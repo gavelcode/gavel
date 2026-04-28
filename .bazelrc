@@ -1,0 +1,9 @@
+common --registry=https://bcr.bazel.build
+
+# Testcontainers reaper (Ryuk) requires a "bridge" network that not every
+# Docker-compatible runtime exposes by default. Disable it; the tests provision
+# their own cleanup via t.Cleanup.
+test --test_env=TESTCONTAINERS_RYUK_DISABLED=true
+test --test_env=DOCKER_HOST
+
+try-import %workspace%/.gavel/gavel.bazelrc

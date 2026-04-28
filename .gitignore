@@ -1,0 +1,45 @@
+# Bazel
+bazel-*
+MODULE.bazel.lock
+
+# macOS
+.DS_Store
+
+# IDE
+.idea/
+.vscode/
+.eclipse/
+
+# Node
+node_modules/
+dist/
+
+# Python
+__pycache__/
+*.pyc
+
+# Rust
+**/target/
+
+# Gavel temporary output (not committed)
+**/.gavel/results/
+
+# Binaries
+/gavel
+/gavel-server
+/clispec-gen
+
+# Coverage reports (generated; baselines live in .gavel/baseline/)
+apps/web/coverage/
+
+# Example baselines (generated locally; examples ship config only)
+examples/*/.gavel/baseline/
+
+# Playwright / e2e artifacts
+e2e-*.png
+playwright-report/
+test-results/
+blob-report/
+
+# Compiled artifacts
+*.class

@@ -1,0 +1,18 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "failure",
+    srcs = ["failure.go"],
+    importpath = "github.com/usegavel/gavel/core/domain/shared/failure",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "failure_test",
+    srcs = ["failure_test.go"],
+    deps = [
+        ":failure",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

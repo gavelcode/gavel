@@ -1,0 +1,13 @@
+load("@rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "service",
+    srcs = ["repository.go"],
+    importpath = "github.com/usegavel/gavel/core/domain/casefile/service",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//core/domain/casefile/model",
+        "//core/domain/casefile/model/evidence/finding",
+        "//core/domain/project/model",
+    ],
+)

@@ -1,0 +1,30 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "architecture",
+    srcs = [
+        "content.go",
+        "errors.go",
+        "violation.go",
+    ],
+    importpath = "github.com/usegavel/gavel/core/domain/casefile/model/evidence/architecture",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//core/domain/casefile/model/evidence",
+        "//core/domain/shared/failure",
+    ],
+)
+
+go_test(
+    name = "architecture_test",
+    srcs = [
+        "content_test.go",
+        "violation_test.go",
+    ],
+    deps = [
+        ":architecture",
+        "//core/domain/casefile/model/evidence",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

@@ -1,0 +1,32 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "finding",
+    srcs = [
+        "content.go",
+        "errors.go",
+        "finding.go",
+        "fingerprint_id.go",
+        "severity.go",
+    ],
+    importpath = "github.com/usegavel/gavel/core/domain/casefile/model/evidence/finding",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//core/domain/casefile/model/evidence",
+        "//core/domain/shared/failure",
+    ],
+)
+
+go_test(
+    name = "finding_test",
+    srcs = [
+        "finding_test.go",
+        "fingerprint_id_test.go",
+        "severity_test.go",
+    ],
+    deps = [
+        ":finding",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

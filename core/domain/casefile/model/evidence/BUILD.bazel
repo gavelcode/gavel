@@ -1,0 +1,40 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "evidence",
+    srcs = [
+        "content.go",
+        "errors.go",
+        "evidence.go",
+        "evidence_id.go",
+        "subtype.go",
+        "type.go",
+    ],
+    importpath = "github.com/usegavel/gavel/core/domain/casefile/model/evidence",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//core/domain/shared/failure",
+        "@com_github_google_uuid//:uuid",
+    ],
+)
+
+go_test(
+    name = "evidence_test",
+    srcs = [
+        "content_test.go",
+        "evidence_id_test.go",
+        "evidence_test.go",
+        "subtype_test.go",
+        "type_test.go",
+    ],
+    deps = [
+        ":evidence",
+        "//core/domain/casefile/model/evidence/architecture",
+        "//core/domain/casefile/model/evidence/coverage",
+        "//core/domain/casefile/model/evidence/finding",
+        "//core/domain/casefile/model/evidence/license",
+        "@com_github_google_uuid//:uuid",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

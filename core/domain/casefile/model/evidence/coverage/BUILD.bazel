@@ -1,0 +1,32 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "coverage",
+    srcs = [
+        "content.go",
+        "errors.go",
+        "language.go",
+        "language_stats.go",
+        "patch_content.go",
+    ],
+    importpath = "github.com/usegavel/gavel/core/domain/casefile/model/evidence/coverage",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//core/domain/casefile/model/evidence",
+        "//core/domain/shared/failure",
+    ],
+)
+
+go_test(
+    name = "coverage_test",
+    srcs = [
+        "language_stats_test.go",
+        "language_test.go",
+        "patch_content_test.go",
+    ],
+    deps = [
+        ":coverage",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

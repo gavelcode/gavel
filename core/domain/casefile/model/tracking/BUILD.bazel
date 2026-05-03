@@ -1,0 +1,23 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "tracking",
+    srcs = [
+        "identifier_result.go",
+        "result.go",
+    ],
+    importpath = "github.com/usegavel/gavel/core/domain/casefile/model/tracking",
+    visibility = ["//visibility:public"],
+    deps = ["//core/domain/casefile/model/evidence/finding"],
+)
+
+go_test(
+    name = "tracking_test",
+    srcs = ["result_test.go"],
+    deps = [
+        ":tracking",
+        "//core/domain/casefile/model/evidence/finding",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

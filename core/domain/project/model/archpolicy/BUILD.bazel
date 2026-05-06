@@ -1,0 +1,28 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "archpolicy",
+    srcs = [
+        "deny_rule.go",
+        "errors.go",
+        "layer.go",
+        "policy.go",
+    ],
+    importpath = "github.com/usegavel/gavel/core/domain/project/model/archpolicy",
+    visibility = ["//visibility:public"],
+    deps = ["//core/domain/shared/failure"],
+)
+
+go_test(
+    name = "archpolicy_test",
+    srcs = [
+        "deny_rule_test.go",
+        "layer_test.go",
+        "policy_test.go",
+    ],
+    deps = [
+        ":archpolicy",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

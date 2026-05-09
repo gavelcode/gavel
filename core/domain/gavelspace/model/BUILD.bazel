@@ -1,0 +1,38 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "model",
+    srcs = [
+        "coverage_options.go",
+        "errors.go",
+        "events.go",
+        "gavelspace.go",
+        "gavelspace_id.go",
+        "project_ref.go",
+        "server_config.go",
+    ],
+    importpath = "github.com/usegavel/gavel/core/domain/gavelspace/model",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//core/domain/project/model",
+        "//core/domain/shared/event",
+        "//core/domain/shared/failure",
+    ],
+)
+
+go_test(
+    name = "model_test",
+    srcs = [
+        "gavelspace_enrichment_test.go",
+        "gavelspace_id_test.go",
+        "gavelspace_test.go",
+        "project_ref_test.go",
+    ],
+    deps = [
+        ":model",
+        "//core/domain/project/model",
+        "@com_github_google_uuid//:uuid",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

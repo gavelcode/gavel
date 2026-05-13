@@ -1,0 +1,47 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "judge",
+    srcs = [
+        "command.go",
+        "errors.go",
+        "handler.go",
+        "result.go",
+        "ruling_view.go",
+        "verdict_view.go",
+    ],
+    importpath = "github.com/usegavel/gavel/core/application/casefile/judge",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//core/application/casefile/evidencedto",
+        "//core/application/shared/event",
+        "//core/domain/casefile/model",
+        "//core/domain/casefile/model/tracking",
+        "//core/domain/casefile/model/verdict",
+        "//core/domain/casefile/service",
+        "//core/domain/project/service",
+        "//core/domain/shared/failure",
+    ],
+)
+
+go_test(
+    name = "judge_test",
+    srcs = [
+        "command_test.go",
+        "fakes_test.go",
+        "handler_test.go",
+    ],
+    deps = [
+        ":judge",
+        "//core/application/casefile/evidencedto",
+        "//core/domain/casefile/model",
+        "//core/domain/casefile/model/evidence",
+        "//core/domain/casefile/model/evidence/finding",
+        "//core/domain/casefile/model/verdict",
+        "//core/domain/project/model",
+        "//core/domain/project/model/qualitygate",
+        "@com_github_google_uuid//:uuid",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

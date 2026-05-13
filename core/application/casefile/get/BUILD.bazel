@@ -1,0 +1,31 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "get",
+    srcs = [
+        "casefile_detail.go",
+        "errors.go",
+        "evidence_summary.go",
+        "finder.go",
+        "handler.go",
+        "query.go",
+        "ruling_view.go",
+    ],
+    importpath = "github.com/usegavel/gavel/core/application/casefile/get",
+    visibility = ["//visibility:public"],
+    deps = ["//core/domain/shared/failure"],
+)
+
+go_test(
+    name = "get_test",
+    srcs = [
+        "fakes_test.go",
+        "handler_test.go",
+    ],
+    deps = [
+        ":get",
+        "//core/domain/shared/failure",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

@@ -1,0 +1,19 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "event",
+    srcs = ["event.go"],
+    importpath = "github.com/usegavel/gavel/core/application/shared/event",
+    visibility = ["//visibility:public"],
+    deps = ["//core/domain/shared/event"],
+)
+
+go_test(
+    name = "event_test",
+    srcs = ["event_test.go"],
+    deps = [
+        ":event",
+        "//core/domain/shared/event",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

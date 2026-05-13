@@ -1,0 +1,49 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "evidencedto",
+    srcs = [
+        "architecture.go",
+        "coverage.go",
+        "dependency.go",
+        "errors.go",
+        "evidence.go",
+        "filecoverage.go",
+        "finding.go",
+        "language_stats.go",
+        "license.go",
+        "new_code_coverage.go",
+        "tracking.go",
+        "violation.go",
+    ],
+    importpath = "github.com/usegavel/gavel/core/application/casefile/evidencedto",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//core/domain/casefile/model/evidence",
+        "//core/domain/casefile/model/evidence/architecture",
+        "//core/domain/casefile/model/evidence/coverage",
+        "//core/domain/casefile/model/evidence/finding",
+        "//core/domain/casefile/model/evidence/license",
+        "//core/domain/casefile/model/tracking",
+        "//core/domain/shared/failure",
+    ],
+)
+
+go_test(
+    name = "evidencedto_test",
+    srcs = [
+        "evidence_test.go",
+        "filecoverage_test.go",
+        "helpers_test.go",
+    ],
+    deps = [
+        ":evidencedto",
+        "//core/domain/casefile/model/evidence",
+        "//core/domain/casefile/model/evidence/architecture",
+        "//core/domain/casefile/model/evidence/coverage",
+        "//core/domain/casefile/model/evidence/finding",
+        "//core/domain/casefile/model/evidence/license",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

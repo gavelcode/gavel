@@ -1,0 +1,11 @@
+load("@rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "projectview",
+    srcs = [
+        "project_detail.go",
+        "quality_gate_rule_view.go",
+    ],
+    importpath = "github.com/usegavel/gavel/core/application/project/projectview",
+    visibility = ["//visibility:public"],
+)

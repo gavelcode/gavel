@@ -1,0 +1,41 @@
+{
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "spotbugs",
+          "rules": [
+            { "id": "RULE_ERROR", "defaultConfiguration": { "level": "error" } },
+            { "id": "RULE_NOTE",  "defaultConfiguration": { "level": "note"  } }
+          ]
+        }
+      },
+      "results": [
+        {
+          "ruleId": "RULE_ERROR",
+          "message": { "text": "without level" },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": { "uri": "F.java" },
+                "region": { "startLine": 1 }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "RULE_NOTE",
+          "message": { "text": "without level note" },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": { "uri": "F.java" },
+                "region": { "startLine": 2 }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

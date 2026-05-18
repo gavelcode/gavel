@@ -1,0 +1,14 @@
+{
+  "runs": [
+    {
+      "tool": { "driver": { "name": "spotbugs" } },
+      "results": [
+        {
+          "ruleId": "RULE1",
+          "level": "warning",
+          "message": { "text": "no location" }
+        }
+      ]
+    }
+  ]
+}

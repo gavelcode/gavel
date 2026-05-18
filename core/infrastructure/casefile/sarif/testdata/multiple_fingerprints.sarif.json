@@ -1,0 +1,27 @@
+{
+  "runs": [
+    {
+      "tool": { "driver": { "name": "spotbugs" } },
+      "results": [
+        {
+          "ruleId": "RULE1",
+          "level": "warning",
+          "message": { "text": "msg" },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": { "uri": "X.java" },
+                "region": { "startLine": 5 }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "zz-last-key":         "z-zzz-zzzz",
+            "aa-first-key":        "expected-stable-value",
+            "mm-middle-key":       "m-mmm-mmmm"
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,42 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "postgres",
+    srcs = [
+        "gavelspace_finder.go",
+        "gavelspace_repository.go",
+    ],
+    importpath = "github.com/usegavel/gavel/core/infrastructure/gavelspace/postgres",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//core/application/gavelspace/get",
+        "//core/application/gavelspace/list",
+        "//core/domain/gavelspace/model",
+        "//core/domain/project/model",
+        "//core/domain/shared/failure",
+        "//core/infrastructure/platform/database",
+        "@com_github_google_uuid//:uuid",
+    ],
+)
+
+go_test(
+    name = "postgres_test",
+    srcs = ["gavelspace_integration_test.go"],
+    deps = [
+        ":postgres",
+        "//core/domain/casefile/model",
+        "//core/domain/casefile/model/evidence",
+        "//core/domain/casefile/model/evidence/finding",
+        "//core/domain/casefile/model/verdict",
+        "//core/domain/gavelspace/model",
+        "//core/domain/project/model",
+        "//core/domain/shared/failure",
+        "//core/infrastructure/casefile/postgres",
+        "//core/infrastructure/platform/database",
+        "//core/infrastructure/platform/database/testkit",
+        "//core/infrastructure/project/postgres",
+        "@com_github_google_uuid//:uuid",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

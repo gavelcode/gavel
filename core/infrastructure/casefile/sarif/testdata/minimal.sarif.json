@@ -1,0 +1,26 @@
+{
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "spotbugs"
+        }
+      },
+      "results": [
+        {
+          "ruleId": "NP_NULL_ON_SOME_PATH",
+          "level": "error",
+          "message": { "text": "Possible null dereference" },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": { "uri": "src/main/java/Foo.java" },
+                "region": { "startLine": 42 }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

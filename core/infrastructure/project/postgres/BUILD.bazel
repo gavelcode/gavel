@@ -1,0 +1,50 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "postgres",
+    srcs = [
+        "project_detail_row.go",
+        "project_finder.go",
+        "project_repository.go",
+        "qg_rule_row.go",
+    ],
+    importpath = "github.com/usegavel/gavel/core/infrastructure/project/postgres",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//core/application/project/get",
+        "//core/application/project/getbykey",
+        "//core/application/project/list",
+        "//core/domain/casefile/model/evidence",
+        "//core/domain/casefile/model/evidence/coverage",
+        "//core/domain/project/model",
+        "//core/domain/project/model/qualitygate",
+        "//core/domain/shared/failure",
+        "//core/infrastructure/platform/database",
+        "@com_github_google_uuid//:uuid",
+    ],
+)
+
+go_test(
+    name = "postgres_test",
+    srcs = [
+        "project_repository_integration_test.go",
+        "query_finder_integration_test.go",
+        "test_helpers_test.go",
+    ],
+    deps = [
+        ":postgres",
+        "//core/domain/casefile/model",
+        "//core/domain/casefile/model/evidence",
+        "//core/domain/casefile/model/evidence/coverage",
+        "//core/domain/casefile/model/evidence/finding",
+        "//core/domain/casefile/model/verdict",
+        "//core/domain/project/model",
+        "//core/domain/project/model/qualitygate",
+        "//core/infrastructure/casefile/postgres",
+        "//core/infrastructure/platform/database",
+        "//core/infrastructure/platform/database/testkit",
+        "@com_github_google_uuid//:uuid",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

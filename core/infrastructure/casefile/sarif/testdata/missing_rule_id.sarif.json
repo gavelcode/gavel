@@ -1,0 +1,22 @@
+{
+  "runs": [
+    {
+      "tool": { "driver": { "name": "spotbugs" } },
+      "results": [
+        {
+          "ruleId": "",
+          "level": "error",
+          "message": { "text": "no rule" },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": { "uri": "X.java" },
+                "region": { "startLine": 1 }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

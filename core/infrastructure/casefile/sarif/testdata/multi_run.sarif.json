@@ -1,0 +1,53 @@
+{
+  "runs": [
+    {
+      "tool": { "driver": { "name": "spotbugs" } },
+      "results": [
+        {
+          "ruleId": "NP_NULL",
+          "level": "error",
+          "message": { "text": "null deref" },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": { "uri": "A.java" },
+                "region": { "startLine": 1 }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "tool": { "driver": { "name": "pmd" } },
+      "results": [
+        {
+          "ruleId": "UnusedLocalVariable",
+          "level": "warning",
+          "message": { "text": "unused var" },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": { "uri": "B.java" },
+                "region": { "startLine": 10 }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "EmptyCatchBlock",
+          "level": "note",
+          "message": { "text": "empty catch" },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": { "uri": "B.java" },
+                "region": { "startLine": 20 }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "golangci-lint"
+        }
+      },
+      "results": [
+        {
+          "ruleId": "errcheck",
+          "level": "error",
+          "message": { "text": "Error return value is not checked" },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": { "uri": "../../../../Library/Caches/bazel/_bazel_user/abc123/execroot/_main/internal/domain/order/order.go" },
+                "region": { "startLine": 96 }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

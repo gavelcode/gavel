@@ -1,0 +1,34 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "archconfig",
+    srcs = [
+        "config_dto.go",
+        "errors.go",
+        "generic_dto.go",
+        "loader.go",
+        "parser.go",
+        "rule_dto.go",
+    ],
+    importpath = "github.com/usegavel/gavel/core/infrastructure/project/archconfig",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//core/domain/project/model/archpolicy",
+        "//core/domain/shared/failure",
+        "@in_gopkg_yaml_v3//:yaml_v3",
+    ],
+)
+
+go_test(
+    name = "archconfig_test",
+    srcs = [
+        "loader_test.go",
+        "parser_test.go",
+    ],
+    deps = [
+        ":archconfig",
+        "//core/domain/shared/failure",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

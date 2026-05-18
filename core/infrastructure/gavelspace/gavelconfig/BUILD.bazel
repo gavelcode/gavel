@@ -1,0 +1,52 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "gavelconfig",
+    srcs = [
+        "config_dto.go",
+        "coverage_options.go",
+        "coverage_options_dto.go",
+        "coverage_rule_dto.go",
+        "errors.go",
+        "findings_rule_dto.go",
+        "license_rule_dto.go",
+        "new_code_coverage_rule_dto.go",
+        "parser.go",
+        "project_dto.go",
+        "quality_gate_dto.go",
+        "server_config.go",
+        "server_dto.go",
+        "violations_rule_dto.go",
+        "workspace_config.go",
+        "workspace_finder.go",
+    ],
+    importpath = "github.com/usegavel/gavel/core/infrastructure/gavelspace/gavelconfig",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//core/domain/casefile/model/evidence",
+        "//core/domain/casefile/model/evidence/coverage",
+        "//core/domain/gavelspace/model",
+        "//core/domain/project/model",
+        "//core/domain/project/model/qualitygate",
+        "//core/domain/shared/failure",
+        "@in_gopkg_yaml_v3//:yaml_v3",
+    ],
+)
+
+go_test(
+    name = "gavelconfig_test",
+    srcs = [
+        "parser_test.go",
+        "workspace_finder_test.go",
+    ],
+    data = ["//:.gavel/gavel.yaml"],
+    deps = [
+        ":gavelconfig",
+        "//core/domain/casefile/model/evidence",
+        "//core/domain/project/model/qualitygate",
+        "//core/domain/shared/failure",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@rules_go//go/runfiles",
+    ],
+)

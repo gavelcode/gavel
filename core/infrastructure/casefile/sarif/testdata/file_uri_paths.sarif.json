@@ -1,0 +1,26 @@
+{
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "pmd"
+        }
+      },
+      "results": [
+        {
+          "ruleId": "UnusedLocalVariable",
+          "level": "warning",
+          "message": { "text": "Unused local variable 'x'" },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": { "uri": "file:///private/var/tmp/_bazel_user/abc123/execroot/_main/src/main/java/com/example/Foo.java" },
+                "region": { "startLine": 10 }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

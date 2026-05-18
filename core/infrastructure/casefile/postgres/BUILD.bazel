@@ -1,0 +1,60 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "postgres",
+    srcs = [
+        "case_file_finder.go",
+        "case_file_repository.go",
+        "file_coverage.go",
+        "finding_finder.go",
+    ],
+    importpath = "github.com/usegavel/gavel/core/infrastructure/casefile/postgres",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//core/application/casefile/evidencedto",
+        "//core/application/casefile/finalize",
+        "//core/application/casefile/get",
+        "//core/application/casefile/list",
+        "//core/application/casefile/listfindings",
+        "//core/domain/casefile/model",
+        "//core/domain/casefile/model/evidence",
+        "//core/domain/casefile/model/evidence/architecture",
+        "//core/domain/casefile/model/evidence/coverage",
+        "//core/domain/casefile/model/evidence/finding",
+        "//core/domain/casefile/model/verdict",
+        "//core/domain/project/model",
+        "//core/domain/shared/failure",
+        "//core/infrastructure/platform/database",
+        "@com_github_google_uuid//:uuid",
+    ],
+)
+
+go_test(
+    name = "postgres_test",
+    srcs = [
+        "case_file_repository_integration_test.go",
+        "error_paths_integration_test.go",
+        "file_coverage_integration_test.go",
+        "query_finders_integration_test.go",
+        "test_helpers_test.go",
+    ],
+    deps = [
+        ":postgres",
+        "//core/application/casefile/evidencedto",
+        "//core/application/casefile/finalize",
+        "//core/application/casefile/listfindings",
+        "//core/domain/casefile/model",
+        "//core/domain/casefile/model/evidence",
+        "//core/domain/casefile/model/evidence/architecture",
+        "//core/domain/casefile/model/evidence/coverage",
+        "//core/domain/casefile/model/evidence/finding",
+        "//core/domain/casefile/model/verdict",
+        "//core/domain/project/model",
+        "//core/infrastructure/platform/database",
+        "//core/infrastructure/platform/database/testkit",
+        "//core/infrastructure/project/postgres",
+        "@com_github_google_uuid//:uuid",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

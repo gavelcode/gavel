@@ -1,0 +1,22 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+package(default_visibility = ["//visibility:public"])
+
+go_library(
+    name = "composite",
+    srcs = ["coverage.go"],
+    importpath = "github.com/usegavel/gavel/core/infrastructure/platform/bazel/collector/composite",
+    visibility = ["//visibility:public"],
+    deps = ["//core/application/casefile/collectevidence"],
+)
+
+go_test(
+    name = "composite_test",
+    srcs = ["coverage_test.go"],
+    deps = [
+        ":composite",
+        "//core/application/casefile/collectevidence",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

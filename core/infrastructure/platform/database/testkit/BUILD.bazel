@@ -1,0 +1,25 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "testkit",
+    srcs = ["testkit.go"],
+    importpath = "github.com/usegavel/gavel/core/infrastructure/platform/database/testkit",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//core/infrastructure/platform/database",
+        "@com_github_stretchr_testify//require",
+        "@com_github_testcontainers_testcontainers_go//:testcontainers-go",
+        "@com_github_testcontainers_testcontainers_go//wait",
+        "@com_github_testcontainers_testcontainers_go_modules_postgres//:postgres",
+    ],
+)
+
+go_test(
+    name = "testkit_test",
+    srcs = ["testkit_test.go"],
+    embed = [":testkit"],
+    deps = [
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

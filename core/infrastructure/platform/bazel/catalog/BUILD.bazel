@@ -1,0 +1,23 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+package(default_visibility = ["//visibility:public"])
+
+go_library(
+    name = "catalog",
+    srcs = [
+        "aspect.go",
+        "language_rules.go",
+        "tool_repo.go",
+    ],
+    importpath = "github.com/usegavel/gavel/core/infrastructure/platform/bazel/catalog",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "catalog_test",
+    srcs = ["catalog_test.go"],
+    deps = [
+        ":catalog",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

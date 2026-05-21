@@ -1,0 +1,30 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+package(default_visibility = ["//visibility:public"])
+
+go_library(
+    name = "installer",
+    srcs = [
+        "install.go",
+        "installer.go",
+        "verify.go",
+    ],
+    embedsrcs = [
+        "bazelrc.tmpl",
+        "module.bazel.tmpl",
+    ],
+    importpath = "github.com/usegavel/gavel/core/infrastructure/platform/bazel/installer",
+    visibility = ["//visibility:public"],
+    deps = ["//core/infrastructure/platform/bazel/catalog"],
+)
+
+go_test(
+    name = "installer_test",
+    srcs = ["install_test.go"],
+    deps = [
+        ":installer",
+        "//core/infrastructure/platform/bazel/catalog",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

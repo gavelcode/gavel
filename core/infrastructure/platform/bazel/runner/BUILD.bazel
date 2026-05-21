@@ -1,0 +1,48 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+package(default_visibility = ["//visibility:public"])
+
+go_library(
+    name = "runner",
+    srcs = [
+        "affected.go",
+        "analysis.go",
+        "aspect.go",
+        "collector.go",
+        "command.go",
+        "coverage.go",
+        "jscoverage.go",
+        "query.go",
+        "target_analyzer.go",
+    ],
+    importpath = "github.com/usegavel/gavel/core/infrastructure/platform/bazel/runner",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//core/application/supporting/analyzetarget",
+        "//core/infrastructure/casefile/sarif",
+        "//core/infrastructure/platform/bazel/catalog",
+    ],
+)
+
+go_test(
+    name = "runner_test",
+    srcs = [
+        "affected_test.go",
+        "analysis_test.go",
+        "aspect_int_test.go",
+        "bindir_test.go",
+        "collector_test.go",
+        "collector_whitebox_test.go",
+        "coverage_test.go",
+        "fakes_test.go",
+        "jscoverage_test.go",
+        "query_test.go",
+        "target_analyzer_test.go",
+    ],
+    embed = [":runner"],
+    deps = [
+        "//core/infrastructure/platform/bazel/catalog",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

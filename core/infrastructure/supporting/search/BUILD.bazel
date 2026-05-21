@@ -1,0 +1,31 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "search",
+    srcs = ["finder.go"],
+    importpath = "github.com/usegavel/gavel/core/infrastructure/supporting/search",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//core/application/supporting/search",
+        "//core/infrastructure/platform/database",
+    ],
+)
+
+go_test(
+    name = "search_test",
+    srcs = ["finder_integration_test.go"],
+    deps = [
+        ":search",
+        "//core/domain/casefile/model",
+        "//core/domain/casefile/model/evidence",
+        "//core/domain/casefile/model/evidence/finding",
+        "//core/domain/casefile/model/verdict",
+        "//core/domain/project/model",
+        "//core/infrastructure/casefile/postgres",
+        "//core/infrastructure/platform/database",
+        "//core/infrastructure/platform/database/testkit",
+        "//core/infrastructure/project/postgres",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

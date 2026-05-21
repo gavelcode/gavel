@@ -1,0 +1,26 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+package(default_visibility = ["//visibility:public"])
+
+go_library(
+    name = "git",
+    srcs = [
+        "difflines.go",
+        "sourcecontext.go",
+    ],
+    importpath = "github.com/usegavel/gavel/core/infrastructure/platform/git",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "git_test",
+    srcs = [
+        "difflines_test.go",
+        "sourcecontext_integration_test.go",
+    ],
+    embed = [":git"],
+    deps = [
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

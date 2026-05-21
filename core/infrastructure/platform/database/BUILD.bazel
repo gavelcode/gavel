@@ -1,0 +1,37 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+package(default_visibility = ["//visibility:public"])
+
+go_library(
+    name = "database",
+    srcs = [
+        "connection.go",
+        "db.go",
+        "tx.go",
+    ],
+    embedsrcs = [
+        "bootstrap.sql",
+        "seed.sql",
+    ],
+    importpath = "github.com/usegavel/gavel/core/infrastructure/platform/database",
+    visibility = ["//visibility:public"],
+    deps = ["@com_github_jackc_pgx_v5//stdlib"],
+)
+
+go_test(
+    name = "database_test",
+    srcs = [
+        "connection_integration_test.go",
+        "db_test.go",
+        "escape_test.go",
+        "seed_integration_test.go",
+    ],
+    deps = [
+        ":database",
+        "//core/domain/iam/model/user",
+        "//core/infrastructure/iam/argon2",
+        "//core/infrastructure/platform/database/testkit",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

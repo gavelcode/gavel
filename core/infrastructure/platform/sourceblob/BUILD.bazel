@@ -1,0 +1,31 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+package(default_visibility = ["//visibility:public"])
+
+go_library(
+    name = "sourceblob",
+    srcs = ["storage.go"],
+    importpath = "github.com/usegavel/gavel/core/infrastructure/platform/sourceblob",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//core/domain/shared/failure",
+        "//core/infrastructure/platform/database",
+    ],
+)
+
+go_test(
+    name = "sourceblob_test",
+    srcs = [
+        "storage_integration_test.go",
+        "test_helpers_test.go",
+    ],
+    deps = [
+        ":sourceblob",
+        "//core/domain/project/model",
+        "//core/infrastructure/platform/database",
+        "//core/infrastructure/platform/database/testkit",
+        "//core/infrastructure/project/postgres",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

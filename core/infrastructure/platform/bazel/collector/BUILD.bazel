@@ -1,0 +1,44 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+package(default_visibility = ["//visibility:public"])
+
+go_library(
+    name = "collector",
+    srcs = [
+        "architecture.go",
+        "coverage.go",
+        "findings.go",
+        "runner_adapter.go",
+        "vitest.go",
+    ],
+    importpath = "github.com/usegavel/gavel/core/infrastructure/platform/bazel/collector",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//core/application/casefile/collectevidence",
+        "//core/application/casefile/evidencedto",
+        "//core/application/casefile/ingestfindings",
+        "//core/infrastructure/casefile/sarif",
+        "//core/infrastructure/platform/bazel/catalog",
+        "//core/infrastructure/platform/bazel/runner",
+    ],
+)
+
+go_test(
+    name = "collector_test",
+    srcs = [
+        "architecture_test.go",
+        "coverage_test.go",
+        "fakes_test.go",
+        "findings_test.go",
+        "vitest_test.go",
+    ],
+    deps = [
+        ":collector",
+        "//core/application/casefile/collectevidence",
+        "//core/application/casefile/evidencedto",
+        "//core/application/casefile/ingestfindings",
+        "//core/infrastructure/platform/bazel/runner",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

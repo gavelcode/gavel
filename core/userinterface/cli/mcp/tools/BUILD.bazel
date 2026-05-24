@@ -1,0 +1,38 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+package(default_visibility = ["//visibility:public"])
+
+go_library(
+    name = "tools",
+    srcs = [
+        "arch.go",
+        "coverage.go",
+        "init.go",
+        "judge.go",
+        "lint.go",
+        "trends.go",
+        "validate.go",
+    ],
+    importpath = "github.com/usegavel/gavel/core/userinterface/cli/mcp/tools",
+    deps = [
+        "//core/userinterface/cli/mcp/executor",
+        "@com_github_modelcontextprotocol_go_sdk//mcp",
+    ],
+)
+
+go_test(
+    name = "tools_test",
+    srcs = [
+        "coverage_test.go",
+        "judge_test.go",
+        "lint_test.go",
+        "run_test.go",
+        "trends_test.go",
+    ],
+    embed = [":tools"],
+    deps = [
+        "//core/userinterface/cli/mcp/executor",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

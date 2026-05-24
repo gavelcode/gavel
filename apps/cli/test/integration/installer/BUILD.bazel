@@ -1,0 +1,11 @@
+load("@rules_go//go:def.bzl", "go_test")
+
+go_test(
+    name = "installer_test",
+    srcs = ["installer_test.go"],
+    deps = [
+        "//core/infrastructure/platform/bazel/installer",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

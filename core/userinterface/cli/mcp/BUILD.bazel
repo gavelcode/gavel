@@ -1,0 +1,26 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+package(default_visibility = ["//visibility:public"])
+
+go_library(
+    name = "mcp",
+    srcs = ["serve.go"],
+    importpath = "github.com/usegavel/gavel/core/userinterface/cli/mcp",
+    deps = [
+        "//core/userinterface/cli/mcp/executor",
+        "//core/userinterface/cli/mcp/resources",
+        "//core/userinterface/cli/mcp/tools",
+        "@com_github_modelcontextprotocol_go_sdk//mcp",
+        "@com_github_spf13_cobra//:cobra",
+    ],
+)
+
+go_test(
+    name = "mcp_test",
+    srcs = ["serve_test.go"],
+    embed = [":mcp"],
+    deps = [
+        "//core/userinterface/cli/mcp/executor",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

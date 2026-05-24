@@ -1,0 +1,44 @@
+load("@rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "gavel_lib",
+    srcs = ["main.go"],
+    importpath = "github.com/usegavel/gavel/apps/cli/cmd/gavel",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//apps/cli/internal/app",
+        "//core/application/casefile/classify",
+        "//core/application/casefile/classifyarch",
+        "//core/application/casefile/collectevidence",
+        "//core/application/casefile/createcasefile",
+        "//core/application/casefile/finalize",
+        "//core/application/casefile/ingestcoverage",
+        "//core/application/casefile/ingestevidence",
+        "//core/application/casefile/ingestfindings",
+        "//core/application/casefile/ingestncc",
+        "//core/application/casefile/judge",
+        "//core/application/casefile/submit",
+        "//core/application/gavelspace/loadgavelspace",
+        "//core/application/supporting/analyzetarget",
+        "//core/infrastructure/casefile/lcov",
+        "//core/infrastructure/casefile/memory",
+        "//core/infrastructure/casefile/sarif",
+        "//core/infrastructure/gavelspace/gavelconfig",
+        "//core/infrastructure/platform/bazel",
+        "//core/infrastructure/platform/bazel/catalog",
+        "//core/infrastructure/platform/bazel/collector",
+        "//core/infrastructure/platform/bazel/collector/composite",
+        "//core/infrastructure/platform/bazel/installer",
+        "//core/infrastructure/platform/bazel/runner",
+        "//core/infrastructure/platform/git",
+        "//core/infrastructure/project/archconfig",
+        "//core/infrastructure/project/memory",
+        "//core/userinterface/cli/judge",
+    ],
+)
+
+go_binary(
+    name = "gavel",
+    embed = [":gavel_lib"],
+    visibility = ["//visibility:public"],
+)

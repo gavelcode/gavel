@@ -1,0 +1,33 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+package(default_visibility = ["//visibility:public"])
+
+go_library(
+    name = "json",
+    srcs = [
+        "cache.go",
+        "json.go",
+    ],
+    importpath = "github.com/usegavel/gavel/core/userinterface/cli/judge/output/json",
+    deps = [
+        "//core/application/casefile/judge",
+        "//core/userinterface/cli/judge/output/tree",
+        "//core/userinterface/cli/judge/pipeline",
+    ],
+)
+
+go_test(
+    name = "json_test",
+    srcs = [
+        "cache_test.go",
+        "json_test.go",
+    ],
+    deps = [
+        ":json",
+        "//core/application/casefile/evidencedto",
+        "//core/application/casefile/judge",
+        "//core/userinterface/cli/judge/pipeline",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

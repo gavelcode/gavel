@@ -1,0 +1,28 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+package(default_visibility = ["//visibility:public"])
+
+go_library(
+    name = "resources",
+    srcs = [
+        "architecture.go",
+        "config.go",
+        "projects.go",
+    ],
+    importpath = "github.com/usegavel/gavel/core/userinterface/cli/mcp/resources",
+    deps = [
+        "//core/userinterface/cli/mcp/executor",
+        "@com_github_modelcontextprotocol_go_sdk//mcp",
+    ],
+)
+
+go_test(
+    name = "resources_test",
+    srcs = ["resources_test.go"],
+    embed = [":resources"],
+    deps = [
+        "//core/userinterface/cli/mcp/executor",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

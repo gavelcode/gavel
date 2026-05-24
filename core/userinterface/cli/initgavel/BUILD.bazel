@@ -1,0 +1,37 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+package(default_visibility = ["//visibility:public"])
+
+go_library(
+    name = "initgavel",
+    srcs = [
+        "archdefault.go",
+        "execute.go",
+        "flags.gen.go",
+        "initialize.go",
+        "prompt.go",
+    ],
+    importpath = "github.com/usegavel/gavel/core/userinterface/cli/initgavel",
+    deps = [
+        "//core/userinterface/cli/ui",
+        "@com_github_charmbracelet_huh//:huh",
+        "@com_github_spf13_cobra//:cobra",
+        "@in_gopkg_yaml_v3//:yaml_v3",
+    ],
+)
+
+go_test(
+    name = "initgavel_test",
+    srcs = [
+        "archdefault_test.go",
+        "execute_test.go",
+        "initialize_test.go",
+        "prompt_test.go",
+    ],
+    embed = [":initgavel"],
+    deps = [
+        "@com_github_spf13_cobra//:cobra",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

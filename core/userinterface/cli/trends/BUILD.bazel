@@ -1,0 +1,25 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "trends",
+    srcs = [
+        "flags.gen.go",
+        "trends.go",
+    ],
+    importpath = "github.com/usegavel/gavel/core/userinterface/cli/trends",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//core/userinterface/api/v1/client",
+        "@com_github_spf13_cobra//:cobra",
+    ],
+)
+
+go_test(
+    name = "trends_test",
+    srcs = ["trends_test.go"],
+    deps = [
+        ":trends",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

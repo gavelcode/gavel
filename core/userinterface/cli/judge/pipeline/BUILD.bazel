@@ -1,0 +1,57 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+package(default_visibility = ["//visibility:public"])
+
+go_library(
+    name = "pipeline",
+    srcs = [
+        "delta.go",
+        "delta_merge.go",
+        "deps.go",
+        "local.go",
+        "options.go",
+        "pipeline.go",
+        "result.go",
+        "server.go",
+    ],
+    importpath = "github.com/usegavel/gavel/core/userinterface/cli/judge/pipeline",
+    deps = [
+        "//core/application/casefile/collectevidence",
+        "//core/application/casefile/evidencedto",
+        "//core/application/casefile/finalize",
+        "//core/application/casefile/ingestcoverage",
+        "//core/application/casefile/ingestfindings",
+        "//core/application/casefile/judge",
+        "//core/application/casefile/submit",
+        "//core/userinterface/api/v1/client",
+    ],
+)
+
+go_test(
+    name = "pipeline_test",
+    srcs = [
+        "delta_merge_test.go",
+        "local_test.go",
+        "server_test.go",
+    ],
+    embed = [":pipeline"],
+    deps = [
+        "//core/application/casefile/classify",
+        "//core/application/casefile/collectevidence",
+        "//core/application/casefile/createcasefile",
+        "//core/application/casefile/evidencedto",
+        "//core/application/casefile/finalize",
+        "//core/application/casefile/ingestcoverage",
+        "//core/application/casefile/ingestevidence",
+        "//core/application/casefile/ingestfindings",
+        "//core/application/casefile/judge",
+        "//core/application/casefile/submit",
+        "//core/domain/casefile/model/evidence/finding",
+        "//core/domain/project/model",
+        "//core/infrastructure/casefile/memory",
+        "//core/infrastructure/project/memory",
+        "//core/userinterface/api/v1/client",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

@@ -1,0 +1,20 @@
+load("@rules_go//go:def.bzl", "go_test")
+
+go_test(
+    name = "submit_test",
+    srcs = ["submit_e2e_test.go"],
+    deps = [
+        "//core/application/casefile/classify",
+        "//core/application/casefile/createcasefile",
+        "//core/application/casefile/evidencedto",
+        "//core/application/casefile/finalize",
+        "//core/application/casefile/ingestevidence",
+        "//core/application/casefile/judge",
+        "//core/domain/project/model",
+        "//core/infrastructure/casefile/postgres",
+        "//core/infrastructure/platform/database/testkit",
+        "//core/infrastructure/project/postgres",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

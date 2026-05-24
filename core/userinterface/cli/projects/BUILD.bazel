@@ -1,0 +1,34 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+package(default_visibility = ["//visibility:public"])
+
+go_library(
+    name = "projects",
+    srcs = [
+        "flags.gen.go",
+        "projects.go",
+    ],
+    importpath = "github.com/usegavel/gavel/core/userinterface/cli/projects",
+    deps = [
+        "//core/application/gavelspace/loadgavelspace",
+        "@com_github_spf13_cobra//:cobra",
+    ],
+)
+
+go_test(
+    name = "projects_test",
+    srcs = ["projects_test.go"],
+    deps = [
+        ":projects",
+        "//core/application/gavelspace/loadgavelspace",
+        "//core/domain/casefile/model/evidence",
+        "//core/domain/gavelspace/model",
+        "//core/domain/project/model",
+        "//core/domain/project/model/archpolicy",
+        "//core/domain/project/model/qualitygate",
+        "@com_github_google_uuid//:uuid",
+        "@com_github_spf13_cobra//:cobra",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

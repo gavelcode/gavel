@@ -1,0 +1,65 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+package(default_visibility = ["//visibility:public"])
+
+go_library(
+    name = "judge",
+    srcs = [
+        "deps.go",
+        "flags.gen.go",
+        "helpers.go",
+        "judge.go",
+        "scope.go",
+    ],
+    importpath = "github.com/usegavel/gavel/core/userinterface/cli/judge",
+    deps = [
+        "//core/application/casefile/collectevidence",
+        "//core/application/casefile/ingestcoverage",
+        "//core/application/casefile/ingestfindings",
+        "//core/application/casefile/submit",
+        "//core/application/gavelspace/loadgavelspace",
+        "//core/application/project/preparebaseline",
+        "//core/userinterface/api/v1/client",
+        "//core/userinterface/cli/judge/output/json",
+        "//core/userinterface/cli/judge/output/render",
+        "//core/userinterface/cli/judge/output/sarif",
+        "//core/userinterface/cli/judge/pipeline",
+        "//core/userinterface/cli/ui",
+        "@com_github_spf13_cobra//:cobra",
+    ],
+)
+
+go_test(
+    name = "judge_test",
+    srcs = [
+        "helpers_test.go",
+        "judge_test.go",
+        "scope_test.go",
+    ],
+    embed = [":judge"],
+    deps = [
+        "//core/application/casefile/classify",
+        "//core/application/casefile/collectevidence",
+        "//core/application/casefile/createcasefile",
+        "//core/application/casefile/evidencedto",
+        "//core/application/casefile/finalize",
+        "//core/application/casefile/ingestcoverage",
+        "//core/application/casefile/ingestevidence",
+        "//core/application/casefile/ingestfindings",
+        "//core/application/casefile/judge",
+        "//core/application/casefile/submit",
+        "//core/application/gavelspace/loadgavelspace",
+        "//core/application/project/preparebaseline",
+        "//core/domain/casefile/model/evidence",
+        "//core/domain/casefile/model/evidence/finding",
+        "//core/domain/gavelspace/model",
+        "//core/domain/project/model",
+        "//core/domain/project/model/qualitygate",
+        "//core/infrastructure/casefile/memory",
+        "//core/infrastructure/project/memory",
+        "//core/userinterface/api/v1/client",
+        "//core/userinterface/cli/judge/pipeline",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

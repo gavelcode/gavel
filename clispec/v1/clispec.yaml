@@ -1,0 +1,613 @@
+clispec: "1.0"
+
+info:
+  name: gavel
+  summary: Monorepo Bazel quality analyzer
+  description: >
+    Code quality platform for Bazel monorepos. Runs static analyzers as Bazel
+    aspects, normalizes findings to SARIF, and enforces quality gates.
+
+globals:
+  flags:
+    verbose:
+      type: bool
+      default: false
+      description: Enable debug logging
+
+  signals:
+    - SIGINT
+    - SIGTERM
+
+  exit_codes:
+    0: Success
+    1: Error or failure condition (command-specific)
+
+commands:
+  judge:
+    package: core/userinterface/cli/judge
+    summary: Run analyzers and evaluate quality gate
+    description: >
+      Loads project configuration, runs Bazel lint aspects and coverage
+      collection, evaluates the quality gate, and reports the verdict.
+      When server mode is enabled, fetches baseline from the server and
+      submits results. Exits 1 on verdict fail (no error message printed)
+      or on any runtime error (message printed to stderr).
+    examples:
+      - command: gavel judge
+        description: Run with default config
+      - command: gavel judge --project mylib
+        description: Analyze a single project
+      - command: gavel judge --quick
+        description: Findings only, skip coverage and architecture
+      - command: gavel judge --server https://gavel.example.com --token $GAVEL_TOKEN
+        description: Run with server baseline
+      - command: gavel judge --output-sarif report.sarif
+        description: Write merged SARIF report
+      - command: gavel judge --json
+        description: Output results as JSON
+
+    flags:
+      config:
+        type: string
+        description: >
+          Path to gavel.yaml. Resolution order: flag value,
+          .gavel/gavel.yaml, gavel.yaml, then defaults to .gavel/gavel.yaml.
+      commit:
+        type: string
+        field: CommitSHA
+        description: Commit SHA. Auto-detected from git if not provided.
+      branch:
+        type: string
+        description: Branch name. Auto-detected from git if not provided.
+      json:
+        type: bool
+        field: JSONOutput
+        default: false
+        description: Output results as JSON.
+      timeout:
+        type: duration
+        default: 30m
+        description: Maximum time for the entire judge run.
+      project:
+        type: string
+        description: Analyze only the named project. Error if not found in config.
+      quick:
+        type: bool
+        short: q
+        default: false
+        description: Run findings only, skip coverage and architecture checks.
+      absolute:
+        type: bool
+        default: false
+        description: Evaluate quality gate on total findings, ignoring baseline.
+      affected:
+        type: bool
+        default: false
+        description: Analyze only Bazel targets affected by changed files (git diff against default branch). Implies --quick.
+      target-file:
+        type: string
+        field: TargetFile
+        description: File path relative to workspace root. Resolves the owning Bazel package and analyzes only that target. Implies --quick.
+      base-ref:
+        type: string
+        field: BaseRef
+        description: Git ref to diff against when using --affected. Defaults to the project's defaultBranch from gavel.yaml.
+      server:
+        type: string
+        field: ServerURL
+        env: GAVEL_SERVER_URL
+        description: Gavel server URL for shared baseline and result submission.
+      token:
+        type: string
+        field: ServerToken
+        env: GAVEL_TOKEN
+        sensitive: true
+        description: API token for server authentication.
+      findings-source:
+        type: string
+        description: >
+          Findings source: auto, gavel, or rules_lint.
+          Defaults to workspace config value if not set.
+        enum: [auto, gavel, rules_lint]
+      require-submit:
+        type: bool
+        default: false
+        description: Exit with error if server submission fails. Default behavior is warn and continue.
+      pr-number:
+        type: int
+        description: Pull request number. Creates or updates PR record on server.
+      pr-title:
+        type: string
+        description: Pull request title.
+      pr-author:
+        type: string
+        description: Pull request author.
+      pr-branch:
+        type: string
+        description: Pull request source branch.
+      output-sarif:
+        type: string
+        field: OutputSARIF
+        description: Write merged SARIF 2.1.0 report to the specified file path.
+      gavelspace:
+        type: string
+        description: Associate analysis with a gavelspace (multi-repo group).
+
+    constraints:
+      - type: implies
+        flag: require-submit
+        requires: [server, token]
+      - type: implies
+        flag: pr-number
+        requires: [server, token]
+      - type: group
+        name: pr-metadata
+        flags: [pr-title, pr-author, pr-branch]
+        description: PR metadata flags; only meaningful when pr-number is set.
+
+    exit_codes:
+      0: All projects passed quality gate
+      1: >
+        Verdict fail (one or more projects failed quality gate — no error
+        message printed to stderr) or runtime error (config, git detection,
+        timeout — message printed to stderr).
+
+    output:
+      default: text
+      formats:
+        text:
+          description: Human-readable terminal output with verdict summary.
+        json:
+          flag: json
+          description: Structured JSON with per-project results.
+          schema:
+            type: object
+            properties:
+              projects:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    name:
+                      type: string
+                      description: Project name from gavel.yaml.
+                    verdict:
+                      type: string
+                      enum: [pass, fail]
+                    findings_count:
+                      type: int
+                    violations_count:
+                      type: int
+                    coverage_percent:
+                      type: float
+                      nullable: true
+                      description: Omitted when coverage collection was skipped (--quick).
+                    new_code_coverage_percent:
+                      type: float
+                    rulings:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          subtype:
+                            type: string
+                            description: Quality gate rule subtype.
+                          passed:
+                            type: bool
+                          detail:
+                            type: string
+                    findings:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          tool:
+                            type: string
+                            description: Analyzer name (e.g. golangci-lint).
+                          rule_id:
+                            type: string
+                          severity:
+                            type: string
+                          file_path:
+                            type: string
+                          line:
+                            type: int
+                          message:
+                            type: string
+                          fingerprint:
+                            type: string
+                            description: Stable ID for deduplication and baseline tracking.
+                          status:
+                            type: string
+                            enum: [new, existing]
+                            nullable: true
+                            description: Present only when baseline delta is available.
+                    violations:
+                      type: array
+                      nullable: true
+                      description: Architecture violations. Omitted when architecture checks were skipped.
+                      items:
+                        type: object
+                        properties:
+                          rule:
+                            type: string
+                          source_pkg:
+                            type: string
+                          target_pkg:
+                            type: string
+                          message:
+                            type: string
+                          status:
+                            type: string
+                            enum: [new, existing]
+                            nullable: true
+                            description: Present only when baseline delta is available.
+                    delta:
+                      type: object
+                      nullable: true
+                      description: Baseline comparison. Omitted when no previous baseline exists.
+                      properties:
+                        has_previous:
+                          type: bool
+                        new_count:
+                          type: int
+                          description: Findings not present in previous baseline.
+                        fixed_count:
+                          type: int
+                          description: Findings present in previous baseline but now gone.
+                        existing_count:
+                          type: int
+                          description: Findings present in both current and previous.
+                        findings_delta:
+                          type: int
+                          description: Net change in total findings (positive = regression).
+                        coverage_delta:
+                          type: float
+                          description: Change in coverage percentage (positive = improvement).
+                        violations_delta:
+                          type: int
+                          description: Net change in architecture violations.
+                        new_violations_count:
+                          type: int
+                          nullable: true
+                        fixed_violations_count:
+                          type: int
+                          nullable: true
+                        existing_violations_count:
+                          type: int
+                          nullable: true
+        sarif:
+          flag: output-sarif
+          description: >
+            SARIF 2.1.0 merged report written to a file.
+            Schema defined by the OASIS SARIF 2.1.0 standard.
+
+  init:
+    package: core/userinterface/cli/initgavel
+    summary: Initialize Gavel configuration for this Bazel workspace
+    description: >
+      Creates gavel.yaml, registers analysis aspects in .bazelrc, and
+      installs tool dependencies in MODULE.bazel. Runs interactively by
+      default; use flags for non-interactive mode.
+    examples:
+      - command: gavel init
+        description: Interactive setup
+      - command: gavel init --from existing/gavel.yaml
+        description: Re-apply from existing config
+      - command: gavel init --force
+        description: Overwrite existing configuration
+
+    flags:
+      config:
+        type: string
+        description: Path to gavel.yaml. Defaults to .gavel/gavel.yaml.
+      from:
+        type: string
+        description: >
+          Path to existing gavel.yaml to re-apply. Implies --force.
+      force:
+        type: bool
+        default: false
+        description: Overwrite existing configuration files.
+
+    constraints:
+      - type: implies
+        flag: from
+        sets: { force: true }
+
+    modes:
+      interactive:
+        description: Prompts for project name and project definitions.
+        when: No --from flag.
+      from-config:
+        description: Reads existing gavel.yaml and re-applies it.
+        when: --from is set.
+
+    exit_codes:
+      0: Configuration created successfully (or skipped existing without --force)
+      1: Config write error, installer error, or runtime failure
+
+    output:
+      default: text
+      formats:
+        text:
+          description: >
+            Step-by-step progress output (CONFIG, BAZEL, MODULE phases).
+
+  config:
+    package: core/userinterface/cli/config
+    summary: Show workspace configuration
+    description: >
+      Read gavel.yaml and output the parsed workspace configuration as JSON.
+      Includes gavelspace name, projects with patterns and languages,
+      quality gate rules, and server URL.
+    examples:
+      - command: gavel config
+        description: Show configuration as JSON
+
+    flags:
+      config:
+        type: string
+        description: Path to gavel.yaml.
+
+    exit_codes:
+      0: Configuration read successfully
+      1: Config file not found or parse error
+
+    output:
+      default: json
+      formats:
+        json:
+          description: Parsed workspace configuration.
+
+  projects:
+    package: core/userinterface/cli/projects
+    summary: List configured projects with quality gates and baselines
+    description: >
+      Read gavel.yaml and baseline data, output project details as JSON.
+      Includes quality gate rules, baseline fingerprint and violation counts,
+      and architecture policy if present.
+    examples:
+      - command: gavel projects
+        description: List all projects as JSON
+
+    flags:
+      config:
+        type: string
+        description: Path to gavel.yaml.
+
+    exit_codes:
+      0: Projects read successfully
+      1: Config file not found or parse error
+
+    output:
+      default: json
+      formats:
+        json:
+          description: Project details with baselines and architecture.
+
+  mcp:
+    package: core/userinterface/cli/mcp
+    summary: Start MCP server for LLM agent integration
+    description: >
+      Start a Model Context Protocol server on stdio. Exposes Gavel
+      resources and tools to MCP-compatible LLM agents. Designed to be
+      launched by Claude Code, Cursor, VS Code Copilot, or any MCP client.
+    examples:
+      - command: gavel mcp
+        description: Start MCP server on stdio
+
+    flags: {}
+
+    exit_codes:
+      0: Clean shutdown
+      1: Server error
+
+    output:
+      default: jsonrpc
+      formats:
+        jsonrpc:
+          description: JSON-RPC 2.0 over stdio (MCP protocol).
+
+  trends:
+    package: core/userinterface/cli/trends
+    summary: Show quality trends for a project (requires server)
+    description: >
+      Fetch historical analysis data from the Gavel server and display
+      coverage, findings, and verdict trends over recent runs. Requires
+      GAVEL_SERVER_URL and GAVEL_TOKEN to be configured.
+    examples:
+      - command: gavel trends --project=core
+        description: Show last 10 analysis runs for the core project
+      - command: gavel trends --project=core --limit=20 --branch=main
+        description: Show last 20 runs filtered to main branch
+
+    flags:
+      project:
+        type: string
+        description: Project name (required).
+      limit:
+        type: int
+        default: 10
+        description: Number of recent analysis runs to show. Defaults to 10.
+      branch:
+        type: string
+        description: Filter trends to a specific branch.
+      json:
+        type: bool
+        field: JSONOutput
+        default: false
+        description: Output results as JSON.
+      server:
+        type: string
+        field: ServerURL
+        env: GAVEL_SERVER_URL
+        description: Gavel server URL.
+      token:
+        type: string
+        field: ServerToken
+        env: GAVEL_TOKEN
+        sensitive: true
+        description: API token for server authentication.
+
+    exit_codes:
+      0: Success
+      1: Error (no server, project not found, etc.)
+
+    output:
+      default: table
+      formats:
+        table:
+          description: Markdown-style table with trend summary.
+        json:
+          description: JSON array of trend entries.
+
+  validate:
+    package: core/userinterface/cli/validate
+    summary: Validate Gavel structural setup (files, includes)
+    description: >
+      Checks that required files exist, .bazelrc includes are in place,
+      and MODULE.bazel has expected entries. Read-only, no side effects.
+    examples:
+      - command: gavel validate
+        description: Validate current workspace
+
+    flags: {}
+
+    exit_codes:
+      0: Structure is valid
+      1: Validation failed (issues found)
+
+    output:
+      default: text
+      formats:
+        text:
+          description: Validation results with pass/fail per check.
+
+  watch:
+    package: core/userinterface/cli/watch
+    summary: Watch workspace and emit JSONL analysis events
+    description: >
+      Watches for file changes, determines affected Bazel targets, and runs
+      lint analysis on them. Designed to be consumed by LLM monitors, CI
+      pipelines, and IDE bridges. Emits one JSON event per line to stdout;
+      warnings and errors go to stderr.
+    examples:
+      - command: gavel watch
+        description: Watch with defaults (Go, 500ms debounce)
+      - command: gavel watch --languages go,java --debounce 1s
+        description: Watch Go and Java with 1 second debounce
+
+    flags:
+      debounce:
+        type: duration
+        default: 500ms
+        description: File change debounce duration.
+      languages:
+        type: "string[]"
+        default: [go]
+        description: Languages whose lint aspects to run.
+        enum: [go, java, python, typescript, rust]
+      workspace:
+        type: string
+        description: >
+          Workspace path. Auto-detected via "bazel info workspace" if not set.
+
+    exit_codes:
+      0: Clean shutdown (signal received)
+      1: Workspace detection failure, file watcher error, or runtime failure
+
+    output:
+      default: jsonl
+      formats:
+        jsonl:
+          description: >
+            One JSON event per line to stdout. Every event carries "event"
+            (type discriminator) and "ts" (ISO 8601 timestamp). All other
+            fields are omitempty.
+          common_fields:
+            event:
+              type: string
+              description: Event type discriminator.
+            ts:
+              type: string
+              format: iso8601
+              description: Timestamp with nanosecond precision.
+          events:
+            - name: started
+              description: Emitted once when the watcher starts.
+              fields:
+                workspace:
+                  type: string
+                  description: Absolute path to the Bazel workspace.
+                bazel_version:
+                  type: string
+                  description: Detected Bazel version string.
+            - name: changed
+              description: Emitted when file changes are detected (after debounce).
+              fields:
+                files:
+                  type: string[]
+                  description: Paths of changed files.
+            - name: affected
+              description: Emitted after determining which Bazel targets are affected.
+              fields:
+                targets:
+                  type: string[]
+                  description: Affected Bazel target labels.
+            - name: analysis_started
+              description: Emitted when Bazel build starts for a target.
+              fields:
+                target:
+                  type: string
+                  description: Bazel target label being analyzed.
+            - name: finding
+              description: Emitted for each individual lint finding discovered.
+              fields:
+                target:
+                  type: string
+                  description: Bazel target label.
+                tool:
+                  type: string
+                  description: Analyzer name (e.g. golangci-lint).
+                rule:
+                  type: string
+                  description: Rule ID from SARIF.
+                severity:
+                  type: string
+                file:
+                  type: string
+                  description: Source file path.
+                line:
+                  type: int
+                  description: Line number (0 if not applicable).
+                message:
+                  type: string
+                fingerprint:
+                  type: string
+                  description: Stable ID for deduplication.
+            - name: analysis_done
+              description: Emitted when analysis completes for a target.
+              fields:
+                target:
+                  type: string
+                findings:
+                  type: int
+                  description: Total findings count for this target.
+                duration_ms:
+                  type: int
+                  description: Analysis duration in milliseconds.
+            - name: analysis_failed
+              description: Emitted when analysis fails for a target.
+              fields:
+                target:
+                  type: string
+                reason:
+                  type: string
+                  description: Error description (e.g. "bazel build failed").
+            - name: stopped
+              description: Emitted on clean shutdown.
+              fields:
+                reason:
+                  type: string
+                  description: Shutdown reason.

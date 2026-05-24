@@ -1,0 +1,25 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+package(default_visibility = ["//visibility:public"])
+
+go_library(
+    name = "render",
+    srcs = ["render.go"],
+    importpath = "github.com/usegavel/gavel/core/userinterface/cli/judge/output/render",
+    deps = [
+        "//core/userinterface/cli/judge/output/tree",
+        "//core/userinterface/cli/judge/pipeline",
+        "//core/userinterface/cli/ui",
+    ],
+)
+
+go_test(
+    name = "render_test",
+    srcs = ["render_test.go"],
+    deps = [
+        ":render",
+        "//core/application/casefile/evidencedto",
+        "//core/userinterface/cli/judge/pipeline",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

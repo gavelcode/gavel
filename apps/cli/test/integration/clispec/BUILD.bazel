@@ -1,0 +1,18 @@
+load("@rules_go//go:def.bzl", "go_test")
+
+go_test(
+    name = "clispec_test",
+    srcs = [
+        "clispec_test.go",
+        "helpers_test.go",
+    ],
+    data = [
+        "//apps/cli/cmd/gavel",
+        "//clispec/v1:clispec.yaml",
+    ],
+    deps = [
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@in_gopkg_yaml_v3//:yaml_v3",
+    ],
+)

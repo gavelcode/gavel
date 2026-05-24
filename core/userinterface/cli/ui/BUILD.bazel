@@ -1,0 +1,34 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+package(default_visibility = ["//visibility:public"])
+
+go_library(
+    name = "ui",
+    srcs = [
+        "findings.go",
+        "render.go",
+        "spinner.go",
+        "theme.go",
+    ],
+    importpath = "github.com/usegavel/gavel/core/userinterface/cli/ui",
+    visibility = ["//visibility:public"],
+    deps = [
+        "@com_github_charmbracelet_huh//:huh",
+        "@com_github_charmbracelet_lipgloss//:lipgloss",
+        "@com_github_mattn_go_isatty//:go-isatty",
+    ],
+)
+
+go_test(
+    name = "ui_test",
+    srcs = [
+        "findings_test.go",
+        "render_test.go",
+        "spinner_test.go",
+    ],
+    deps = [
+        ":ui",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

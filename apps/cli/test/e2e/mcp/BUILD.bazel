@@ -1,0 +1,14 @@
+load("@rules_go//go:def.bzl", "go_test")
+
+go_test(
+    name = "mcp_test",
+    srcs = ["mcp_e2e_test.go"],
+    data = glob(["testdata/**"]),
+    deps = [
+        "//core/userinterface/cli/mcp",
+        "//core/userinterface/cli/mcp/executor",
+        "@com_github_modelcontextprotocol_go_sdk//mcp",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

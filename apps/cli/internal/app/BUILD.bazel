@@ -1,0 +1,37 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "app",
+    srcs = ["root.go"],
+    importpath = "github.com/usegavel/gavel/apps/cli/internal/app",
+    visibility = ["//apps/cli:__subpackages__"],
+    deps = [
+        "//core/application/casefile/collectevidence",
+        "//core/application/casefile/ingestcoverage",
+        "//core/application/casefile/ingestfindings",
+        "//core/application/casefile/submit",
+        "//core/application/gavelspace/loadgavelspace",
+        "//core/application/project/preparebaseline",
+        "//core/application/supporting/analyzetarget",
+        "//core/userinterface/cli/config",
+        "//core/userinterface/cli/initgavel",
+        "//core/userinterface/cli/judge",
+        "//core/userinterface/cli/mcp",
+        "//core/userinterface/cli/projects",
+        "//core/userinterface/cli/trends",
+        "//core/userinterface/cli/validate",
+        "//core/userinterface/cli/watch",
+        "@com_github_spf13_cobra//:cobra",
+    ],
+)
+
+go_test(
+    name = "app_test",
+    srcs = ["root_test.go"],
+    deps = [
+        ":app",
+        "@com_github_spf13_cobra//:cobra",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

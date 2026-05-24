@@ -1,0 +1,12 @@
+load("@rules_go//go:def.bzl", "go_test")
+
+go_test(
+    name = "watch_test",
+    srcs = ["watch_e2e_test.go"],
+    deps = [
+        "//core/application/supporting/analyzetarget",
+        "//core/userinterface/cli/watch",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

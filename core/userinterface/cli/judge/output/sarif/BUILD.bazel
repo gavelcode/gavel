@@ -1,0 +1,25 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+package(default_visibility = ["//visibility:public"])
+
+go_library(
+    name = "sarif",
+    srcs = [
+        "merge.go",
+        "sarif.go",
+    ],
+    importpath = "github.com/usegavel/gavel/core/userinterface/cli/judge/output/sarif",
+)
+
+go_test(
+    name = "sarif_test",
+    srcs = [
+        "merge_test.go",
+        "sarif_test.go",
+    ],
+    embed = [":sarif"],
+    deps = [
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

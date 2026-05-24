@@ -1,0 +1,31 @@
+load("@rules_go//go:def.bzl", "go_test")
+
+go_test(
+    name = "pipeline_test",
+    srcs = [
+        "helpers_test.go",
+        "local_test.go",
+    ],
+    deps = [
+        "//core/application/casefile/classify",
+        "//core/application/casefile/collectevidence",
+        "//core/application/casefile/createcasefile",
+        "//core/application/casefile/evidencedto",
+        "//core/application/casefile/finalize",
+        "//core/application/casefile/ingestcoverage",
+        "//core/application/casefile/ingestevidence",
+        "//core/application/casefile/ingestfindings",
+        "//core/application/casefile/judge",
+        "//core/application/casefile/submit",
+        "//core/domain/casefile/model/evidence",
+        "//core/domain/project/model",
+        "//core/domain/project/model/qualitygate",
+        "//core/infrastructure/casefile/lcov",
+        "//core/infrastructure/casefile/memory",
+        "//core/infrastructure/casefile/sarif",
+        "//core/infrastructure/project/memory",
+        "//core/userinterface/cli/judge/pipeline",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

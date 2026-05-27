@@ -1,0 +1,11 @@
+load("@rules_go//go:def.bzl", "go_test")
+
+go_test(
+    name = "spectest_test",
+    srcs = ["openapi_refs_test.go"],
+    data = ["//openapi/v1:specs"],
+    deps = [
+        "@in_gopkg_yaml_v3//:yaml_v3",
+        "@rules_go//go/runfiles",
+    ],
+)

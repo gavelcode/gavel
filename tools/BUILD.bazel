@@ -1,0 +1,7 @@
+exports_files(
+    [
+        "go.mod",
+        "go.sum",
+    ],
+    visibility = ["//visibility:public"],
+)

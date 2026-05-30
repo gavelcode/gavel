@@ -1,0 +1,11 @@
+load("@rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "config",
+    srcs = [
+        "app_config.go",
+        "database_config.go",
+    ],
+    importpath = "github.com/example/go-repo/internal/platform/config",
+    visibility = ["//visibility:public"],
+)

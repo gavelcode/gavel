@@ -1,0 +1,23 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "order",
+    srcs = [
+        "money.go",
+        "order.go",
+        "order_line.go",
+        "order_repository.go",
+        "order_status.go",
+    ],
+    importpath = "github.com/example/go-repo/internal/domain/order",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "order_test",
+    srcs = [
+        "money_test.go",
+        "order_test.go",
+    ],
+    deps = [":order"],
+)

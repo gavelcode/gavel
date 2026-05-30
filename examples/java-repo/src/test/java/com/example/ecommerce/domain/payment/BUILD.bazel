@@ -1,0 +1,11 @@
+load("@rules_java//java:defs.bzl", "java_test")
+
+java_test(
+    name = "PaymentTest",
+    srcs = ["PaymentTest.java"],
+    test_class = "com.example.ecommerce.domain.payment.PaymentTest",
+    deps = [
+        "//src/main/java/com/example/ecommerce/domain/order",
+        "//src/main/java/com/example/ecommerce/domain/payment",
+    ],
+)

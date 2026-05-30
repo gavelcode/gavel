@@ -1,0 +1,19 @@
+filegroup(
+    name = "gavel_lint_config",
+    srcs = glob(
+        [
+            ".golangci.yml",
+            ".golangci.yaml",
+            "ruff.toml",
+            "pyproject.toml",
+            ".bandit",
+            "clippy.toml",
+            ".clippy.toml",
+            "eslint.config.*",
+            ".eslintrc.*",
+            ".gavel/architecture.yml",
+        ],
+        allow_empty = True,
+    ),
+    visibility = ["//visibility:public"],
+)

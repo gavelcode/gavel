@@ -1,0 +1,14 @@
+load("@rules_java//java:defs.bzl", "java_test")
+
+java_test(
+    name = "PlaceOrderHandlerTest",
+    srcs = ["PlaceOrderHandlerTest.java"],
+    test_class = "com.example.ecommerce.application.order.PlaceOrderHandlerTest",
+    deps = [
+        "//src/main/java/com/example/ecommerce/application/order",
+        "//src/main/java/com/example/ecommerce/domain/customer",
+        "//src/main/java/com/example/ecommerce/domain/inventory",
+        "//src/main/java/com/example/ecommerce/domain/order",
+        "//src/main/java/com/example/ecommerce/domain/product",
+    ],
+)

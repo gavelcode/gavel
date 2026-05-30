@@ -1,0 +1,12 @@
+load("@rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "customer",
+    srcs = [
+        "address.go",
+        "customer.go",
+        "customer_repository.go",
+    ],
+    importpath = "github.com/example/go-repo/internal/domain/customer",
+    visibility = ["//visibility:public"],
+)

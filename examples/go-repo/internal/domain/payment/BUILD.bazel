@@ -1,0 +1,22 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "payment",
+    srcs = [
+        "payment.go",
+        "payment_repository.go",
+        "payment_status.go",
+    ],
+    importpath = "github.com/example/go-repo/internal/domain/payment",
+    visibility = ["//visibility:public"],
+    deps = ["//internal/domain/order"],
+)
+
+go_test(
+    name = "payment_test",
+    srcs = ["payment_test.go"],
+    deps = [
+        ":payment",
+        "//internal/domain/order",
+    ],
+)

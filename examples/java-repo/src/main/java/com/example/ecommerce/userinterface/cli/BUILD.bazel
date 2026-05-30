@@ -1,0 +1,19 @@
+load("@rules_java//java:defs.bzl", "java_binary", "java_library")
+
+java_binary(
+    name = "cli",
+    srcs = ["Main.java"],
+    javacopts = ["-XepDisableAllChecks"],
+    main_class = "com.example.ecommerce.userinterface.cli.Main",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//src/main/java/com/example/ecommerce/application/order",
+        "//src/main/java/com/example/ecommerce/application/payment",
+        "//src/main/java/com/example/ecommerce/domain/customer",
+        "//src/main/java/com/example/ecommerce/domain/inventory",
+        "//src/main/java/com/example/ecommerce/domain/order",
+        "//src/main/java/com/example/ecommerce/domain/product",
+        "//src/main/java/com/example/ecommerce/infrastructure/persistence",
+        "//src/main/java/com/example/ecommerce/platform/config",
+    ],
+)

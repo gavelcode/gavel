@@ -1,0 +1,17 @@
+version: "2"
+
+linters:
+  enable:
+    - errcheck
+    - govet
+    - unused
+    - staticcheck
+    - gosec
+    - gocognit
+    - gocritic
+    - dupl
+    - errorlint
+    - gochecknoglobals
+    - revive
+    - forbidigo
+    - mnd

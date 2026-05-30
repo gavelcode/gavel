@@ -1,0 +1,15 @@
+layers:
+  domain: ["backend/src/domain/..."]
+  application: ["backend/src/application/..."]
+  infrastructure: ["backend/src/infrastructure/..."]
+
+rules:
+  - name: domain-imports-nothing
+    source: domain
+    deny: [application, infrastructure]
+
+  - name: application-imports-domain-only
+    source: application
+    deny: [infrastructure]
+
+detect_cycles: true

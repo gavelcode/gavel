@@ -1,0 +1,13 @@
+name: example-python-repo
+projects:
+    - name: data-pipeline
+      pattern: //...
+      tooling:
+        - python
+      quality_gate:
+        findings:
+            max_error: 0
+        coverage:
+            min: 90
+        architecture_violations:
+            max: 0

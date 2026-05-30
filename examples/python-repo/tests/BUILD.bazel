@@ -1,0 +1,42 @@
+load("@rules_python//python:defs.bzl", "py_test")
+
+py_test(
+    name = "test_order",
+    srcs = ["domain/test_order.py"],
+    main = "domain/test_order.py",
+    deps = [
+        "//ecommerce/domain/order",
+    ],
+)
+
+py_test(
+    name = "test_money",
+    srcs = ["domain/test_money.py"],
+    main = "domain/test_money.py",
+    deps = [
+        "//ecommerce/domain/order",
+    ],
+)
+
+py_test(
+    name = "test_payment",
+    srcs = ["domain/test_payment.py"],
+    main = "domain/test_payment.py",
+    deps = [
+        "//ecommerce/domain/order",
+        "//ecommerce/domain/payment",
+    ],
+)
+
+py_test(
+    name = "test_place_order_handler",
+    srcs = ["application/test_place_order_handler.py"],
+    main = "application/test_place_order_handler.py",
+    deps = [
+        "//ecommerce/application/order",
+        "//ecommerce/domain/customer",
+        "//ecommerce/domain/inventory",
+        "//ecommerce/domain/order",
+        "//ecommerce/domain/product",
+    ],
+)

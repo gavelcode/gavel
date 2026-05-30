@@ -1,0 +1,24 @@
+layers:
+  domain: ["internal/domain/..."]
+  application: ["internal/application/..."]
+  infrastructure: ["internal/infrastructure/..."]
+  userinterface: ["internal/userinterface/..."]
+
+rules:
+  - name: domain-imports-nothing
+    source: domain
+    deny: [application, infrastructure, userinterface]
+
+  - name: application-imports-domain-only
+    source: application
+    deny: [infrastructure, userinterface]
+
+  - name: infrastructure-no-application
+    source: infrastructure
+    deny: [application, userinterface]
+
+  - name: userinterface-application-only
+    source: userinterface
+    deny: [domain, infrastructure]
+
+detect_cycles: true

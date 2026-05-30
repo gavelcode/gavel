@@ -1,0 +1,15 @@
+load("@rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "persistence",
+    srcs = [
+        "sqlite_customer_repo.go",
+        "sqlite_order_repo.go",
+    ],
+    importpath = "github.com/example/go-repo/internal/infrastructure/persistence",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//internal/domain/customer",
+        "//internal/domain/order",
+    ],
+)

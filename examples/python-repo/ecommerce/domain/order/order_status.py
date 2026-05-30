@@ -1,0 +1,5 @@
+PENDING = "pending"
+CONFIRMED = "confirmed"
+PAID = "paid"
+SHIPPED = "shipped"
+CANCELLED = "cancelled"

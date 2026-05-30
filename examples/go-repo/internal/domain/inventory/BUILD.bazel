@@ -1,0 +1,11 @@
+load("@rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "inventory",
+    srcs = [
+        "inventory_repository.go",
+        "stock.go",
+    ],
+    importpath = "github.com/example/go-repo/internal/domain/inventory",
+    visibility = ["//visibility:public"],
+)

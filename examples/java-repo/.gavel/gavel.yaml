@@ -1,0 +1,13 @@
+name: example-java-repo
+projects:
+    - name: payment-service
+      pattern: //...
+      tooling:
+        - java
+      quality_gate:
+        findings:
+            max_error: 0
+        coverage:
+            min: 90
+        architecture_violations:
+            max: 0

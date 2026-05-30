@@ -1,0 +1,12 @@
+load("@rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "product",
+    srcs = [
+        "product.go",
+        "product_repository.go",
+    ],
+    importpath = "github.com/example/go-repo/internal/domain/product",
+    visibility = ["//visibility:public"],
+    deps = ["//internal/domain/order"],
+)

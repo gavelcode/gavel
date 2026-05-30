@@ -1,0 +1,12 @@
+load("@rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "payment",
+    srcs = ["process_payment_handler.go"],
+    importpath = "github.com/example/go-repo/internal/application/payment",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//internal/domain/order",
+        "//internal/domain/payment",
+    ],
+)

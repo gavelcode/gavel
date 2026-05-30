@@ -1,0 +1,16 @@
+module(
+    name = "python-repo",
+    version = "0.0.0",
+)
+
+bazel_dep(name = "gavel_tools", version = "0.1.0")
+bazel_dep(name = "rules_python", version = "1.7.0")
+
+python = use_extension("@rules_python//python/extensions:python.bzl", "python")
+python.toolchain(
+    python_version = "3.11",
+    configure_coverage_tool = True,
+    is_default = True,
+)
+
+include("//:.gavel/gavel.MODULE.bazel")

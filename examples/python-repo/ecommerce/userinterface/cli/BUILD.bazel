@@ -1,0 +1,21 @@
+load("@rules_python//python:defs.bzl", "py_binary", "py_library")
+
+py_library(
+    name = "cli_lib",
+    srcs = glob(["*.py"]),
+    visibility = ["//visibility:public"],
+    deps = [
+        "//ecommerce/domain/customer",
+        "//ecommerce/domain/inventory",
+        "//ecommerce/domain/order",
+        "//ecommerce/domain/product",
+        "//ecommerce/platform/config",
+    ],
+)
+
+py_binary(
+    name = "cli",
+    srcs = ["main.py"],
+    main = "main.py",
+    deps = [":cli_lib"],
+)

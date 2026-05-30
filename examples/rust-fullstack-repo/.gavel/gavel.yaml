@@ -1,0 +1,24 @@
+name: example-rust-fullstack-repo
+projects:
+    - name: rest-api
+      pattern: //backend/...
+      tooling:
+        - rust
+      quality_gate:
+        findings:
+            max_error: 0
+        coverage:
+            min: 90
+        architecture_violations:
+            max: 0
+    - name: web-app
+      pattern: //frontend/...
+      tooling:
+        - typescript
+      quality_gate:
+        findings:
+            max_error: 0
+        coverage:
+            min: 90
+        architecture_violations:
+            max: 0

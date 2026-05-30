@@ -1,0 +1,26 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "order",
+    srcs = ["place_order_handler.go"],
+    importpath = "github.com/example/go-repo/internal/application/order",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//internal/domain/customer",
+        "//internal/domain/inventory",
+        "//internal/domain/order",
+        "//internal/domain/product",
+    ],
+)
+
+go_test(
+    name = "order_test",
+    srcs = ["place_order_handler_test.go"],
+    deps = [
+        ":order",
+        "//internal/domain/customer",
+        "//internal/domain/inventory",
+        "//internal/domain/order",
+        "//internal/domain/product",
+    ],
+)

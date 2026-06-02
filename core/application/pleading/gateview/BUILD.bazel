@@ -1,0 +1,11 @@
+load("@rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "gateview",
+    srcs = [
+        "gate_condition.go",
+        "gate_result.go",
+    ],
+    importpath = "github.com/usegavel/gavel/core/application/pleading/gateview",
+    visibility = ["//visibility:public"],
+)

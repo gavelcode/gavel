@@ -1,0 +1,34 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "list",
+    srcs = [
+        "errors.go",
+        "finder.go",
+        "gateview_aliases.go",
+        "handler.go",
+        "pleading_summary.go",
+        "query.go",
+        "result.go",
+    ],
+    importpath = "github.com/usegavel/gavel/core/application/pleading/list",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//core/application/pleading/gateview",
+        "//core/domain/shared/failure",
+    ],
+)
+
+go_test(
+    name = "list_test",
+    srcs = [
+        "fakes_test.go",
+        "handler_test.go",
+    ],
+    deps = [
+        ":list",
+        "//core/domain/shared/failure",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

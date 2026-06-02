@@ -1,0 +1,47 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "postgres",
+    srcs = [
+        "pleading_finder.go",
+        "pleading_repository.go",
+    ],
+    importpath = "github.com/usegavel/gavel/core/infrastructure/pleading/postgres",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//core/application/pleading/get",
+        "//core/application/pleading/list",
+        "//core/domain/pleading/model",
+        "//core/domain/pleading/service",
+        "//core/domain/project/model",
+        "//core/domain/shared/failure",
+        "//core/infrastructure/platform/database",
+        "@com_github_google_uuid//:uuid",
+    ],
+)
+
+go_test(
+    name = "postgres_test",
+    srcs = [
+        "pleading_finder_integration_test.go",
+        "pleading_repository_integration_test.go",
+        "test_helpers_test.go",
+    ],
+    deps = [
+        ":postgres",
+        "//core/domain/casefile/model",
+        "//core/domain/casefile/model/evidence",
+        "//core/domain/casefile/model/evidence/finding",
+        "//core/domain/casefile/model/verdict",
+        "//core/domain/pleading/model",
+        "//core/domain/project/model",
+        "//core/domain/shared/failure",
+        "//core/infrastructure/casefile/postgres",
+        "//core/infrastructure/platform/database",
+        "//core/infrastructure/platform/database/testkit",
+        "//core/infrastructure/project/postgres",
+        "@com_github_google_uuid//:uuid",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

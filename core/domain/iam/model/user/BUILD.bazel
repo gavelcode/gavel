@@ -1,0 +1,40 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "user",
+    srcs = [
+        "email.go",
+        "errors.go",
+        "events.go",
+        "password_hash.go",
+        "role.go",
+        "user.go",
+        "user_id.go",
+    ],
+    importpath = "github.com/usegavel/gavel/core/domain/iam/model/user",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//core/domain/iam/model/tenant",
+        "//core/domain/shared/event",
+        "//core/domain/shared/failure",
+        "@com_github_google_uuid//:uuid",
+    ],
+)
+
+go_test(
+    name = "user_test",
+    srcs = [
+        "email_test.go",
+        "password_hash_test.go",
+        "role_test.go",
+        "user_id_test.go",
+        "user_test.go",
+    ],
+    deps = [
+        ":user",
+        "//core/domain/iam/model/tenant",
+        "@com_github_google_uuid//:uuid",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

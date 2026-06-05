@@ -1,0 +1,33 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "service",
+    srcs = [
+        "apitoken_repository.go",
+        "hasher.go",
+        "secret_generator.go",
+        "session_repository.go",
+        "tenant_repository.go",
+        "user_repository.go",
+    ],
+    importpath = "github.com/usegavel/gavel/core/domain/iam/service",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//core/domain/iam/model/apitoken",
+        "//core/domain/iam/model/session",
+        "//core/domain/iam/model/tenant",
+        "//core/domain/iam/model/user",
+    ],
+)
+
+go_test(
+    name = "service_test",
+    srcs = ["ports_test.go"],
+    deps = [
+        ":service",
+        "//core/domain/iam/model/apitoken",
+        "//core/domain/iam/model/session",
+        "//core/domain/iam/model/tenant",
+        "//core/domain/iam/model/user",
+    ],
+)

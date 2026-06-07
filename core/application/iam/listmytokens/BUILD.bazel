@@ -1,0 +1,37 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "listmytokens",
+    srcs = [
+        "errors.go",
+        "handler.go",
+        "query.go",
+        "result.go",
+        "token_summary.go",
+    ],
+    importpath = "github.com/usegavel/gavel/core/application/iam/listmytokens",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//core/domain/iam/model/user",
+        "//core/domain/iam/service",
+        "//core/domain/shared/failure",
+    ],
+)
+
+go_test(
+    name = "listmytokens_test",
+    srcs = [
+        "handler_internal_test.go",
+        "handler_test.go",
+    ],
+    embed = [":listmytokens"],
+    deps = [
+        "//core/domain/iam/model/apitoken",
+        "//core/domain/iam/model/tenant",
+        "//core/domain/iam/model/user",
+        "//core/infrastructure/iam/memory",
+        "@com_github_google_uuid//:uuid",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

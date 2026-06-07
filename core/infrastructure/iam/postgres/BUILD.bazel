@@ -1,0 +1,42 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "postgres",
+    srcs = [
+        "apitoken_repo.go",
+        "helpers.go",
+        "scanner.go",
+        "session_repo.go",
+        "tenant_repo.go",
+        "user_repo.go",
+    ],
+    importpath = "github.com/usegavel/gavel/core/infrastructure/iam/postgres",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//core/domain/iam/model/apitoken",
+        "//core/domain/iam/model/session",
+        "//core/domain/iam/model/tenant",
+        "//core/domain/iam/model/user",
+        "//core/domain/iam/service",
+        "//core/infrastructure/platform/database",
+        "@com_github_google_uuid//:uuid",
+        "@com_github_jackc_pgx_v5//pgconn",
+    ],
+)
+
+go_test(
+    name = "postgres_test",
+    srcs = ["integration_test.go"],
+    deps = [
+        ":postgres",
+        "//core/domain/iam/model/apitoken",
+        "//core/domain/iam/model/session",
+        "//core/domain/iam/model/tenant",
+        "//core/domain/iam/model/user",
+        "//core/infrastructure/platform/database",
+        "//core/infrastructure/platform/database/testkit",
+        "@com_github_google_uuid//:uuid",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

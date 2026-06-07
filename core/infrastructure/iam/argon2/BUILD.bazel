@@ -1,0 +1,27 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "argon2",
+    srcs = [
+        "config.go",
+        "hasher.go",
+    ],
+    importpath = "github.com/usegavel/gavel/core/infrastructure/iam/argon2",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//core/domain/iam/model/user",
+        "//core/domain/iam/service",
+        "@org_golang_x_crypto//argon2",
+    ],
+)
+
+go_test(
+    name = "argon2_test",
+    srcs = ["hasher_test.go"],
+    deps = [
+        ":argon2",
+        "//core/domain/iam/model/user",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

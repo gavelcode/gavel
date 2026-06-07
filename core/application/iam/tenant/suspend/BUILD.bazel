@@ -1,0 +1,35 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "suspend",
+    srcs = [
+        "command.go",
+        "errors.go",
+        "handler.go",
+        "result.go",
+    ],
+    importpath = "github.com/usegavel/gavel/core/application/iam/tenant/suspend",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//core/application/shared/event",
+        "//core/domain/iam/model/tenant",
+        "//core/domain/iam/service",
+        "//core/domain/shared/failure",
+    ],
+)
+
+go_test(
+    name = "suspend_test",
+    srcs = [
+        "handler_internal_test.go",
+        "handler_test.go",
+    ],
+    embed = [":suspend"],
+    deps = [
+        "//core/domain/iam/model/tenant",
+        "//core/infrastructure/iam/memory",
+        "@com_github_google_uuid//:uuid",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

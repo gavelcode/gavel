@@ -1,0 +1,23 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "crypto",
+    srcs = ["secrets.go"],
+    importpath = "github.com/usegavel/gavel/core/infrastructure/iam/crypto",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//core/domain/iam/model/apitoken",
+        "//core/domain/iam/model/session",
+        "//core/domain/iam/service",
+    ],
+)
+
+go_test(
+    name = "crypto_test",
+    srcs = ["secrets_test.go"],
+    deps = [
+        ":crypto",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

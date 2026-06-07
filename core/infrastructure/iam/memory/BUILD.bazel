@@ -1,0 +1,40 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "memory",
+    srcs = [
+        "apitoken_repository.go",
+        "fake_hasher.go",
+        "fake_secret_generator.go",
+        "session_repository.go",
+        "tenant_repository.go",
+        "user_repository.go",
+    ],
+    importpath = "github.com/usegavel/gavel/core/infrastructure/iam/memory",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//core/domain/iam/model/apitoken",
+        "//core/domain/iam/model/session",
+        "//core/domain/iam/model/tenant",
+        "//core/domain/iam/model/user",
+        "//core/domain/iam/service",
+    ],
+)
+
+go_test(
+    name = "memory_test",
+    srcs = [
+        "fakes_test.go",
+        "iam_test.go",
+    ],
+    deps = [
+        ":memory",
+        "//core/domain/iam/model/apitoken",
+        "//core/domain/iam/model/session",
+        "//core/domain/iam/model/tenant",
+        "//core/domain/iam/model/user",
+        "@com_github_google_uuid//:uuid",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

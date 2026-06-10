@@ -1,0 +1,23 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "client",
+    srcs = ["client.go"],
+    importpath = "github.com/usegavel/gavel/core/userinterface/api/v1/client",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//core/application/casefile/evidencedto",
+        "//core/userinterface/api/v1/gen",
+    ],
+)
+
+go_test(
+    name = "client_test",
+    srcs = ["client_test.go"],
+    deps = [
+        ":client",
+        "//core/application/casefile/evidencedto",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

@@ -1,0 +1,15 @@
+load("@rules_go//go:def.bzl", "go_library")
+
+package(default_visibility = ["//visibility:public"])
+
+go_library(
+    name = "gen",
+    srcs = ["api.gen.go"],
+    importpath = "github.com/usegavel/gavel/core/userinterface/api/v1/gen",
+    visibility = ["//visibility:public"],
+    deps = [
+        "@com_github_go_chi_chi_v5//:chi",
+        "@com_github_oapi_codegen_runtime//:runtime",
+        "@com_github_oapi_codegen_runtime//types",
+    ],
+)

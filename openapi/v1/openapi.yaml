@@ -1,0 +1,311 @@
+openapi: 3.0.3
+info:
+  title: Gavel API
+  version: "1.0.0"
+  description: |
+    Yaml-first contract for the Gavel HTTP API. This file is the source of
+    truth; Go server stubs and TypeScript client types are generated from
+    it via `make openapi-gen`.
+
+    The spec is split by bounded context under `openapi/v1/`. Each child
+    file uses cross-file `$ref` to shared components in `shared/common.yaml`.
+    `@redocly/cli bundle` produces the single-file artifact that code
+    generators consume.
+
+servers:
+  - url: /api/v1
+    description: Default server (relative path; works in dev and prod).
+
+tags:
+  - name: platform
+    description: Liveness, readiness, and other operational endpoints.
+  - name: auth
+    description: Session lifecycle.
+  - name: me
+    description: Operations on the currently authenticated user.
+  - name: tokens
+    description: API tokens owned by the currently authenticated user.
+  - name: users
+    description: Administrative user management.
+  - name: gavelspaces
+    description: Monorepo containers that group related Projects.
+  - name: projects
+    description: Code projects analysed by Gavel.
+  - name: pleadings
+    description: Pull requests filed against a project.
+  - name: casefiles
+    description: Analysis sessions for a commit, with verdicts and evidence.
+  - name: findings
+    description: Individual issues flagged by analyzers.
+  - name: search
+    description: Cross-cutting search across all resources.
+  - name: source
+    description: Source-blob retrieval by project + commit + path.
+
+security:
+  - sessionCookie: []
+  - bearerToken: []
+
+paths:
+  # Order here is significant: openapi-typescript emits paths in document
+  # order, so reordering changes apps/web's generated client. Path ordering
+  # below mirrors the original monolithic openapi.yaml so the TS client
+  # remains byte-identical after bundling.
+  /health:
+    $ref: 'platform/platform.yaml#/paths/~1health'
+
+  /sessions:
+    $ref: 'iam/iam.yaml#/paths/~1sessions'
+  /sessions/current:
+    $ref: 'iam/iam.yaml#/paths/~1sessions~1current'
+  /me:
+    $ref: 'iam/iam.yaml#/paths/~1me'
+  /me/password:
+    $ref: 'iam/iam.yaml#/paths/~1me~1password'
+  /me/tokens:
+    $ref: 'iam/iam.yaml#/paths/~1me~1tokens'
+  /me/tokens/{id}:
+    $ref: 'iam/iam.yaml#/paths/~1me~1tokens~1{id}'
+
+  /gavelspaces:
+    $ref: 'gavelspace/gavelspace.yaml#/paths/~1gavelspaces'
+  /gavelspaces/{name}:
+    $ref: 'gavelspace/gavelspace.yaml#/paths/~1gavelspaces~1{name}'
+  /gavelspaces/{name}/projects:
+    $ref: 'gavelspace/gavelspace.yaml#/paths/~1gavelspaces~1{name}~1projects'
+  /gavelspaces/{name}/projects/{project_id}:
+    $ref: 'gavelspace/gavelspace.yaml#/paths/~1gavelspaces~1{name}~1projects~1{project_id}'
+
+  /projects:
+    $ref: 'project/project.yaml#/paths/~1projects'
+  /projects/{key}:
+    $ref: 'project/project.yaml#/paths/~1projects~1{key}'
+  /projects/{key}/quality-gate:
+    $ref: 'project/project.yaml#/paths/~1projects~1{key}~1quality-gate'
+  /projects/{key}/languages:
+    $ref: 'project/project.yaml#/paths/~1projects~1{key}~1languages'
+
+  /projects/{key}/casefiles:
+    $ref: 'casefile/casefile.yaml#/paths/~1projects~1{key}~1casefiles'
+
+  /projects/{key}/pleadings:
+    $ref: 'pleading/pleading.yaml#/paths/~1projects~1{key}~1pleadings'
+
+  /projects/{key}/baseline:
+    $ref: 'casefile/casefile.yaml#/paths/~1projects~1{key}~1baseline'
+
+  /pleadings:
+    $ref: 'pleading/pleading.yaml#/paths/~1pleadings'
+  /pleadings/{id}:
+    $ref: 'pleading/pleading.yaml#/paths/~1pleadings~1{id}'
+
+  /casefiles:
+    $ref: 'casefile/casefile.yaml#/paths/~1casefiles'
+  /casefiles/{id}/evidence:
+    $ref: 'casefile/casefile.yaml#/paths/~1casefiles~1{id}~1evidence'
+  /casefiles/{id}/finalize:
+    $ref: 'casefile/casefile.yaml#/paths/~1casefiles~1{id}~1finalize'
+  /casefiles/{id}:
+    $ref: 'casefile/casefile.yaml#/paths/~1casefiles~1{id}'
+
+  /findings:
+    $ref: 'casefile/casefile.yaml#/paths/~1findings'
+
+  /search:
+    $ref: 'supporting/search.yaml#/paths/~1search'
+
+  /projects/{key}/source:
+    $ref: 'supporting/source.yaml#/paths/~1projects~1{key}~1source'
+
+  /admin/users:
+    $ref: 'iam/iam.yaml#/paths/~1admin~1users'
+
+components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: gavel_session
+      description: Opaque session token set by `POST /sessions`.
+    bearerToken:
+      type: http
+      scheme: bearer
+      description: API token issued via `POST /me/tokens`. Prefixed `gav_`.
+
+  parameters:
+    Limit:
+      $ref: 'shared/common.yaml#/components/parameters/Limit'
+    Cursor:
+      $ref: 'shared/common.yaml#/components/parameters/Cursor'
+    GavelspaceName:
+      $ref: 'gavelspace/gavelspace.yaml#/components/parameters/GavelspaceName'
+    ProjectKey:
+      $ref: 'project/project.yaml#/components/parameters/ProjectKey'
+    PleadingID:
+      $ref: 'pleading/pleading.yaml#/components/parameters/PleadingID'
+    CaseFileID:
+      $ref: 'casefile/casefile.yaml#/components/parameters/CaseFileID'
+
+  responses:
+    BadRequest:
+      $ref: 'shared/common.yaml#/components/responses/BadRequest'
+    Unauthorized:
+      $ref: 'shared/common.yaml#/components/responses/Unauthorized'
+    Forbidden:
+      $ref: 'shared/common.yaml#/components/responses/Forbidden'
+    NotFound:
+      $ref: 'shared/common.yaml#/components/responses/NotFound'
+    InvalidCredentials:
+      $ref: 'shared/common.yaml#/components/responses/InvalidCredentials'
+    CurrentPasswordIncorrect:
+      $ref: 'shared/common.yaml#/components/responses/CurrentPasswordIncorrect'
+
+  schemas:
+    Problem:
+      $ref: 'shared/common.yaml#/components/schemas/Problem'
+    Health:
+      $ref: 'platform/platform.yaml#/components/schemas/Health'
+
+    Me:
+      $ref: 'iam/iam.yaml#/components/schemas/Me'
+    LoginRequest:
+      $ref: 'iam/iam.yaml#/components/schemas/LoginRequest'
+    ChangePasswordRequest:
+      $ref: 'iam/iam.yaml#/components/schemas/ChangePasswordRequest'
+    CreateTokenRequest:
+      $ref: 'iam/iam.yaml#/components/schemas/CreateTokenRequest'
+    CreatedToken:
+      $ref: 'iam/iam.yaml#/components/schemas/CreatedToken'
+    TokenSummary:
+      $ref: 'iam/iam.yaml#/components/schemas/TokenSummary'
+    TokenList:
+      $ref: 'iam/iam.yaml#/components/schemas/TokenList'
+    CreateUserRequest:
+      $ref: 'iam/iam.yaml#/components/schemas/CreateUserRequest'
+    CreatedUser:
+      $ref: 'iam/iam.yaml#/components/schemas/CreatedUser'
+
+    Gavelspace:
+      $ref: 'gavelspace/gavelspace.yaml#/components/schemas/Gavelspace'
+    GavelspaceDetail:
+      $ref: 'gavelspace/gavelspace.yaml#/components/schemas/GavelspaceDetail'
+    GavelspaceProject:
+      $ref: 'gavelspace/gavelspace.yaml#/components/schemas/GavelspaceProject'
+    GavelspaceList:
+      $ref: 'gavelspace/gavelspace.yaml#/components/schemas/GavelspaceList'
+    CreateGavelspaceRequest:
+      $ref: 'gavelspace/gavelspace.yaml#/components/schemas/CreateGavelspaceRequest'
+    CreatedGavelspace:
+      $ref: 'gavelspace/gavelspace.yaml#/components/schemas/CreatedGavelspace'
+    RegisterGavelspaceProjectRequest:
+      $ref: 'gavelspace/gavelspace.yaml#/components/schemas/RegisterGavelspaceProjectRequest'
+
+    Project:
+      $ref: 'project/project.yaml#/components/schemas/Project'
+    ProjectDetail:
+      $ref: 'project/project.yaml#/components/schemas/ProjectDetail'
+    ProjectRuleView:
+      $ref: 'project/project.yaml#/components/schemas/ProjectRuleView'
+    ProjectList:
+      $ref: 'project/project.yaml#/components/schemas/ProjectList'
+    CreateProjectRequest:
+      $ref: 'project/project.yaml#/components/schemas/CreateProjectRequest'
+    CreatedProject:
+      $ref: 'project/project.yaml#/components/schemas/CreatedProject'
+    QualityGate:
+      $ref: 'project/project.yaml#/components/schemas/QualityGate'
+    QualityGateRule:
+      $ref: 'project/project.yaml#/components/schemas/QualityGateRule'
+    QualityGateStrategy:
+      $ref: 'project/project.yaml#/components/schemas/QualityGateStrategy'
+    CountBySeverityStrategy:
+      $ref: 'project/project.yaml#/components/schemas/CountBySeverityStrategy'
+    MinPercentageStrategy:
+      $ref: 'project/project.yaml#/components/schemas/MinPercentageStrategy'
+    ForbiddenListStrategy:
+      $ref: 'project/project.yaml#/components/schemas/ForbiddenListStrategy'
+    MaxViolationsStrategy:
+      $ref: 'project/project.yaml#/components/schemas/MaxViolationsStrategy'
+    MinNewCodeCoverageStrategy:
+      $ref: 'project/project.yaml#/components/schemas/MinNewCodeCoverageStrategy'
+    UpdateLanguagesRequest:
+      $ref: 'project/project.yaml#/components/schemas/UpdateLanguagesRequest'
+
+    # Schema ordering mirrors the original monolithic openapi.yaml so the
+    # openapi-typescript output stays byte-identical. Per-BC schemas all
+    # live in their BC file; the ordering at the root is independent of
+    # where the definition resides.
+    CaseFile:
+      $ref: 'casefile/casefile.yaml#/components/schemas/CaseFile'
+    CaseFileDetail:
+      $ref: 'casefile/casefile.yaml#/components/schemas/CaseFileDetail'
+    Evidence:
+      $ref: 'casefile/casefile.yaml#/components/schemas/Evidence'
+    Ruling:
+      $ref: 'casefile/casefile.yaml#/components/schemas/Ruling'
+    CaseFileList:
+      $ref: 'casefile/casefile.yaml#/components/schemas/CaseFileList'
+    Finding:
+      $ref: 'casefile/casefile.yaml#/components/schemas/Finding'
+    FindingList:
+      $ref: 'casefile/casefile.yaml#/components/schemas/FindingList'
+    Baseline:
+      $ref: 'casefile/casefile.yaml#/components/schemas/Baseline'
+    FinalizeCaseFileRequest:
+      $ref: 'casefile/casefile.yaml#/components/schemas/FinalizeCaseFileRequest'
+
+    Pleading:
+      $ref: 'pleading/pleading.yaml#/components/schemas/Pleading'
+    GateResult:
+      $ref: 'pleading/pleading.yaml#/components/schemas/GateResult'
+    GateCondition:
+      $ref: 'pleading/pleading.yaml#/components/schemas/GateCondition'
+    PleadingList:
+      $ref: 'pleading/pleading.yaml#/components/schemas/PleadingList'
+    FilePleadingRequest:
+      $ref: 'pleading/pleading.yaml#/components/schemas/FilePleadingRequest'
+    FiledPleading:
+      $ref: 'pleading/pleading.yaml#/components/schemas/FiledPleading'
+    ResolvePleadingRequest:
+      $ref: 'pleading/pleading.yaml#/components/schemas/ResolvePleadingRequest'
+
+    SearchResult:
+      $ref: 'supporting/search.yaml#/components/schemas/SearchResult'
+    SearchResults:
+      $ref: 'supporting/search.yaml#/components/schemas/SearchResults'
+
+    UploadSourceRequest:
+      $ref: 'supporting/source.yaml#/components/schemas/UploadSourceRequest'
+    SourceFile:
+      $ref: 'supporting/source.yaml#/components/schemas/SourceFile'
+
+    CreateCaseFileRequest:
+      $ref: 'casefile/casefile.yaml#/components/schemas/CreateCaseFileRequest'
+    CreatedCaseFile:
+      $ref: 'casefile/casefile.yaml#/components/schemas/CreatedCaseFile'
+    IngestEvidenceRequest:
+      $ref: 'casefile/casefile.yaml#/components/schemas/IngestEvidenceRequest'
+    IngestedEvidence:
+      $ref: 'casefile/casefile.yaml#/components/schemas/IngestedEvidence'
+    IngestFinding:
+      $ref: 'casefile/casefile.yaml#/components/schemas/IngestFinding'
+    IngestCoverage:
+      $ref: 'casefile/casefile.yaml#/components/schemas/IngestCoverage'
+    IngestLanguageStats:
+      $ref: 'casefile/casefile.yaml#/components/schemas/IngestLanguageStats'
+    IngestNewCodeCoverage:
+      $ref: 'casefile/casefile.yaml#/components/schemas/IngestNewCodeCoverage'
+    IngestLicense:
+      $ref: 'casefile/casefile.yaml#/components/schemas/IngestLicense'
+    IngestDependency:
+      $ref: 'casefile/casefile.yaml#/components/schemas/IngestDependency'
+    IngestArchitecture:
+      $ref: 'casefile/casefile.yaml#/components/schemas/IngestArchitecture'
+    IngestViolation:
+      $ref: 'casefile/casefile.yaml#/components/schemas/IngestViolation'
+    FinalizedCaseFile:
+      $ref: 'casefile/casefile.yaml#/components/schemas/FinalizedCaseFile'
+    Verdict:
+      $ref: 'casefile/casefile.yaml#/components/schemas/Verdict'
+    AnalysisCounters:
+      $ref: 'casefile/casefile.yaml#/components/schemas/AnalysisCounters'

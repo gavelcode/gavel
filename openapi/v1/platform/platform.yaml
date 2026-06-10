@@ -1,0 +1,27 @@
+# Platform paths (liveness, readiness, ops).
+
+paths:
+  /health:
+    get:
+      summary: Liveness probe
+      operationId: getHealth
+      tags: [platform]
+      security: []
+      responses:
+        "200":
+          description: Service is alive.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Health'
+
+components:
+  schemas:
+    Health:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [ok]
+          description: Always `ok` when the endpoint responds.

@@ -1,0 +1,41 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+package(default_visibility = ["//visibility:public"])
+
+go_library(
+    name = "auth",
+    srcs = [
+        "auth.go",
+        "authenticator.go",
+        "clock.go",
+        "cookie.go",
+        "principal.go",
+        "request.go",
+    ],
+    importpath = "github.com/usegavel/gavel/core/userinterface/api/v1/server/httpx/auth",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//core/application/iam/resolveprincipal",
+        "//core/userinterface/api/v1/server/httpx",
+    ],
+)
+
+go_test(
+    name = "auth_test",
+    srcs = [
+        "auth_test.go",
+        "cookie_test.go",
+        "principal_test.go",
+        "request_test.go",
+    ],
+    deps = [
+        ":auth",
+        "//core/application/iam/login",
+        "//core/application/iam/resolveprincipal",
+        "//core/domain/iam/model/tenant",
+        "//core/domain/iam/model/user",
+        "//core/infrastructure/iam/memory",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

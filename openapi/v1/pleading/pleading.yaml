@@ -1,0 +1,266 @@
+# Pleading bounded context paths, parameters, and schemas.
+#
+# Pleading is the domain name; the published vocabulary at the URL boundary
+# stays close to Git ("pull request") so integrators recognise the resource.
+
+paths:
+  /projects/{key}/pleadings:
+    parameters:
+      - $ref: '../project/project.yaml#/components/parameters/ProjectKey'
+      - $ref: '../shared/common.yaml#/components/parameters/Limit'
+      - $ref: '../shared/common.yaml#/components/parameters/Cursor'
+    get:
+      summary: List pleadings for a project
+      operationId: listProjectPleadings
+      tags: [pleadings]
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [open, merged, closed]
+      responses:
+        "200":
+          description: Pleadings, sorted by `created_at` desc.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PleadingList'
+        "401":
+          $ref: '../shared/common.yaml#/components/responses/Unauthorized'
+        "404":
+          $ref: '../shared/common.yaml#/components/responses/NotFound'
+    post:
+      summary: File a new pleading against the project (admin only)
+      operationId: fileProjectPleading
+      tags: [pleadings]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FilePleadingRequest'
+      responses:
+        "201":
+          description: Pleading filed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FiledPleading'
+        "400":
+          $ref: '../shared/common.yaml#/components/responses/BadRequest'
+        "401":
+          $ref: '../shared/common.yaml#/components/responses/Unauthorized'
+        "403":
+          $ref: '../shared/common.yaml#/components/responses/Forbidden'
+        "404":
+          $ref: '../shared/common.yaml#/components/responses/NotFound'
+
+  /pleadings:
+    get:
+      summary: List pleadings (filterable)
+      description: |
+        Cross-project read of the pleadings index. Use `project_id`,
+        `gavelspace`, and `status` to scope.
+      operationId: listPleadings
+      tags: [pleadings]
+      parameters:
+        - $ref: '../shared/common.yaml#/components/parameters/Limit'
+        - $ref: '../shared/common.yaml#/components/parameters/Cursor'
+        - name: project_id
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: gavelspace
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [open, merged, closed]
+      responses:
+        "200":
+          description: Pleadings, sorted by `created_at` desc.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PleadingList'
+        "401":
+          $ref: '../shared/common.yaml#/components/responses/Unauthorized'
+
+  /pleadings/{id}:
+    parameters:
+      - $ref: '#/components/parameters/PleadingID'
+    get:
+      summary: Get a pleading by ID
+      operationId: getPleading
+      tags: [pleadings]
+      responses:
+        "200":
+          description: Pleading detail.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pleading'
+        "401":
+          $ref: '../shared/common.yaml#/components/responses/Unauthorized'
+        "404":
+          $ref: '../shared/common.yaml#/components/responses/NotFound'
+    patch:
+      summary: Resolve a pleading (admin only)
+      operationId: resolvePleading
+      tags: [pleadings]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResolvePleadingRequest'
+      responses:
+        "204":
+          description: Pleading resolved.
+        "400":
+          $ref: '../shared/common.yaml#/components/responses/BadRequest'
+        "401":
+          $ref: '../shared/common.yaml#/components/responses/Unauthorized'
+        "403":
+          $ref: '../shared/common.yaml#/components/responses/Forbidden'
+        "404":
+          $ref: '../shared/common.yaml#/components/responses/NotFound'
+
+components:
+  parameters:
+    PleadingID:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+  schemas:
+    Pleading:
+      type: object
+      required:
+        - id
+        - project_id
+        - number
+        - title
+        - petitioner
+        - source_branch
+        - target_branch
+        - commit_sha
+        - status
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        project_id:
+          type: string
+          format: uuid
+        number:
+          type: integer
+          format: int32
+        title:
+          type: string
+        petitioner:
+          type: string
+        source_branch:
+          type: string
+        target_branch:
+          type: string
+        commit_sha:
+          type: string
+        status:
+          type: string
+          enum: [open, merged, closed]
+        gate_result:
+          $ref: '#/components/schemas/GateResult'
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    GateResult:
+      type: object
+      required: [passed]
+      properties:
+        passed:
+          type: boolean
+        conditions:
+          type: array
+          items:
+            $ref: '#/components/schemas/GateCondition'
+
+    GateCondition:
+      type: object
+      required: [label, operator, value, threshold, passed]
+      properties:
+        label:
+          type: string
+        operator:
+          type: string
+        value:
+          type: string
+        threshold:
+          type: string
+        passed:
+          type: boolean
+
+    PleadingList:
+      type: object
+      required: [items, next_cursor]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Pleading'
+        next_cursor:
+          type: string
+          nullable: true
+
+    FilePleadingRequest:
+      type: object
+      required: [number, title, petitioner, source_branch, target_branch, commit_sha]
+      properties:
+        number:
+          type: integer
+          format: int32
+        title:
+          type: string
+        petitioner:
+          type: string
+        source_branch:
+          type: string
+        target_branch:
+          type: string
+        commit_sha:
+          type: string
+
+    FiledPleading:
+      type: object
+      required: [pleading_id]
+      properties:
+        pleading_id:
+          type: string
+          format: uuid
+
+    ResolvePleadingRequest:
+      type: object
+      required: [outcome]
+      properties:
+        outcome:
+          type: string
+          enum: [merged, closed]

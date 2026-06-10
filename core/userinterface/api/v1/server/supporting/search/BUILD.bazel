@@ -1,0 +1,29 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+package(default_visibility = ["//visibility:public"])
+
+go_library(
+    name = "search",
+    srcs = [
+        "handler.go",
+        "mappers.go",
+    ],
+    importpath = "github.com/usegavel/gavel/core/userinterface/api/v1/server/supporting/search",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//core/application/supporting/search",
+        "//core/userinterface/api/v1/gen",
+    ],
+)
+
+go_test(
+    name = "search_test",
+    srcs = ["handler_test.go"],
+    deps = [
+        ":search",
+        "//core/application/supporting/search",
+        "//core/userinterface/api/v1/gen",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

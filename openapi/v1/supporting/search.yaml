@@ -1,0 +1,50 @@
+# Supporting subdomain: cross-resource search.
+
+paths:
+  /search:
+    get:
+      summary: Cross-resource search
+      operationId: search
+      tags: [search]
+      parameters:
+        - name: q
+          in: query
+          required: false
+          schema:
+            type: string
+        - $ref: '../shared/common.yaml#/components/parameters/Limit'
+      responses:
+        "200":
+          description: Mixed search results.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchResults'
+        "401":
+          $ref: '../shared/common.yaml#/components/responses/Unauthorized'
+
+components:
+  schemas:
+    SearchResult:
+      type: object
+      required: [type, id, title, subtitle, url]
+      properties:
+        type:
+          type: string
+        id:
+          type: string
+        title:
+          type: string
+        subtitle:
+          type: string
+        url:
+          type: string
+
+    SearchResults:
+      type: object
+      required: [results]
+      properties:
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/SearchResult'

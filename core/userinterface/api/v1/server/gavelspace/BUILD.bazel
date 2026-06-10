@@ -1,0 +1,47 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+package(default_visibility = ["//visibility:public"])
+
+go_library(
+    name = "gavelspace",
+    srcs = [
+        "handler.go",
+        "mappers.go",
+    ],
+    importpath = "github.com/usegavel/gavel/core/userinterface/api/v1/server/gavelspace",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//core/application/gavelspace/create",
+        "//core/application/gavelspace/get",
+        "//core/application/gavelspace/list",
+        "//core/application/gavelspace/registerproject",
+        "//core/application/gavelspace/removeproject",
+        "//core/application/shared/apperr",
+        "//core/userinterface/api/v1/gen",
+        "//core/userinterface/api/v1/server/httpx",
+    ],
+)
+
+go_test(
+    name = "gavelspace_test",
+    srcs = [
+        "fakes_test.go",
+        "handler_test.go",
+    ],
+    deps = [
+        ":gavelspace",
+        "//core/application/gavelspace/create",
+        "//core/application/gavelspace/get",
+        "//core/application/gavelspace/list",
+        "//core/application/gavelspace/registerproject",
+        "//core/application/gavelspace/removeproject",
+        "//core/domain/gavelspace/model",
+        "//core/domain/gavelspace/service",
+        "//core/domain/shared/failure",
+        "//core/infrastructure/gavelspace/memory",
+        "//core/userinterface/api/v1/gen",
+        "//core/userinterface/api/v1/server/httpx",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

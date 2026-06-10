@@ -1,0 +1,38 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+package(default_visibility = ["//visibility:public"])
+
+go_library(
+    name = "source",
+    srcs = ["handler.go"],
+    importpath = "github.com/usegavel/gavel/core/userinterface/api/v1/server/supporting/source",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//core/application/casefile/evidencedto",
+        "//core/application/casefile/listfindings",
+        "//core/application/project/getbykey",
+        "//core/application/shared/apperr",
+        "//core/userinterface/api/v1/gen",
+        "//core/userinterface/api/v1/server/httpx",
+    ],
+)
+
+go_test(
+    name = "source_test",
+    srcs = [
+        "fakes_test.go",
+        "handler_test.go",
+    ],
+    deps = [
+        ":source",
+        "//core/application/casefile/evidencedto",
+        "//core/application/casefile/listfindings",
+        "//core/application/project/getbykey",
+        "//core/application/project/projectview",
+        "//core/domain/shared/failure",
+        "//core/userinterface/api/v1/gen",
+        "//core/userinterface/api/v1/server/httpx",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

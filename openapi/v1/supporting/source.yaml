@@ -1,0 +1,136 @@
+# Supporting subdomain: source-blob storage and retrieval.
+
+paths:
+  /projects/{key}/source:
+    parameters:
+      - $ref: '../project/project.yaml#/components/parameters/ProjectKey'
+    get:
+      summary: Fetch a source-blob from a commit
+      description: |
+        Returns the raw contents of `path` at `commit` for the given project.
+        The server picks an appropriate `Content-Type` for common text
+        extensions (json/html/plain). Binaries are returned as
+        `application/octet-stream`.
+      operationId: getProjectSource
+      tags: [source]
+      parameters:
+        - name: commit
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: path
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: casefile
+          in: query
+          required: false
+          description: |
+            When present, the response switches from raw binary to a JSON
+            envelope that includes the file content plus coverage and findings
+            for the given case-file analysis run.
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: |
+            Without `casefile`: raw file contents (any MIME type).
+            With `casefile`: JSON envelope with source, coverage, and findings.
+          content:
+            "*/*":
+              schema:
+                type: string
+                format: binary
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SourceWithContext'
+        "400":
+          $ref: '../shared/common.yaml#/components/responses/BadRequest'
+        "401":
+          $ref: '../shared/common.yaml#/components/responses/Unauthorized'
+        "404":
+          $ref: '../shared/common.yaml#/components/responses/NotFound'
+    post:
+      summary: Upload source files for a commit
+      description: |
+        Bulk-upload source files so the UI can display code context for
+        findings. Each file is stored keyed by `(project, commit, path)`.
+        Duplicate uploads are silently ignored (idempotent).
+        Only files referenced by findings need to be uploaded.
+      operationId: uploadProjectSource
+      tags: [source]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UploadSourceRequest'
+      responses:
+        "204":
+          description: All files stored successfully.
+        "400":
+          $ref: '../shared/common.yaml#/components/responses/BadRequest'
+        "401":
+          $ref: '../shared/common.yaml#/components/responses/Unauthorized'
+        "404":
+          $ref: '../shared/common.yaml#/components/responses/NotFound'
+
+components:
+  schemas:
+    UploadSourceRequest:
+      type: object
+      required: [commit, files]
+      properties:
+        commit:
+          type: string
+          description: Full commit SHA the files belong to.
+        files:
+          type: array
+          description: Source files to store. Maximum 500 per request.
+          maxItems: 500
+          items:
+            $ref: '#/components/schemas/SourceFile'
+    SourceFile:
+      type: object
+      required: [path, content]
+      properties:
+        path:
+          type: string
+          description: Repository-relative file path.
+        content:
+          type: string
+          description: UTF-8 file contents.
+
+    SourceWithContext:
+      type: object
+      required: [content]
+      properties:
+        content:
+          type: string
+          description: UTF-8 file contents.
+        coverage:
+          $ref: '#/components/schemas/FileCoverageData'
+          nullable: true
+        findings:
+          type: array
+          nullable: true
+          items:
+            $ref: '../casefile/casefile.yaml#/components/schemas/Finding'
+
+    FileCoverageData:
+      type: object
+      required: [covered_lines, uncovered_lines]
+      properties:
+        covered_lines:
+          type: array
+          items:
+            type: integer
+            format: int32
+        uncovered_lines:
+          type: array
+          items:
+            type: integer
+            format: int32

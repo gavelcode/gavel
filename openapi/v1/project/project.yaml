@@ -1,0 +1,350 @@
+# Project bounded context paths, parameters, and schemas.
+
+paths:
+  /projects:
+    get:
+      summary: List projects
+      operationId: listProjects
+      tags: [projects]
+      parameters:
+        - $ref: '../shared/common.yaml#/components/parameters/Limit'
+        - $ref: '../shared/common.yaml#/components/parameters/Cursor'
+      responses:
+        "200":
+          description: Projects, sorted by `created_at` desc.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectList'
+        "401":
+          $ref: '../shared/common.yaml#/components/responses/Unauthorized'
+    post:
+      summary: Create a project (admin only)
+      operationId: createProject
+      tags: [projects]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateProjectRequest'
+      responses:
+        "201":
+          description: Project created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreatedProject'
+        "400":
+          $ref: '../shared/common.yaml#/components/responses/BadRequest'
+        "401":
+          $ref: '../shared/common.yaml#/components/responses/Unauthorized'
+        "403":
+          $ref: '../shared/common.yaml#/components/responses/Forbidden'
+        "409":
+          description: Project with that key already exists.
+          content:
+            application/json:
+              schema:
+                $ref: '../shared/common.yaml#/components/schemas/Problem'
+
+  /projects/{key}:
+    parameters:
+      - $ref: '#/components/parameters/ProjectKey'
+    get:
+      summary: Get a project by key
+      operationId: getProject
+      tags: [projects]
+      responses:
+        "200":
+          description: Project detail.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectDetail'
+        "401":
+          $ref: '../shared/common.yaml#/components/responses/Unauthorized'
+        "404":
+          $ref: '../shared/common.yaml#/components/responses/NotFound'
+
+  /projects/{key}/quality-gate:
+    parameters:
+      - $ref: '#/components/parameters/ProjectKey'
+    put:
+      summary: Replace the project's quality gate (admin only)
+      operationId: updateProjectQualityGate
+      tags: [projects]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QualityGate'
+      responses:
+        "204":
+          description: Quality gate updated.
+        "400":
+          $ref: '../shared/common.yaml#/components/responses/BadRequest'
+        "401":
+          $ref: '../shared/common.yaml#/components/responses/Unauthorized'
+        "403":
+          $ref: '../shared/common.yaml#/components/responses/Forbidden'
+        "404":
+          $ref: '../shared/common.yaml#/components/responses/NotFound'
+
+  /projects/{key}/languages:
+    parameters:
+      - $ref: '#/components/parameters/ProjectKey'
+    put:
+      summary: Replace the project's declared languages (admin only)
+      operationId: updateProjectLanguages
+      tags: [projects]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateLanguagesRequest'
+      responses:
+        "204":
+          description: Languages updated.
+        "400":
+          $ref: '../shared/common.yaml#/components/responses/BadRequest'
+        "401":
+          $ref: '../shared/common.yaml#/components/responses/Unauthorized'
+        "403":
+          $ref: '../shared/common.yaml#/components/responses/Forbidden'
+        "404":
+          $ref: '../shared/common.yaml#/components/responses/NotFound'
+
+components:
+  parameters:
+    ProjectKey:
+      name: key
+      in: path
+      required: true
+      description: Project key (slug; used as identity).
+      schema:
+        type: string
+
+  schemas:
+    Project:
+      description: Project summary as returned in lists.
+      type: object
+      required: [id, key, name, default_branch, latest_verdict, total_findings, created_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        key:
+          type: string
+        name:
+          type: string
+        default_branch:
+          type: string
+        latest_verdict:
+          type: string
+        total_findings:
+          type: integer
+          format: int32
+        created_at:
+          type: string
+          format: date-time
+
+    ProjectDetail:
+      type: object
+      required:
+        - id
+        - key
+        - name
+        - default_branch
+        - latest_verdict
+        - total_findings
+        - created_at
+        - target_pattern
+        - languages
+        - quality_gate_rules
+        - severity_counts
+      properties:
+        id:
+          type: string
+          format: uuid
+        key:
+          type: string
+        name:
+          type: string
+        default_branch:
+          type: string
+        latest_verdict:
+          type: string
+        total_findings:
+          type: integer
+          format: int32
+        created_at:
+          type: string
+          format: date-time
+        target_pattern:
+          type: string
+        languages:
+          type: array
+          items:
+            type: string
+        quality_gate_rules:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProjectRuleView'
+        severity_counts:
+          type: object
+          additionalProperties:
+            type: integer
+            format: int32
+
+    ProjectRuleView:
+      type: object
+      required: [subtype, strategy_type]
+      properties:
+        subtype:
+          type: string
+        strategy_type:
+          type: string
+
+    ProjectList:
+      type: object
+      required: [items, next_cursor]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Project'
+        next_cursor:
+          type: string
+          nullable: true
+
+    CreateProjectRequest:
+      type: object
+      required: [key, name]
+      properties:
+        key:
+          type: string
+        name:
+          type: string
+        target_pattern:
+          type: string
+
+    CreatedProject:
+      type: object
+      required: [project_id]
+      properties:
+        project_id:
+          type: string
+          format: uuid
+
+    QualityGate:
+      description: Replacement payload for a project's quality-gate rules.
+      type: object
+      required: [rules]
+      properties:
+        rules:
+          type: array
+          items:
+            $ref: '#/components/schemas/QualityGateRule'
+
+    QualityGateRule:
+      type: object
+      required: [subtype, strategy]
+      properties:
+        subtype:
+          type: string
+        strategy:
+          $ref: '#/components/schemas/QualityGateStrategy'
+        min_resolved:
+          description: Minimum findings or violations that must be resolved per cycle.
+          type: integer
+          format: int32
+        min_delta:
+          description: Minimum coverage percentage change required (e.g. 0 = must not decrease).
+          type: number
+          format: double
+
+    QualityGateStrategy:
+      description: |
+        Strategy union. Exactly one of the optional fields must be set
+        according to `type`.
+      type: object
+      required: [type]
+      properties:
+        type:
+          type: string
+          enum:
+            - count_by_severity
+            - zero_tolerance
+            - min_percentage
+            - forbidden_list
+            - max_violations
+            - min_new_code_coverage
+        count_by_severity:
+          $ref: '#/components/schemas/CountBySeverityStrategy'
+        min_percentage:
+          $ref: '#/components/schemas/MinPercentageStrategy'
+        forbidden_list:
+          $ref: '#/components/schemas/ForbiddenListStrategy'
+        max_violations:
+          $ref: '#/components/schemas/MaxViolationsStrategy'
+        min_new_code_coverage:
+          $ref: '#/components/schemas/MinNewCodeCoverageStrategy'
+
+    CountBySeverityStrategy:
+      type: object
+      required: [max_error, max_warning, max_note]
+      properties:
+        max_error:
+          type: integer
+          format: int32
+        max_warning:
+          type: integer
+          format: int32
+        max_note:
+          type: integer
+          format: int32
+
+    MinPercentageStrategy:
+      type: object
+      required: [min]
+      properties:
+        min:
+          type: number
+          format: double
+
+    ForbiddenListStrategy:
+      type: object
+      required: [forbidden]
+      properties:
+        forbidden:
+          type: array
+          items:
+            type: string
+
+    MaxViolationsStrategy:
+      type: object
+      required: [max]
+      properties:
+        max:
+          type: integer
+          format: int32
+
+    MinNewCodeCoverageStrategy:
+      type: object
+      required: [min]
+      properties:
+        min:
+          type: number
+          format: double
+
+    UpdateLanguagesRequest:
+      type: object
+      required: [languages]
+      properties:
+        languages:
+          type: array
+          items:
+            type: string

@@ -1,0 +1,350 @@
+# Identity & Access bounded context paths and schemas.
+
+paths:
+  /sessions:
+    post:
+      summary: Create a session (log in)
+      operationId: createSession
+      tags: [auth]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        "200":
+          description: Session created. Sets a `gavel_session` HttpOnly cookie.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Me'
+        "400":
+          $ref: '../shared/common.yaml#/components/responses/BadRequest'
+        "401":
+          $ref: '../shared/common.yaml#/components/responses/InvalidCredentials'
+
+  /sessions/current:
+    delete:
+      summary: Delete the current session (log out)
+      operationId: deleteCurrentSession
+      tags: [auth]
+      responses:
+        "204":
+          description: Session deleted. Clears the `gavel_session` cookie.
+        "401":
+          $ref: '../shared/common.yaml#/components/responses/Unauthorized'
+
+  /me:
+    get:
+      summary: Get the currently authenticated user
+      operationId: getMe
+      tags: [me]
+      responses:
+        "200":
+          description: Current user.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Me'
+        "401":
+          $ref: '../shared/common.yaml#/components/responses/Unauthorized'
+
+  /me/password:
+    post:
+      summary: Change the current user's password
+      description: |
+        Verifies `current_password`, sets the new password, and revokes the
+        current session — the client must log in again with the new password.
+      operationId: changeMyPassword
+      tags: [me]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangePasswordRequest'
+      responses:
+        "204":
+          description: Password changed. Session has been revoked.
+        "400":
+          $ref: '../shared/common.yaml#/components/responses/BadRequest'
+        "401":
+          $ref: '../shared/common.yaml#/components/responses/CurrentPasswordIncorrect'
+
+  /me/tokens:
+    get:
+      summary: List the current user's API tokens
+      operationId: listMyTokens
+      tags: [tokens]
+      parameters:
+        - $ref: '../shared/common.yaml#/components/parameters/Limit'
+        - $ref: '../shared/common.yaml#/components/parameters/Cursor'
+      responses:
+        "200":
+          description: Tokens sorted by `created_at` desc.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenList'
+        "401":
+          $ref: '../shared/common.yaml#/components/responses/Unauthorized'
+    post:
+      summary: Create a new API token for the current user
+      description: |
+        The plaintext `token` is returned exactly once. Subsequent reads return
+        only the metadata (id, name, prefix, scopes, dates, status).
+      operationId: createMyToken
+      tags: [tokens]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTokenRequest'
+      responses:
+        "201":
+          description: Token created. Plaintext returned once.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreatedToken'
+        "400":
+          $ref: '../shared/common.yaml#/components/responses/BadRequest'
+        "401":
+          $ref: '../shared/common.yaml#/components/responses/Unauthorized'
+        "403":
+          description: Caller is not allowed to mint a token with the requested scopes.
+          content:
+            application/json:
+              schema:
+                $ref: '../shared/common.yaml#/components/schemas/Problem'
+
+  /me/tokens/{id}:
+    delete:
+      summary: Revoke one of the current user's API tokens
+      operationId: deleteMyToken
+      tags: [tokens]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Token revoked.
+        "400":
+          $ref: '../shared/common.yaml#/components/responses/BadRequest'
+        "401":
+          $ref: '../shared/common.yaml#/components/responses/Unauthorized'
+        "403":
+          description: Token does not belong to the current user.
+          content:
+            application/json:
+              schema:
+                $ref: '../shared/common.yaml#/components/schemas/Problem'
+        "404":
+          $ref: '../shared/common.yaml#/components/responses/NotFound'
+
+  /admin/users:
+    post:
+      summary: Create a user (admin only)
+      operationId: createUser
+      tags: [users]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUserRequest'
+      responses:
+        "201":
+          description: User created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreatedUser'
+        "400":
+          $ref: '../shared/common.yaml#/components/responses/BadRequest'
+        "401":
+          $ref: '../shared/common.yaml#/components/responses/Unauthorized'
+        "403":
+          $ref: '../shared/common.yaml#/components/responses/Forbidden'
+        "409":
+          description: Email already in use.
+          content:
+            application/json:
+              schema:
+                $ref: '../shared/common.yaml#/components/schemas/Problem'
+
+components:
+  schemas:
+    Me:
+      type: object
+      required: [id, email, display_name, role, tenant_id, must_change_password]
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        display_name:
+          type: string
+        role:
+          type: string
+          enum: [admin, maintainer, viewer]
+        tenant_id:
+          type: string
+          format: uuid
+        must_change_password:
+          type: boolean
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        tenant:
+          type: string
+          description: Tenant slug. Defaults to the server's bootstrap tenant.
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+
+    ChangePasswordRequest:
+      type: object
+      required: [current_password, new_password]
+      properties:
+        current_password:
+          type: string
+          format: password
+        new_password:
+          type: string
+          format: password
+
+    CreateTokenRequest:
+      type: object
+      required: [name, scopes]
+      properties:
+        name:
+          type: string
+          description: Human-readable label for this token.
+        scopes:
+          type: array
+          items:
+            type: string
+            enum: [ingest, admin]
+        expires_in_days:
+          type: integer
+          minimum: 1
+          description: |
+            When omitted the token never expires. Capped at the server's
+            configured maximum (default 365).
+
+    CreatedToken:
+      description: |
+        Plaintext `token` is returned exactly once at creation time. Store it
+        somewhere safe — the server only keeps a SHA-256 hash.
+      type: object
+      required: [id, name, scopes, token, prefix]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        scopes:
+          type: array
+          items:
+            type: string
+        token:
+          type: string
+          description: Full plaintext token. Shown once.
+        prefix:
+          type: string
+          description: |
+            First few characters of the token. Surfaced in listings so users
+            can identify which token they are looking at.
+
+    TokenSummary:
+      type: object
+      required: [id, name, prefix, scopes, created_at, is_revoked, is_expired]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        prefix:
+          type: string
+        scopes:
+          type: array
+          items:
+            type: string
+        created_at:
+          type: string
+          format: date-time
+        last_used_at:
+          type: string
+          format: date-time
+          nullable: true
+        expires_at:
+          type: string
+          format: date-time
+          nullable: true
+        is_revoked:
+          type: boolean
+        is_expired:
+          type: boolean
+
+    TokenList:
+      type: object
+      required: [items, next_cursor]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/TokenSummary'
+        next_cursor:
+          type: string
+          nullable: true
+          description: |
+            Opaque cursor for the next page, or `null` when the caller has
+            reached the end.
+
+    CreateUserRequest:
+      type: object
+      required: [email, display_name, password]
+      properties:
+        email:
+          type: string
+          format: email
+        display_name:
+          type: string
+        password:
+          type: string
+          format: password
+        role:
+          type: string
+          enum: [admin, maintainer, viewer]
+          default: viewer
+
+    CreatedUser:
+      type: object
+      required: [id, email, role]
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        role:
+          type: string
+          enum: [admin, maintainer, viewer]

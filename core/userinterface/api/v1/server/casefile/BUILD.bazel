@@ -1,0 +1,59 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+package(default_visibility = ["//visibility:public"])
+
+go_library(
+    name = "casefile",
+    srcs = [
+        "handler.go",
+        "ingest.go",
+        "mappers.go",
+    ],
+    importpath = "github.com/usegavel/gavel/core/userinterface/api/v1/server/casefile",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//core/application/casefile/createcasefile",
+        "//core/application/casefile/evidencedto",
+        "//core/application/casefile/finalize",
+        "//core/application/casefile/get",
+        "//core/application/casefile/ingestevidence",
+        "//core/application/casefile/list",
+        "//core/application/casefile/listfindings",
+        "//core/application/project/getbaseline",
+        "//core/application/project/getbykey",
+        "//core/application/shared/apperr",
+        "//core/userinterface/api/v1/gen",
+        "//core/userinterface/api/v1/server/httpx",
+    ],
+)
+
+go_test(
+    name = "casefile_test",
+    srcs = [
+        "fakes_test.go",
+        "handler_test.go",
+    ],
+    deps = [
+        ":casefile",
+        "//core/application/casefile/classify",
+        "//core/application/casefile/createcasefile",
+        "//core/application/casefile/evidencedto",
+        "//core/application/casefile/finalize",
+        "//core/application/casefile/get",
+        "//core/application/casefile/ingestevidence",
+        "//core/application/casefile/judge",
+        "//core/application/casefile/list",
+        "//core/application/casefile/listfindings",
+        "//core/application/project/getbaseline",
+        "//core/application/project/getbykey",
+        "//core/application/project/projectview",
+        "//core/domain/project/model",
+        "//core/domain/shared/failure",
+        "//core/infrastructure/casefile/memory",
+        "//core/infrastructure/project/memory",
+        "//core/userinterface/api/v1/gen",
+        "//core/userinterface/api/v1/server/httpx",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

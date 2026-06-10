@@ -1,0 +1,220 @@
+# Gavelspace bounded context paths, parameters, and schemas.
+
+paths:
+  /gavelspaces:
+    get:
+      summary: List gavelspaces
+      operationId: listGavelspaces
+      tags: [gavelspaces]
+      parameters:
+        - $ref: '../shared/common.yaml#/components/parameters/Limit'
+        - $ref: '../shared/common.yaml#/components/parameters/Cursor'
+      responses:
+        "200":
+          description: Gavelspaces, sorted by `created_at` desc.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GavelspaceList'
+        "401":
+          $ref: '../shared/common.yaml#/components/responses/Unauthorized'
+    post:
+      summary: Create a gavelspace (admin only)
+      operationId: createGavelspace
+      tags: [gavelspaces]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateGavelspaceRequest'
+      responses:
+        "201":
+          description: Gavelspace created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreatedGavelspace'
+        "400":
+          $ref: '../shared/common.yaml#/components/responses/BadRequest'
+        "401":
+          $ref: '../shared/common.yaml#/components/responses/Unauthorized'
+        "403":
+          $ref: '../shared/common.yaml#/components/responses/Forbidden'
+        "409":
+          description: Gavelspace with that name already exists.
+          content:
+            application/json:
+              schema:
+                $ref: '../shared/common.yaml#/components/schemas/Problem'
+
+  /gavelspaces/{name}:
+    parameters:
+      - $ref: '#/components/parameters/GavelspaceName'
+    get:
+      summary: Get a gavelspace by name
+      operationId: getGavelspace
+      tags: [gavelspaces]
+      responses:
+        "200":
+          description: Gavelspace detail including registered projects.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GavelspaceDetail'
+        "401":
+          $ref: '../shared/common.yaml#/components/responses/Unauthorized'
+        "404":
+          $ref: '../shared/common.yaml#/components/responses/NotFound'
+
+  /gavelspaces/{name}/projects:
+    parameters:
+      - $ref: '#/components/parameters/GavelspaceName'
+    post:
+      summary: Register a project in a gavelspace (admin only)
+      operationId: registerGavelspaceProject
+      tags: [gavelspaces]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterGavelspaceProjectRequest'
+      responses:
+        "204":
+          description: Project registered.
+        "400":
+          $ref: '../shared/common.yaml#/components/responses/BadRequest'
+        "401":
+          $ref: '../shared/common.yaml#/components/responses/Unauthorized'
+        "403":
+          $ref: '../shared/common.yaml#/components/responses/Forbidden'
+        "404":
+          $ref: '../shared/common.yaml#/components/responses/NotFound'
+        "409":
+          description: |
+            Target pattern conflicts with another project already registered
+            in this gavelspace.
+          content:
+            application/json:
+              schema:
+                $ref: '../shared/common.yaml#/components/schemas/Problem'
+
+  /gavelspaces/{name}/projects/{project_id}:
+    parameters:
+      - $ref: '#/components/parameters/GavelspaceName'
+      - name: project_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    delete:
+      summary: Remove a project from a gavelspace (admin only)
+      operationId: removeGavelspaceProject
+      tags: [gavelspaces]
+      responses:
+        "204":
+          description: Project removed.
+        "400":
+          $ref: '../shared/common.yaml#/components/responses/BadRequest'
+        "401":
+          $ref: '../shared/common.yaml#/components/responses/Unauthorized'
+        "403":
+          $ref: '../shared/common.yaml#/components/responses/Forbidden'
+        "404":
+          $ref: '../shared/common.yaml#/components/responses/NotFound'
+
+components:
+  parameters:
+    GavelspaceName:
+      name: name
+      in: path
+      required: true
+      description: Gavelspace name (used as identity).
+      schema:
+        type: string
+
+  schemas:
+    Gavelspace:
+      description: Summary view returned in lists.
+      type: object
+      required: [name, project_count, created_at]
+      properties:
+        name:
+          type: string
+        project_count:
+          type: integer
+          format: int32
+        created_at:
+          type: string
+          format: date-time
+
+    GavelspaceDetail:
+      type: object
+      required: [name, projects, created_at]
+      properties:
+        name:
+          type: string
+        projects:
+          type: array
+          items:
+            $ref: '#/components/schemas/GavelspaceProject'
+        created_at:
+          type: string
+          format: date-time
+
+    GavelspaceProject:
+      description: Project registered in a gavelspace.
+      type: object
+      required: [id, key, name, latest_verdict]
+      properties:
+        id:
+          type: string
+          format: uuid
+        key:
+          type: string
+        name:
+          type: string
+        latest_verdict:
+          type: string
+
+    GavelspaceList:
+      type: object
+      required: [items, next_cursor]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Gavelspace'
+        next_cursor:
+          type: string
+          nullable: true
+
+    CreateGavelspaceRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+
+    CreatedGavelspace:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+
+    RegisterGavelspaceProjectRequest:
+      type: object
+      required: [project_id, target_pattern]
+      properties:
+        project_id:
+          type: string
+          format: uuid
+        target_pattern:
+          type: string
+          description: |
+            Bazel target pattern this project owns inside the gavelspace
+            (e.g. `//apps/server/...`). Must be unique within the
+            gavelspace.

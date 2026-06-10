@@ -1,0 +1,745 @@
+# CaseFile bounded context paths, parameters, and schemas.
+
+paths:
+  /projects/{key}/casefiles:
+    parameters:
+      - $ref: '../project/project.yaml#/components/parameters/ProjectKey'
+      - $ref: '../shared/common.yaml#/components/parameters/Limit'
+      - $ref: '../shared/common.yaml#/components/parameters/Cursor'
+    get:
+      summary: List casefiles for a project
+      operationId: listProjectCaseFiles
+      tags: [casefiles]
+      responses:
+        "200":
+          description: Casefiles, sorted by `started_at` desc.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CaseFileList'
+        "401":
+          $ref: '../shared/common.yaml#/components/responses/Unauthorized'
+        "404":
+          $ref: '../shared/common.yaml#/components/responses/NotFound'
+
+  /projects/{key}/baseline:
+    parameters:
+      - $ref: '../project/project.yaml#/components/parameters/ProjectKey'
+    get:
+      summary: Get the baseline (last casefile on a branch)
+      description: |
+        Returns the fingerprints and architecture-violation IDs from the most
+        recent case file on the given branch. The CLI uses this to mark a
+        finding as `new` versus `existing` when judging a new commit.
+      operationId: getProjectBaseline
+      tags: [casefiles]
+      parameters:
+        - name: branch
+          in: query
+          required: false
+          description: |
+            Branch to read the baseline for. Defaults to the project's
+            `default_branch`.
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Baseline payload.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Baseline'
+        "401":
+          $ref: '../shared/common.yaml#/components/responses/Unauthorized'
+        "404":
+          $ref: '../shared/common.yaml#/components/responses/NotFound'
+
+  /casefiles:
+    post:
+      summary: Open a case file
+      description: |
+        First step of the two-step submit flow. Creates an empty case file
+        attached to the given project at the given commit. Each subsequent
+        `POST /casefiles/{id}/evidence` call appends evidence; the verdict
+        is computed when classify + judge run (today done implicitly after
+        the final evidence upload — see `final` on the evidence endpoint).
+      operationId: createCaseFile
+      tags: [casefiles]
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: false
+          description: |
+            Opaque key supplied by the client to deduplicate a retried
+            POST. Repeating the call with the same key + same payload
+            within the server's idempotency window returns the original
+            response. Stripe-style semantics.
+          schema:
+            type: string
+            maxLength: 255
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCaseFileRequest'
+      responses:
+        "201":
+          description: Case file opened.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreatedCaseFile'
+        "400":
+          $ref: '../shared/common.yaml#/components/responses/BadRequest'
+        "401":
+          $ref: '../shared/common.yaml#/components/responses/Unauthorized'
+        "403":
+          $ref: '../shared/common.yaml#/components/responses/Forbidden'
+        "404":
+          description: Project not found.
+          content:
+            application/json:
+              schema:
+                $ref: '../shared/common.yaml#/components/schemas/Problem'
+    get:
+      summary: List case files (filterable)
+      description: |
+        Cross-project read of the case-file index. At least one of `project_id`
+        or `gavelspace` is recommended for sensible page sizes; passing
+        neither lists every case file the caller can see.
+      operationId: listCaseFiles
+      tags: [casefiles]
+      parameters:
+        - $ref: '../shared/common.yaml#/components/parameters/Limit'
+        - $ref: '../shared/common.yaml#/components/parameters/Cursor'
+        - name: project_id
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: gavelspace
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Case files, sorted by `started_at` desc.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CaseFileList'
+        "400":
+          $ref: '../shared/common.yaml#/components/responses/BadRequest'
+        "401":
+          $ref: '../shared/common.yaml#/components/responses/Unauthorized'
+
+  /casefiles/{id}/evidence:
+    parameters:
+      - $ref: '#/components/parameters/CaseFileID'
+    post:
+      summary: Append one evidence to a case file
+      description: |
+        Second step of the two-step submit flow. Uploads a single piece of
+        evidence to the named case file. Findings, coverage, license and
+        architecture payloads share the same envelope; the `subtype` field
+        plus the populated content sub-object determine the kind.
+
+        The CLI parses SARIF / LCOV / archtest output locally and posts a
+        JSON DTO here. Future binary-blob upload variants will live at a
+        separate endpoint to keep this one's contract small.
+      operationId: ingestCaseFileEvidence
+      tags: [casefiles]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IngestEvidenceRequest'
+      responses:
+        "201":
+          description: Evidence ingested.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IngestedEvidence'
+        "400":
+          $ref: '../shared/common.yaml#/components/responses/BadRequest'
+        "401":
+          $ref: '../shared/common.yaml#/components/responses/Unauthorized'
+        "403":
+          $ref: '../shared/common.yaml#/components/responses/Forbidden'
+        "404":
+          $ref: '../shared/common.yaml#/components/responses/NotFound'
+
+  /casefiles/{id}/finalize:
+    parameters:
+      - $ref: '#/components/parameters/CaseFileID'
+    post:
+      summary: Finalize a case file
+      description: |
+        Third step of the two-step submit flow. Classify findings against
+        the project's default-branch baseline (skipped when the case file
+        was opened with `fresh_evaluation: true`) and run the quality
+        gate. Returns the verdict + counters; the case file is judged
+        once and the response is what the CLI surfaces to the user.
+
+        Calling finalize twice on the same case file returns a 409
+        because the aggregate refuses to be judged twice.
+      operationId: finalizeCaseFile
+      tags: [casefiles]
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FinalizeCaseFileRequest'
+      responses:
+        "200":
+          description: Verdict computed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinalizedCaseFile'
+        "400":
+          $ref: '../shared/common.yaml#/components/responses/BadRequest'
+        "401":
+          $ref: '../shared/common.yaml#/components/responses/Unauthorized'
+        "403":
+          $ref: '../shared/common.yaml#/components/responses/Forbidden'
+        "404":
+          $ref: '../shared/common.yaml#/components/responses/NotFound'
+        "409":
+          description: Case file is already judged.
+          content:
+            application/json:
+              schema:
+                $ref: '../shared/common.yaml#/components/schemas/Problem'
+
+  /casefiles/{id}:
+    parameters:
+      - $ref: '#/components/parameters/CaseFileID'
+    get:
+      summary: Get a case file by ID
+      operationId: getCaseFile
+      tags: [casefiles]
+      responses:
+        "200":
+          description: Case file detail with evidence summaries and rulings.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CaseFileDetail'
+        "401":
+          $ref: '../shared/common.yaml#/components/responses/Unauthorized'
+        "404":
+          $ref: '../shared/common.yaml#/components/responses/NotFound'
+
+  /findings:
+    get:
+      summary: List findings across projects (filterable)
+      description: |
+        Read-only access to the findings index. Use `project_id`,
+        `casefile_id`, `gavelspace`, and the metadata filters
+        (`tool`, `severity`, `status`, `file_path`) to scope the result.
+        Every parameter is optional.
+      operationId: listFindings
+      tags: [findings]
+      parameters:
+        - $ref: '../shared/common.yaml#/components/parameters/Limit'
+        - $ref: '../shared/common.yaml#/components/parameters/Cursor'
+        - name: project_id
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: casefile_id
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: gavelspace
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: tool
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: severity
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: file_path
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Findings index page.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FindingList'
+        "401":
+          $ref: '../shared/common.yaml#/components/responses/Unauthorized'
+
+components:
+  parameters:
+    CaseFileID:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+  schemas:
+    CaseFile:
+      description: Case-file summary as returned in lists.
+      type: object
+      required:
+        - id
+        - project_id
+        - commit_sha
+        - branch
+        - started_at
+        - verdict_outcome
+        - total_findings
+        - new_findings
+        - existing_findings
+        - resolved_findings
+        - created_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        project_id:
+          type: string
+          format: uuid
+        commit_sha:
+          type: string
+        branch:
+          type: string
+        started_at:
+          type: string
+          format: date-time
+        verdict_outcome:
+          type: string
+        total_findings:
+          type: integer
+          format: int32
+        new_findings:
+          type: integer
+          format: int32
+        existing_findings:
+          type: integer
+          format: int32
+        resolved_findings:
+          type: integer
+          format: int32
+        coverage_percent:
+          type: number
+          format: double
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+
+    CaseFileDetail:
+      allOf:
+        - $ref: '#/components/schemas/CaseFile'
+        - type: object
+          required: [evidences, rulings]
+          properties:
+            evidences:
+              type: array
+              items:
+                $ref: '#/components/schemas/Evidence'
+            rulings:
+              type: array
+              items:
+                $ref: '#/components/schemas/Ruling'
+
+    Evidence:
+      type: object
+      required: [id, subtype, source, collected_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        subtype:
+          type: string
+        source:
+          type: string
+        collected_at:
+          type: string
+          format: date-time
+
+    Ruling:
+      type: object
+      required: [subtype, passed, detail]
+      properties:
+        subtype:
+          type: string
+        passed:
+          type: boolean
+        detail:
+          type: string
+
+    CaseFileList:
+      type: object
+      required: [items, next_cursor]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CaseFile'
+        next_cursor:
+          type: string
+          nullable: true
+
+    Finding:
+      type: object
+      required:
+        - tool
+        - rule_id
+        - severity
+        - file_path
+        - line
+        - message
+        - fingerprint
+        - status
+        - source
+        - commit_sha
+        - project_key
+        - casefile_id
+      properties:
+        tool:
+          type: string
+        rule_id:
+          type: string
+        severity:
+          type: string
+        file_path:
+          type: string
+        line:
+          type: integer
+          format: int32
+        message:
+          type: string
+        fingerprint:
+          type: string
+        status:
+          type: string
+        source:
+          type: string
+        commit_sha:
+          type: string
+        project_key:
+          type: string
+        casefile_id:
+          type: string
+          format: uuid
+
+    FindingList:
+      type: object
+      required: [items, next_cursor]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Finding'
+        next_cursor:
+          type: string
+          nullable: true
+
+    Baseline:
+      type: object
+      required: [fingerprints, architecture_ids, has_previous]
+      properties:
+        fingerprints:
+          type: array
+          items:
+            type: string
+        architecture_ids:
+          type: array
+          items:
+            type: string
+        has_previous:
+          type: boolean
+
+    CreateCaseFileRequest:
+      type: object
+      required: [project_id, commit_sha, branch]
+      properties:
+        project_id:
+          type: string
+          format: uuid
+        commit_sha:
+          type: string
+        branch:
+          type: string
+        started_at:
+          type: string
+          format: date-time
+          description: |
+            Optional explicit start time. Defaults to the server's `Now()`
+            when omitted, which is normally what the CLI wants.
+        fresh_evaluation:
+          type: boolean
+          description: |
+            When true, the eventual judge step skips classify against the
+            project's default branch — useful when the quality gate just
+            changed and prior fingerprints are no longer comparable.
+
+    CreatedCaseFile:
+      type: object
+      required: [case_file_id]
+      properties:
+        case_file_id:
+          type: string
+          format: uuid
+
+    IngestEvidenceRequest:
+      description: |
+        Single evidence upload. Exactly one of the content sub-fields
+        (`findings`, `coverage`, `new_code_coverage`, `license`,
+        `architecture`) must be populated according to `subtype`.
+      type: object
+      required: [subtype, source, collected_at]
+      properties:
+        id:
+          type: string
+          description: |
+            Optional client-supplied evidence identifier. When omitted the
+            server mints one. Useful when the client wants to retry the
+            upload idempotently.
+        subtype:
+          type: string
+          enum: [code_quality, coverage, new_code_coverage, license, architecture, source]
+        source:
+          type: string
+          description: Tool or origin that produced the evidence (e.g. `golangci-lint`).
+        collected_at:
+          type: string
+          format: date-time
+        findings:
+          type: array
+          nullable: true
+          items:
+            $ref: '#/components/schemas/IngestFinding'
+        coverage:
+          $ref: '#/components/schemas/IngestCoverage'
+          nullable: true
+        new_code_coverage:
+          $ref: '#/components/schemas/IngestNewCodeCoverage'
+          nullable: true
+        license:
+          $ref: '#/components/schemas/IngestLicense'
+          nullable: true
+        architecture:
+          $ref: '#/components/schemas/IngestArchitecture'
+          nullable: true
+
+    IngestedEvidence:
+      type: object
+      required: [evidence_id]
+      properties:
+        evidence_id:
+          type: string
+          format: uuid
+
+    IngestFinding:
+      type: object
+      required: [tool, rule_id, severity, file_path, line, message, fingerprint]
+      properties:
+        tool:
+          type: string
+        rule_id:
+          type: string
+        severity:
+          type: string
+        file_path:
+          type: string
+        line:
+          type: integer
+          format: int32
+        message:
+          type: string
+        fingerprint:
+          type: string
+
+    IngestCoverage:
+      type: object
+      required: [total_lines, covered_lines]
+      properties:
+        total_lines:
+          type: integer
+          format: int32
+        covered_lines:
+          type: integer
+          format: int32
+        by_language:
+          type: array
+          items:
+            $ref: '#/components/schemas/IngestLanguageStats'
+        by_file:
+          type: array
+          nullable: true
+          items:
+            $ref: '#/components/schemas/IngestFileCoverage'
+
+    IngestFileCoverage:
+      type: object
+      required: [file_path, covered_lines, uncovered_lines]
+      properties:
+        file_path:
+          type: string
+        covered_lines:
+          type: array
+          items:
+            type: integer
+            format: int32
+        uncovered_lines:
+          type: array
+          items:
+            type: integer
+            format: int32
+
+    IngestLanguageStats:
+      type: object
+      required: [language, total_lines, covered_lines]
+      properties:
+        language:
+          type: string
+        total_lines:
+          type: integer
+          format: int32
+        covered_lines:
+          type: integer
+          format: int32
+
+    IngestNewCodeCoverage:
+      type: object
+      required: [covered_lines, coverable_lines]
+      properties:
+        covered_lines:
+          type: integer
+          format: int32
+        coverable_lines:
+          type: integer
+          format: int32
+
+    IngestLicense:
+      type: object
+      required: [dependencies]
+      properties:
+        dependencies:
+          type: array
+          items:
+            $ref: '#/components/schemas/IngestDependency'
+
+    IngestDependency:
+      type: object
+      required: [name, version, license]
+      properties:
+        name:
+          type: string
+        version:
+          type: string
+        license:
+          type: string
+
+    IngestArchitecture:
+      type: object
+      required: [violations]
+      properties:
+        violations:
+          type: array
+          items:
+            $ref: '#/components/schemas/IngestViolation'
+
+    IngestViolation:
+      type: object
+      required: [rule, source_pkg, target_pkg, message]
+      properties:
+        rule:
+          type: string
+        source_pkg:
+          type: string
+        target_pkg:
+          type: string
+        message:
+          type: string
+
+    FinalizedCaseFile:
+      type: object
+      required: [case_file_id, verdict, counters]
+      properties:
+        case_file_id:
+          type: string
+          format: uuid
+        verdict:
+          $ref: '#/components/schemas/Verdict'
+        counters:
+          $ref: '#/components/schemas/AnalysisCounters'
+
+    Verdict:
+      type: object
+      required: [outcome, evaluated_at]
+      properties:
+        outcome:
+          type: string
+          enum: [pass, fail, warning]
+        rulings:
+          type: array
+          items:
+            $ref: '#/components/schemas/Ruling'
+        evaluated_at:
+          type: string
+          format: date-time
+
+    AnalysisCounters:
+      type: object
+      required: [findings_count, coverage_percent, new_count, existing_count, resolved_count, has_tracking]
+      properties:
+        findings_count:
+          type: integer
+          format: int32
+        coverage_percent:
+          type: number
+          format: double
+        new_count:
+          type: integer
+          format: int32
+        existing_count:
+          type: integer
+          format: int32
+        resolved_count:
+          type: integer
+          format: int32
+        has_tracking:
+          type: boolean
+
+    FinalizeCaseFileRequest:
+      type: object
+      required: [verdict, counters]
+      properties:
+        verdict:
+          $ref: '#/components/schemas/Verdict'
+        counters:
+          $ref: '#/components/schemas/AnalysisCounters'

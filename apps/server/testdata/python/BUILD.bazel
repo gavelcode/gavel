@@ -1,0 +1,14 @@
+load("@rules_python//python:defs.bzl", "py_library", "py_test")
+
+py_library(
+    name = "example",
+    srcs = ["example.py"],
+    visibility = ["//visibility:public"],
+)
+
+py_test(
+    name = "example_test",
+    srcs = ["example_test.py"],
+    imports = ["."],
+    deps = [":example"],
+)

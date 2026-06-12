@@ -1,0 +1,17 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "spa",
+    srcs = ["spa.go"],
+    importpath = "github.com/usegavel/gavel/apps/server/internal/platform/spa",
+    visibility = ["//apps/server:__subpackages__"],
+)
+
+go_test(
+    name = "spa_test",
+    srcs = ["spa_test.go"],
+    deps = [
+        ":spa",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

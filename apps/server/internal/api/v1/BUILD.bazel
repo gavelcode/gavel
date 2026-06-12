@@ -1,0 +1,30 @@
+load("@rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "v1",
+    srcs = [
+        "mux.go",
+        "server.go",
+    ],
+    importpath = "github.com/usegavel/gavel/apps/server/internal/api/v1",
+    visibility = [
+        "//apps/cli/test/e2e:__pkg__",
+        "//apps/server:__subpackages__",
+    ],
+    deps = [
+        "//core/domain/iam/model/apitoken",
+        "//core/domain/iam/model/user",
+        "//core/userinterface/api/v1/gen",
+        "//core/userinterface/api/v1/server/casefile",
+        "//core/userinterface/api/v1/server/gavelspace",
+        "//core/userinterface/api/v1/server/httpx",
+        "//core/userinterface/api/v1/server/httpx/auth",
+        "//core/userinterface/api/v1/server/iam",
+        "//core/userinterface/api/v1/server/ops",
+        "//core/userinterface/api/v1/server/pleading",
+        "//core/userinterface/api/v1/server/project",
+        "//core/userinterface/api/v1/server/supporting/search",
+        "//core/userinterface/api/v1/server/supporting/source",
+        "@com_github_go_chi_chi_v5//:chi",
+    ],
+)

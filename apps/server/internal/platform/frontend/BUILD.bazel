@@ -1,0 +1,9 @@
+load("@rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "frontend",
+    srcs = ["frontend.go"],
+    importpath = "github.com/usegavel/gavel/apps/server/internal/platform/frontend",
+    visibility = ["//apps/server:__subpackages__"],
+    deps = ["@rules_go//go/runfiles"],
+)

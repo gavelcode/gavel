@@ -1,0 +1,81 @@
+{
+  "version": "2.1.0",
+  "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "SpotBugs",
+          "version": "4.8.3",
+          "rules": [
+            {
+              "id": "NP_NULL_ON_SOME_PATH",
+              "name": "NullPointerOnSomePath",
+              "shortDescription": { "text": "Possible null pointer dereference on some path" },
+              "helpUri": "https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#NP_NULL_ON_SOME_PATH",
+              "defaultConfiguration": { "level": "warning" }
+            },
+            {
+              "id": "DM_DEFAULT_ENCODING",
+              "name": "DefaultEncoding",
+              "shortDescription": { "text": "Reliance on default encoding" },
+              "helpUri": "https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#DM_DEFAULT_ENCODING",
+              "defaultConfiguration": { "level": "warning" }
+            },
+            {
+              "id": "SQL_INJECTION",
+              "name": "SqlInjection",
+              "shortDescription": { "text": "SQL injection vulnerability" },
+              "helpUri": "https://spotbugs.readthedocs.io/en/latest/bugDescriptions.html#SQL_INJECTION",
+              "defaultConfiguration": { "level": "error" }
+            }
+          ]
+        }
+      },
+      "results": [
+        {
+          "ruleId": "NP_NULL_ON_SOME_PATH",
+          "ruleIndex": 0,
+          "level": "warning",
+          "message": { "text": "Possible null pointer dereference of 'user' in com.example.UserService.getUser()" },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": { "uri": "src/main/java/com/example/UserService.java" },
+                "region": { "startLine": 42, "startColumn": 12 }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "DM_DEFAULT_ENCODING",
+          "ruleIndex": 1,
+          "level": "warning",
+          "message": { "text": "Found reliance on default encoding in com.example.FileReader.read()" },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": { "uri": "src/main/java/com/example/FileReader.java" },
+                "region": { "startLine": 15, "startColumn": 8 }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "SQL_INJECTION",
+          "ruleIndex": 2,
+          "level": "error",
+          "message": { "text": "SQL injection in com.example.UserDao.findByName()" },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": { "uri": "src/main/java/com/example/UserDao.java" },
+                "region": { "startLine": 28, "startColumn": 5, "endLine": 30, "endColumn": 6 }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

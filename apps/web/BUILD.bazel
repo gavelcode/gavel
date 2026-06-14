@@ -1,0 +1,61 @@
+load("@gavel_tools//macros:web.bzl", "web_project")
+load("@npm//:defs.bzl", "npm_link_all_packages")
+load("@npm//apps/web:eslint/package_json.bzl", eslint_bin = "bin")
+load("@npm//apps/web:tailwindcss/package_json.bzl", tailwind_bin = "bin")
+load("@npm//apps/web:typescript/package_json.bzl", tsc_bin = "bin")
+
+exports_files([
+    "pnpm-lock.yaml",
+    "package.json",
+])
+
+npm_link_all_packages(name = "node_modules")
+
+web_project(
+    name = "web",
+    entry_point = "src/main.tsx",
+    tsconfig = "tsconfig.app.json",
+    eslint = eslint_bin,
+    tsc = tsc_bin,
+    tailwind = tailwind_bin,
+    runtime_deps = [
+        "react",
+        "react-dom",
+        "react-router-dom",
+        "recharts",
+        "@tanstack/react-query",
+        "@tanstack/react-table",
+        "class-variance-authority",
+        "clsx",
+        "lucide-react",
+        "prismjs",
+        "tailwind-merge",
+    ],
+    type_deps = [
+        "typescript",
+        "@types/node",
+        "@types/prismjs",
+        "@types/react",
+        "@types/react-dom",
+    ],
+    lint_deps = [
+        "eslint",
+        "@eslint/js",
+        "eslint-plugin-react-hooks",
+        "eslint-plugin-react-refresh",
+        "typescript-eslint",
+        "globals",
+    ],
+    css_deps = [
+        "tailwindcss",
+        "@tailwindcss/forms",
+        "autoprefixer",
+        "postcss",
+    ],
+    esbuild_config = {
+        "jsx": "automatic",
+        "loader": {".css": "empty"},
+        "define": {"import.meta.env.DEV": "false"},
+    },
+    server_visibility = ["//apps/server:__subpackages__"],
+)

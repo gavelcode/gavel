@@ -1,0 +1,61 @@
+name: gavel
+projects:
+  - name: core
+    pattern: //core/...
+    tooling:
+      - go
+    quality_gate:
+      findings:
+        max_error: 0
+      coverage:
+        min: 90
+      architecture_violations:
+        max: 0
+
+  - name: cli
+    pattern: //apps/cli/...
+    tooling:
+      - go
+    quality_gate:
+      findings:
+        max_error: 0
+      coverage:
+        min: 90
+      architecture_violations:
+        max: 0
+
+  - name: server
+    pattern: //apps/server/...
+    tooling:
+      - go
+    quality_gate:
+      findings:
+        max_error: 0
+      coverage:
+        min: 90
+      architecture_violations:
+        max: 0
+
+  - name: web
+    pattern: //apps/web/...
+    tooling:
+      - typescript
+    quality_gate:
+      findings:
+        max_error: 0
+      coverage:
+        min: 90
+      architecture_violations:
+        max: 0
+
+  - name: tools
+    pattern: //tools/...
+    tooling:
+      - go
+    quality_gate:
+      findings:
+        max_error: 0
+      coverage:
+        min: 90
+      architecture_violations:
+        max: 0

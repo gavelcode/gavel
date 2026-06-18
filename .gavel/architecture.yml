@@ -1,0 +1,28 @@
+layers:
+  domain:         ["core/domain/..."]
+  application:    ["core/application/..."]
+  infrastructure: ["core/infrastructure/..."]
+  userinterface:  ["core/userinterface/..."]
+
+rules:
+  - name: domain-imports-nothing
+    source: domain
+    deny: [application, infrastructure, userinterface]
+
+  - name: application-no-infra-no-ui
+    source: application
+    deny: [infrastructure, userinterface]
+
+  - name: infrastructure-no-ui
+    source: infrastructure
+    deny: [userinterface]
+
+  - name: userinterface-no-domain
+    source: userinterface
+    deny: [domain]
+
+  - name: userinterface-no-infra
+    source: userinterface
+    deny: [infrastructure]
+
+detect_cycles: true

@@ -1,0 +1,44 @@
+# Gavel documentation
+
+The knowledge base for what Gavel *is* and how it works. Each concept is a
+single markdown file with an OKF `type` / `title` / `description` header;
+this index maps them. Start here and follow the links.
+
+## Start here
+
+* [Quickstart](quickstart.md) — From zero to a first quality report in five minutes: install, init, judge.
+
+## Reference — look things up
+
+* [Configuration reference](configuration.md) — The `gavel.yaml` and `architecture.yml` schema: projects, quality-gate rules, DDD layer definitions.
+* [Domain model](model/domain-model.md) — The canonical aggregates, value objects, invariants, identity types, and events (Vernon IDDD strict).
+* [Application model](model/application-model.md) — The Simple CQRS commands and queries that orchestrate the aggregates.
+* [Project structure](specs/01-project-structure.md) — Product boundaries, the four-layer architecture, package rules, and the canonical directory tree.
+* [Server architecture](specs/14-server-architecture.md) · [CLI architecture](specs/15-cli-architecture.md) · [Web architecture](specs/16-web-architecture.md) — Current structure of each composition root.
+* [Language support](languages/index.md) — Languages, tools per language, how lint aspects flow to SARIF, coverage. Per-language: [Go](languages/go.md) · [Java & Kotlin](languages/java.md) · [Python](languages/python.md) · [TypeScript](languages/typescript.md) · [Rust](languages/rust.md).
+* [Implementation status](status.md) — A snapshot of what is built today across `core/`, server, and CLI.
+
+## Guides — get a task done
+
+* [CI integration](ci.md) — Running `gavel judge` in CI pipelines.
+* [Server deployment](deployment.md) — Building, configuring, and running `gavel-server`.
+* [IDE integration](ide/vscode.md) — View findings inline: [VS Code](ide/vscode.md) · [IntelliJ IDEA](ide/intellij.md) · [MCP for agents](ide/mcp.md).
+
+## Explanation — understand the why
+
+* [Baseline](baseline.md) — How Gavel separates new findings from existing debt; the pass/ratchet update rules.
+* [Spec design](specs/spec-design.md) — How to write specification documents LLMs can follow reliably.
+
+### Decision records (`design/`)
+
+* [Incrementality decision record](design/incrementality-decision.md) — Why Gavel relies on Bazel's action cache instead of rdeps/diff scoping.
+* [Scoped analysis and the hybrid scoping model](design/scoped-analysis.md) — *Superseded by the incrementality decision.*
+* [Baseline strategy, new vs existing findings](design/baseline-strategy.md) — *Partially superseded.*
+* [Gavel and rules_lint integration](design/rules-lint-integration.md) — Where `aspect_rules_lint` fits relative to the native SARIF aspects.
+* [Web and server alignment](design/web-server-alignment.md) — Aligning the frontend against core server DTOs and query ports.
+* [PostgreSQL connection pool tuning](design/postgres-pool-tuning.md) — Sizing the server's pgx pool.
+
+## Related
+
+* Lint aspects and the `web_project` build macro live in the external
+  **`gavel_tools`** Bazel module, which carries its own OKF docs bundle.

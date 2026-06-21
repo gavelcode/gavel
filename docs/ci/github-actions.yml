@@ -1,0 +1,58 @@
+# Gavel CI — GitHub Actions
+#
+# Prerequisites:
+#   1. A running Gavel server (self-hosted or managed)
+#   2. Repository secrets:
+#      - GAVEL_SERVER_URL: e.g. https://gavel.internal.example.com
+#      - GAVEL_TOKEN:      API token with "ingest" scope (gav_...)
+#
+# This workflow runs on every push and pull request to the main branch.
+# It uses Bazel to build and test, then submits analysis results to
+# the Gavel server. The pipeline fails if the quality gate verdict is "fail".
+
+name: Gavel Quality Gate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  gavel:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history needed for baseline delta
+
+      - name: Mount Bazel cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/bazel
+          key: bazel-${{ runner.os }}-${{ hashFiles('MODULE.bazel', 'go.mod') }}
+          restore-keys: |
+            bazel-${{ runner.os }}-
+
+      - name: Install Gavel CLI
+        run: |
+          # Replace with your preferred installation method:
+          #   - Download binary from GitHub releases
+          #   - Build from source: bazel build //cli/cmd/gavel
+          #   - Use a pre-built container image
+          echo "Install gavel CLI here"
+
+      - name: Run Gavel judge
+        env:
+          GAVEL_SERVER_URL: ${{ secrets.GAVEL_SERVER_URL }}
+          GAVEL_TOKEN: ${{ secrets.GAVEL_TOKEN }}
+        run: |
+          gavel judge \
+            --server="${GAVEL_SERVER_URL}" \
+            --token="${GAVEL_TOKEN}" \
+            --require-submit \
+            --commit="${GITHUB_SHA}" \
+            --branch="${GITHUB_HEAD_REF:-${GITHUB_REF_NAME}}"
+        # Exit code 1 = quality gate failed → pipeline fails
+        # --require-submit ensures submission failure also fails the pipeline

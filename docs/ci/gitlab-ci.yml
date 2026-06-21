@@ -1,0 +1,43 @@
+# Gavel CI — GitLab CI
+#
+# Prerequisites:
+#   1. A running Gavel server (self-hosted or managed)
+#   2. CI/CD variables (Settings → CI/CD → Variables):
+#      - GAVEL_SERVER_URL: e.g. https://gavel.internal.example.com (masked)
+#      - GAVEL_TOKEN:      API token with "ingest" scope (masked, gav_...)
+#
+# This pipeline runs on merge requests and pushes to main.
+# It uses Bazel to build and test, then submits analysis results to
+# the Gavel server. The pipeline fails if the quality gate verdict is "fail".
+
+stages:
+  - quality
+
+gavel:
+  stage: quality
+  image: ubuntu:24.04  # Replace with your Bazel-ready image
+  variables:
+    GIT_DEPTH: 0  # Full history needed for baseline delta
+  cache:
+    key: bazel-${CI_COMMIT_REF_SLUG}
+    paths:
+      - ~/.cache/bazel
+  before_script:
+    # Replace with your preferred installation method:
+    #   - Download binary from a package registry
+    #   - Build from source: bazel build //cli/cmd/gavel
+    #   - Use a pre-built container image with gavel included
+    - echo "Install gavel CLI here"
+  script:
+    - |
+      gavel judge \
+        --server="${GAVEL_SERVER_URL}" \
+        --token="${GAVEL_TOKEN}" \
+        --require-submit \
+        --commit="${CI_COMMIT_SHA}" \
+        --branch="${CI_MERGE_REQUEST_SOURCE_BRANCH_NAME:-${CI_COMMIT_BRANCH}}"
+    # Exit code 1 = quality gate failed → pipeline fails
+    # --require-submit ensures submission failure also fails the pipeline
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH

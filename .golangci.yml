@@ -1,0 +1,43 @@
+version: "2"
+
+linters:
+  enable:
+    - errcheck
+    - govet
+    - unused
+    - staticcheck
+    - goconst
+    - mnd
+    - varnamelen
+
+issues:
+  exclude-rules:
+    - path: tools/
+      linters:
+        - govet
+      text: stdversion
+
+linters-settings:
+  goconst:
+    min-len: 3
+    min-occurrences: 2
+  mnd:
+    ignored-numbers:
+      - "0"
+      - "1"
+      - "2"
+      - "100"
+    ignored-functions:
+      - "os.WriteFile"
+      - "os.MkdirAll"
+      - "os.OpenFile"
+      - "make"
+      - "time.Duration"
+  varnamelen:
+    min-name-length: 5
+    ignore-type-assert-ok: true
+    ignore-map-index-ok: true
+    ignore-chan-recv-ok: true
+    ignore-decls:
+      - ctx context.Context
+      - err error

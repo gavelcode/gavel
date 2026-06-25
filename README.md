@@ -1,5 +1,10 @@
 # Gavel
 
+[![CI](https://github.com/gavelcode/gavel/actions/workflows/ci.yml/badge.svg)](https://github.com/gavelcode/gavel/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/gavelcode/gavel/branch/main/graph/badge.svg)](https://codecov.io/gh/gavelcode/gavel)
+[![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
+![Bazel](https://img.shields.io/badge/bazel-bzlmod-43A047.svg)
+
 **Order in the codebase.** Quality governance for Bazel monorepos.
 
 Your monorepo has 12,000 targets across Go, Java, Python, and TypeScript.

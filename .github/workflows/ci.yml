@@ -40,3 +40,18 @@ jobs:
           files: bazel-out/_coverage/_coverage_report.dat
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: false
+
+      - name: Collect JUnit test reports
+        if: always()
+        run: |
+          mkdir -p test-results
+          find -L bazel-testlogs -name test.xml 2>/dev/null \
+            | while read -r f; do cp "$f" "test-results/$(echo "$f" | tr '/' '_')"; done
+
+      - name: Upload test results to Codecov
+        if: always()
+        uses: codecov/test-results-action@v1
+        with:
+          directory: test-results
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: false

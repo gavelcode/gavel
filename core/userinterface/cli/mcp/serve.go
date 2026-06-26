@@ -18,7 +18,7 @@ func NewCommand() *cobra.Command {
 		Short: "Start MCP server for LLM agent integration",
 		Long: `Start a Model Context Protocol (MCP) server on stdio. Exposes Gavel
 resources (configuration, projects, quality gates, baselines, architecture
-policy) and tools (judge, lint-file, coverage, validate) to MCP-compatible
+policy) and tools (judge, findings, lint-file, coverage, validate) to MCP-compatible
 LLM agents such as Claude Code, Cursor, and VS Code Copilot.
 
 Configure in Claude Code settings.json:
@@ -49,6 +49,7 @@ func NewServer(cli *executor.CLI) *mcpsdk.Server {
 
 	tools.RegisterInit(server, cli)
 	tools.RegisterJudge(server, cli)
+	tools.RegisterFindings(server, cli)
 	tools.RegisterLintFile(server, cli)
 	tools.RegisterCoverage(server, cli)
 	tools.RegisterValidate(server, cli)

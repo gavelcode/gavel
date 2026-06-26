@@ -7,6 +7,7 @@ go_library(
     srcs = [
         "arch.go",
         "coverage.go",
+        "findings.go",
         "init.go",
         "judge.go",
         "lint.go",
@@ -24,6 +25,7 @@ go_test(
     name = "tools_test",
     srcs = [
         "coverage_test.go",
+        "findings_test.go",
         "judge_test.go",
         "lint_test.go",
         "run_test.go",

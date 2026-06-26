@@ -47,8 +47,18 @@ func (fc Content) Merge(other evidence.Content) (evidence.Content, error) {
 	if fc.subtype != otherFindings.subtype {
 		return nil, fmt.Errorf("%w: cannot merge findings with subtypes %q and %q", ErrInvalidContent, fc.subtype, otherFindings.subtype)
 	}
-	merged := make([]Finding, 0, len(fc.findings)+len(otherFindings.findings))
-	merged = append(merged, fc.findings...)
-	merged = append(merged, otherFindings.findings...)
+	capacity := len(fc.findings) + len(otherFindings.findings)
+	merged := make([]Finding, 0, capacity)
+	seen := make(map[string]struct{}, capacity)
+	for _, group := range [][]Finding{fc.findings, otherFindings.findings} {
+		for _, f := range group {
+			id := f.ID().Value()
+			if _, dup := seen[id]; dup {
+				continue
+			}
+			seen[id] = struct{}{}
+			merged = append(merged, f)
+		}
+	}
 	return NewContent(fc.subtype, merged)
 }

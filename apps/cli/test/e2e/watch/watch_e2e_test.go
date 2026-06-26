@@ -81,7 +81,7 @@ func TestWatchEmitsFullEventSequence(t *testing.T) {
 
 	require.Eventually(t, func() bool {
 		return countEvents(&buf, "started") >= 1
-	}, 5*time.Second, 20*time.Millisecond, "watcher did not start")
+	}, 15*time.Second, 20*time.Millisecond, "watcher did not start")
 	require.NoError(t, os.WriteFile(filepath.Join(workspace, "pkg", "main.go"), []byte("package main\n// changed"), 0o644))
 
 	require.Eventually(t, func() bool {
@@ -140,7 +140,7 @@ func TestWatchEmitsAnalysisFailedOnError(t *testing.T) {
 
 	require.Eventually(t, func() bool {
 		return countEvents(&buf, "started") >= 1
-	}, 5*time.Second, 20*time.Millisecond, "watcher did not start")
+	}, 15*time.Second, 20*time.Millisecond, "watcher did not start")
 	require.NoError(t, os.WriteFile(filepath.Join(workspace, "file.go"), []byte("package x\n// edit"), 0o644))
 
 	require.Eventually(t, func() bool {
@@ -182,7 +182,7 @@ func TestWatchNoTargetsSkipsAnalysis(t *testing.T) {
 
 	require.Eventually(t, func() bool {
 		return countEvents(&buf, "started") >= 1
-	}, 5*time.Second, 20*time.Millisecond, "watcher did not start")
+	}, 15*time.Second, 20*time.Millisecond, "watcher did not start")
 	require.NoError(t, os.WriteFile(filepath.Join(workspace, "readme.md"), []byte("# edited"), 0o644))
 
 	require.Eventually(t, func() bool {

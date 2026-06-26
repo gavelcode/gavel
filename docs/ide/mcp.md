@@ -62,6 +62,7 @@ args are identical.
 | Tool | Description |
 |------|-------------|
 | `gavel_judge` | Run static analyzers and evaluate the quality gate |
+| `gavel_findings` | Discover all findings across a project, with by-rule summary and rule/severity filters |
 | `gavel_lint_file` | Lint findings for a specific file |
 | `gavel_coverage` | Extract coverage percentages |
 | `gavel_validate` | Check workspace structural setup |

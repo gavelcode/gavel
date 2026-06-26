@@ -89,3 +89,65 @@ func TestFormatCoverage_WithTree_FilterStillUsesFileBreakdown(t *testing.T) {
 	assert.Contains(t, out, "a.go")
 	assert.Contains(t, out, "uncovered: 3-4")
 }
+
+const packagesJSON = `{"projects":[{"name":"core","verdict":"fail","coverage_percent":60.0,
+	"coverage_by_file":[
+		{"file_path":"core/a/x.go","covered_lines":1,"total_lines":2,"percent":50.0,"covered":[1],"uncovered":[2]},
+		{"file_path":"core/a/sub/y.go","covered_lines":2,"total_lines":2,"percent":100.0,"covered":[1,2],"uncovered":[]},
+		{"file_path":"core/b/z.go","covered_lines":1,"total_lines":2,"percent":50.0,"covered":[1],"uncovered":[2]}
+	]}]}`
+
+func TestValidateCoverageInput_PackagesAndFiles_Errors(t *testing.T) {
+	err := validateCoverageInput(CoverageInput{
+		Files:    []string{"core/a/x.go"},
+		Packages: []string{"core/a/..."},
+	})
+
+	require.Error(t, err)
+}
+
+func TestValidateCoverageInput_OnlyOne_OK(t *testing.T) {
+	require.NoError(t, validateCoverageInput(CoverageInput{Files: []string{"core/a/x.go"}}))
+	require.NoError(t, validateCoverageInput(CoverageInput{Packages: []string{"core/a/..."}}))
+	require.NoError(t, validateCoverageInput(CoverageInput{}))
+}
+
+func TestResolvePackages_Recursive_IncludesSubpackages(t *testing.T) {
+	var resp judgeResponse
+	require.NoError(t, json.Unmarshal([]byte(packagesJSON), &resp))
+
+	files, err := resolvePackages(resp, []string{"core/a/..."})
+
+	require.NoError(t, err)
+	assert.Equal(t, []string{"core/a/sub/y.go", "core/a/x.go"}, files)
+}
+
+func TestResolvePackages_ExactPackage_ExcludesSubpackages(t *testing.T) {
+	var resp judgeResponse
+	require.NoError(t, json.Unmarshal([]byte(packagesJSON), &resp))
+
+	files, err := resolvePackages(resp, []string{"core/a"})
+
+	require.NoError(t, err)
+	assert.Equal(t, []string{"core/a/x.go"}, files)
+}
+
+func TestResolvePackages_NoMatch_Errors(t *testing.T) {
+	var resp judgeResponse
+	require.NoError(t, json.Unmarshal([]byte(packagesJSON), &resp))
+
+	_, err := resolvePackages(resp, []string{"core/nope/..."})
+
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "core/nope/...")
+}
+
+func TestResolvePackages_Deduplicates(t *testing.T) {
+	var resp judgeResponse
+	require.NoError(t, json.Unmarshal([]byte(packagesJSON), &resp))
+
+	files, err := resolvePackages(resp, []string{"core/a/...", "core/a"})
+
+	require.NoError(t, err)
+	assert.Equal(t, []string{"core/a/sub/y.go", "core/a/x.go"}, files)
+}

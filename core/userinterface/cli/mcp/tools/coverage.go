@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"path"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -13,9 +15,9 @@ import (
 )
 
 const (
-	verdictPass   = "PASS"
-	verdictFail   = "FAIL"
-	statusNew     = "new"
+	verdictPass    = "PASS"
+	verdictFail    = "FAIL"
+	statusNew      = "new"
 	statusNewLabel = "NEW"
 )
 
@@ -23,6 +25,7 @@ type CoverageInput struct {
 	Gavelspace string   `json:"gavelspace,omitempty" jsonschema:"Absolute path to a gavelspace directory (omit to use the directory where Claude Code is running)"`
 	Project    string   `json:"project,omitempty"    jsonschema:"Project name (analyzes all projects if omitted)"`
 	Files      []string `json:"files,omitempty"      jsonschema:"Filter the per-file breakdown to these file paths (relative to workspace root). When set, uncovered line ranges are listed for each file."`
+	Packages   []string `json:"packages,omitempty"   jsonschema:"Filter the per-file breakdown to whole package trees (relative to workspace root). A trailing '/...' matches the package and its subpackages; without it, only files directly in that package. Mutually exclusive with 'files'. Same output as 'files', with uncovered line ranges."`
 }
 
 func RegisterCoverage(server *mcp.Server, cli *executor.CLI) {
@@ -39,6 +42,10 @@ func RegisterCoverage(server *mcp.Server, cli *executor.CLI) {
 }
 
 func runCoverage(ctx context.Context, cli *executor.CLI, input CoverageInput) (string, error) {
+	if err := validateCoverageInput(input); err != nil {
+		return "", err
+	}
+
 	args := []string{"judge"}
 	if input.Project != "" {
 		args = append(args, "--project", input.Project)
@@ -54,7 +61,60 @@ func runCoverage(ctx context.Context, cli *executor.CLI, input CoverageInput) (s
 		return "", fmt.Errorf("parse judge output: %w", err)
 	}
 
-	return formatCoverage(resp, input.Files), nil
+	files := input.Files
+	if len(input.Packages) > 0 {
+		files, err = resolvePackages(resp, input.Packages)
+		if err != nil {
+			return "", err
+		}
+	}
+
+	return formatCoverage(resp, files), nil
+}
+
+func validateCoverageInput(input CoverageInput) error {
+	if len(input.Packages) > 0 && len(input.Files) > 0 {
+		return fmt.Errorf("'packages' and 'files' are mutually exclusive; pass only one")
+	}
+	return nil
+}
+
+func resolvePackages(resp judgeResponse, packages []string) ([]string, error) {
+	var coveredPaths []string
+	for _, proj := range resp.Projects {
+		for _, fc := range proj.CoverageByFile {
+			coveredPaths = append(coveredPaths, fc.FilePath)
+		}
+	}
+
+	matched := make(map[string]bool)
+	for _, pkg := range packages {
+		var found bool
+		for _, filePath := range coveredPaths {
+			if packageMatches(pkg, filePath) {
+				matched[filePath] = true
+				found = true
+			}
+		}
+		if !found {
+			return nil, fmt.Errorf("no coverage data for package %q (typo, no production code, or outside the analyzed project?)", pkg)
+		}
+	}
+
+	files := make([]string, 0, len(matched))
+	for filePath := range matched {
+		files = append(files, filePath)
+	}
+	sort.Strings(files)
+	return files, nil
+}
+
+func packageMatches(pkg, filePath string) bool {
+	if strings.HasSuffix(pkg, "/...") {
+		base := strings.TrimSuffix(pkg, "...")
+		return strings.HasPrefix(filePath, base)
+	}
+	return path.Dir(filePath) == pkg
 }
 
 func formatCoverage(resp judgeResponse, files []string) string {

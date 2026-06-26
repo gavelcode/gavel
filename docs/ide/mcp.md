@@ -64,7 +64,7 @@ args are identical.
 | `gavel_judge` | Run static analyzers and evaluate the quality gate |
 | `gavel_findings` | Discover all findings across a project, with by-rule summary and rule/severity filters |
 | `gavel_lint_file` | Lint findings for a specific file |
-| `gavel_coverage` | Extract coverage percentages |
+| `gavel_coverage` | Extract coverage percentages, with per-file or per-package (`pkg/...`) uncovered-line breakdown |
 | `gavel_validate` | Check workspace structural setup |
 | `gavel_trends` | Show analysis history (coverage and findings over time) |
 | `gavel_arch` | Report architecture (layer) violations for a project |

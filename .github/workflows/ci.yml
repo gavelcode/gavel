@@ -29,10 +29,7 @@ jobs:
         run: bazel build //...
 
       - name: Test
-        # Full suite except the gavel-watch e2e: it relies on filesystem event
-        # timing (inotify on Linux vs fsevents locally) and is env-flaky on CI.
-        # The watch logic is covered by core unit tests; run the e2e locally.
-        run: bazel test --flaky_test_attempts=3 -- //... -//apps/cli/test/e2e/watch/...
+        run: bazel test //... --flaky_test_attempts=3
 
       - name: Coverage
         run: bazel coverage //core/... --combined_report=lcov || true

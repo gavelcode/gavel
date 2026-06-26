@@ -48,8 +48,6 @@ func Run(ctx context.Context, stdout io.Writer, opts Options, handler *analyzeta
 	bazelVersion := detectBazelVersion(ctx, opts.Workspace)
 
 	emit := NewEmitter(stdout)
-	_ = emit.Started(opts.Workspace, bazelVersion)
-	defer func() { _ = emit.Stopped("signal") }()
 
 	log := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelWarn}))
 
@@ -76,6 +74,9 @@ func Run(ctx context.Context, stdout io.Writer, opts Options, handler *analyzeta
 	if err != nil {
 		return err
 	}
+
+	watcher.onStart = func() { _ = emit.Started(opts.Workspace, bazelVersion) }
+	defer func() { _ = emit.Stopped("signal") }()
 	return watcher.Run(ctx)
 }
 

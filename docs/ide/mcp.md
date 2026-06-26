@@ -66,6 +66,8 @@ args are identical.
 | `gavel_lint_file` | Lint findings for a specific file |
 | `gavel_coverage` | Extract coverage percentages |
 | `gavel_validate` | Check workspace structural setup |
+| `gavel_trends` | Show analysis history (coverage and findings over time) |
+| `gavel_arch` | Report architecture (layer) violations for a project |
 | `gavel_init` | Initialize Gavel in a workspace |
 
 ## Exposed resources

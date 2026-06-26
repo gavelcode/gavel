@@ -18,7 +18,9 @@ import (
 
 const (
 	detectWorkspaceTimeout = 30 * time.Second
-	detectVersionTimeout   = 30 * time.Second
+	// Version detection is best-effort metadata for the started event; cap it
+	// low so a cold/contended bazel never delays the watcher from registering.
+	detectVersionTimeout = 5 * time.Second
 )
 
 func NewCommand(handler *analyzetarget.Handler, resolver analyzetarget.TargetResolver) *cobra.Command {
@@ -45,8 +47,6 @@ func Run(ctx context.Context, stdout io.Writer, opts Options, handler *analyzeta
 		}
 		opts.Workspace = ws
 	}
-	bazelVersion := detectBazelVersion(ctx, opts.Workspace)
-
 	emit := NewEmitter(stdout)
 
 	log := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelWarn}))
@@ -75,7 +75,9 @@ func Run(ctx context.Context, stdout io.Writer, opts Options, handler *analyzeta
 		return err
 	}
 
-	watcher.onStart = func() { _ = emit.Started(opts.Workspace, bazelVersion) }
+	watcher.onStart = func() {
+		_ = emit.Started(opts.Workspace, detectBazelVersion(ctx, opts.Workspace))
+	}
 	defer func() { _ = emit.Stopped("signal") }()
 	return watcher.Run(ctx)
 }

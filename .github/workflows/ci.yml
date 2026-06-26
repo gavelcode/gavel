@@ -29,7 +29,7 @@ jobs:
         run: bazel build //...
 
       - name: Test
-        run: bazel test //... --flaky_test_attempts=3
+        run: bazel test //...
 
       - name: Coverage
         run: bazel coverage //core/... --combined_report=lcov || true

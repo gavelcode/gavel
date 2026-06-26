@@ -93,7 +93,8 @@ func TestListTools(t *testing.T) {
 	assert.Contains(t, names, "gavel_init")
 	assert.Contains(t, names, "gavel_trends")
 	assert.Contains(t, names, "gavel_arch")
-	assert.Len(t, result.Tools, 7)
+	assert.Contains(t, names, "gavel_findings")
+	assert.Len(t, result.Tools, 8)
 }
 
 func TestListResources(t *testing.T) {

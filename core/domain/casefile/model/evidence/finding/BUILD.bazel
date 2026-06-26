@@ -20,12 +20,14 @@ go_library(
 go_test(
     name = "finding_test",
     srcs = [
+        "content_test.go",
         "finding_test.go",
         "fingerprint_id_test.go",
         "severity_test.go",
     ],
     deps = [
         ":finding",
+        "//core/domain/casefile/model/evidence",
         "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//require",
     ],

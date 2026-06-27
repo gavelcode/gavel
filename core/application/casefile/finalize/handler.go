@@ -241,12 +241,30 @@ func computeDelta(project projectmodel.Project, branch string, fingerprints []st
 		NewFingerprints: classified.NewIdentifiers(),
 		HasPrevious:     baseline.HasPrevious(),
 
+		PreviousCoveragePercent: baseline.CoveragePercent(),
+		PreviousFileCoverage:    toEvidenceFileCoverage(baseline.FileCoverage()),
+
 		NewViolationsCount:      archDelta.NewCount,
 		FixedViolationsCount:    archDelta.FixedCount,
 		ExistingViolationsCount: archDelta.ExistingCount,
 		NewViolationIDs:         archDelta.NewIDs,
 		HasArchPrevious:         archDelta.NewCount > 0 || archDelta.FixedCount > 0 || archDelta.ExistingCount > 0,
 	}
+}
+
+func toEvidenceFileCoverage(entries []projectmodel.FileCoverageEntry) []evidencedto.FileCoverage {
+	if len(entries) == 0 {
+		return nil
+	}
+	out := make([]evidencedto.FileCoverage, 0, len(entries))
+	for _, e := range entries {
+		out = append(out, evidencedto.FileCoverage{
+			FilePath:  e.FilePath(),
+			Covered:   e.Covered(),
+			Uncovered: e.Uncovered(),
+		})
+	}
+	return out
 }
 
 func updateBaseline(ctx context.Context, projects projectservice.ProjectRepository, project projectmodel.Project, branch, outcomeStr string, fingerprints, archIDs []string, quick bool, coveragePercent float64, fileCoverage []projectmodel.FileCoverageEntry, log *slog.Logger) {

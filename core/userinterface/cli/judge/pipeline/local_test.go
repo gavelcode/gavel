@@ -160,6 +160,40 @@ func TestRunLocal_WithCoverage(t *testing.T) {
 	assert.Len(t, result.CoverageByFile, 1)
 }
 
+func TestRunLocal_CoverageDiffAgainstBaseline(t *testing.T) {
+	deps, projectRepo := newTestDeps(t)
+
+	project, err := projectmodel.NewProject("backend", "backend", "//backend/...")
+	require.NoError(t, err)
+	prevPct := 80.0
+	entry, err := projectmodel.NewFileCoverageEntry("pkg/a.go", []int{1, 2}, []int{3, 4})
+	require.NoError(t, err)
+	project.UpdateBaseline("main", nil, nil, &prevPct, []projectmodel.FileCoverageEntry{entry})
+	require.NoError(t, projectRepo.Save(context.Background(), project))
+
+	collected := collectevidence.Result{
+		Evidences:  []evidencedto.Evidence{minimalEvidence()},
+		CovPercent: 90.0,
+		CoverageByFile: []evidencedto.FileCoverage{
+			{FilePath: "pkg/a.go", Covered: []int{1, 2, 3}, Uncovered: []int{4}},
+		},
+	}
+
+	result, err := RunLocal(
+		context.Background(), deps, "/workspace",
+		collected, project.ID().String(), "backend", "abc123", "main",
+		time.Now(), Options{Quick: false},
+	)
+	require.NoError(t, err)
+
+	assert.True(t, result.Delta.HasPrevious)
+	assert.InDelta(t, 10.0, result.Delta.CoverageDelta, 0.001)
+	require.Len(t, result.PreviousCoverageByFile, 1)
+	assert.Equal(t, "pkg/a.go", result.PreviousCoverageByFile[0].FilePath)
+	assert.Equal(t, []int{1, 2}, result.PreviousCoverageByFile[0].Covered)
+	assert.Equal(t, []int{3, 4}, result.PreviousCoverageByFile[0].Uncovered)
+}
+
 func TestCollectEvidenceFiles_WithSARIF(t *testing.T) {
 	collected := collectevidence.Result{
 		RawSARIF: []collectevidence.RawFile{

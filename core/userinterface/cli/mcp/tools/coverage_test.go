@@ -142,6 +142,39 @@ func TestResolvePackages_NoMatch_Errors(t *testing.T) {
 	assert.Contains(t, err.Error(), "core/nope/...")
 }
 
+const coverageDiffJSON = `{"projects":[{"name":"core","verdict":"pass","coverage_percent":80.0,
+	"delta":{"has_previous":true,"new_count":0,"fixed_count":0},
+	"coverage_by_file":[
+		{"file_path":"a.go","covered_lines":4,"total_lines":4,"percent":100.0,"covered":[1,2,3,4],"uncovered":[],"previous_percent":50.0,"coverage_delta":50.0},
+		{"file_path":"b.go","covered_lines":1,"total_lines":2,"percent":50.0,"covered":[1],"uncovered":[2],"is_new":true},
+		{"file_path":"c.go","covered_lines":2,"total_lines":2,"percent":100.0,"covered":[1,2],"uncovered":[],"previous_percent":100.0,"coverage_delta":0.0}
+	]}]}`
+
+func TestFormatCoverageDiff_ShowsChangedAndNewOnly(t *testing.T) {
+	var resp judgeResponse
+	require.NoError(t, json.Unmarshal([]byte(coverageDiffJSON), &resp))
+
+	out := formatCoverageDiff(resp)
+
+	assert.Contains(t, out, "a.go")
+	assert.Contains(t, out, "+50.0%")
+	assert.Contains(t, out, "from baseline 50.0%")
+	assert.Contains(t, out, "b.go")
+	assert.Contains(t, out, "(new)")
+	assert.False(t, strings.Contains(out, "c.go"), "unchanged file must be omitted")
+}
+
+func TestFormatCoverageDiff_NoPreviousBaseline(t *testing.T) {
+	const firstRunJSON = `{"projects":[{"name":"core","verdict":"pass","coverage_percent":80.0,
+		"coverage_by_file":[{"file_path":"a.go","covered_lines":2,"total_lines":2,"percent":100.0,"covered":[1,2],"uncovered":[]}]}]}`
+	var resp judgeResponse
+	require.NoError(t, json.Unmarshal([]byte(firstRunJSON), &resp))
+
+	out := formatCoverageDiff(resp)
+
+	assert.Contains(t, out, "No previous baseline")
+}
+
 func TestResolvePackages_Deduplicates(t *testing.T) {
 	var resp judgeResponse
 	require.NoError(t, json.Unmarshal([]byte(packagesJSON), &resp))

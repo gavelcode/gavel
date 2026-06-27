@@ -26,6 +26,7 @@ type CoverageInput struct {
 	Project    string   `json:"project,omitempty"    jsonschema:"Project name (analyzes all projects if omitted)"`
 	Files      []string `json:"files,omitempty"      jsonschema:"Filter the per-file breakdown to these file paths (relative to workspace root). When set, uncovered line ranges are listed for each file."`
 	Packages   []string `json:"packages,omitempty"   jsonschema:"Filter the per-file breakdown to whole package trees (relative to workspace root). A trailing '/...' matches the package and its subpackages; without it, only files directly in that package. Mutually exclusive with 'files'. Same output as 'files', with uncovered line ranges."`
+	Diff       bool     `json:"diff,omitempty"       jsonschema:"Show per-file coverage change since the last green baseline (only files whose coverage moved, plus files with no baseline marked '(new)'). Reports 'No previous baseline' on the first run."`
 }
 
 func RegisterCoverage(server *mcp.Server, cli *executor.CLI) {
@@ -61,6 +62,10 @@ func runCoverage(ctx context.Context, cli *executor.CLI, input CoverageInput) (s
 		return "", fmt.Errorf("parse judge output: %w", err)
 	}
 
+	if input.Diff {
+		return formatCoverageDiff(resp), nil
+	}
+
 	files := input.Files
 	if len(input.Packages) > 0 {
 		files, err = resolvePackages(resp, input.Packages)
@@ -70,6 +75,40 @@ func runCoverage(ctx context.Context, cli *executor.CLI, input CoverageInput) (s
 	}
 
 	return formatCoverage(resp, files), nil
+}
+
+func formatCoverageDiff(resp judgeResponse) string {
+	var builder strings.Builder
+	for _, proj := range resp.Projects {
+		fmt.Fprintf(&builder, "## %s\n", proj.Name)
+		if proj.CoveragePercent != nil {
+			fmt.Fprintf(&builder, "Coverage: %.1f%%\n", *proj.CoveragePercent)
+		}
+		if proj.Delta == nil || !proj.Delta.HasPrevious {
+			builder.WriteString("No previous baseline to diff against.\n\n")
+			continue
+		}
+		writeCoverageDiff(&builder, proj.CoverageByFile)
+		builder.WriteString("\n")
+	}
+	return builder.String()
+}
+
+func writeCoverageDiff(builder *strings.Builder, byFile []judgeFileCoverage) {
+	var changed bool
+	for _, fc := range byFile {
+		switch {
+		case fc.IsNew:
+			fmt.Fprintf(builder, "  %s — %.1f%% (new)\n", fc.FilePath, fc.Percent)
+			changed = true
+		case fc.CoverageDelta != nil && *fc.CoverageDelta != 0 && fc.PreviousPercent != nil:
+			fmt.Fprintf(builder, "  %s — %.1f%% (%+.1f%% from baseline %.1f%%)\n", fc.FilePath, fc.Percent, *fc.CoverageDelta, *fc.PreviousPercent)
+			changed = true
+		}
+	}
+	if !changed {
+		builder.WriteString("No coverage changes since baseline.\n")
+	}
 }
 
 func validateCoverageInput(input CoverageInput) error {

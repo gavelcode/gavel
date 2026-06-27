@@ -19,6 +19,7 @@ type Result struct {
 	CoverageSkipped        bool
 	NewCodeCoveragePercent float64
 	CoverageByFile         []evidencedto.FileCoverage
+	PreviousCoverageByFile []evidencedto.FileCoverage
 	Rulings                []corejudge.RulingView
 	Findings               []evidencedto.Finding
 	Violations             []evidencedto.Violation

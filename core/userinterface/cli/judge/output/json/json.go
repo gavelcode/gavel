@@ -6,6 +6,7 @@ import (
 	"math"
 	"time"
 
+	"github.com/usegavel/gavel/core/application/casefile/evidencedto"
 	corejudge "github.com/usegavel/gavel/core/application/casefile/judge"
 	"github.com/usegavel/gavel/core/userinterface/cli/judge/output/tree"
 	"github.com/usegavel/gavel/core/userinterface/cli/judge/pipeline"
@@ -50,27 +51,30 @@ type deltaDTO struct {
 }
 
 type fileCoverageDTO struct {
-	FilePath     string  `json:"file_path"`
-	CoveredLines int     `json:"covered_lines"`
-	TotalLines   int     `json:"total_lines"`
-	Percent      float64 `json:"percent"`
-	Covered      []int   `json:"covered"`
-	Uncovered    []int   `json:"uncovered"`
+	FilePath        string   `json:"file_path"`
+	CoveredLines    int      `json:"covered_lines"`
+	TotalLines      int      `json:"total_lines"`
+	Percent         float64  `json:"percent"`
+	Covered         []int    `json:"covered"`
+	Uncovered       []int    `json:"uncovered"`
+	PreviousPercent *float64 `json:"previous_percent,omitempty"`
+	CoverageDelta   *float64 `json:"coverage_delta,omitempty"`
+	IsNew           bool     `json:"is_new,omitempty"`
 }
 
 type projectDTO struct {
-	Name                   string            `json:"name"`
-	Verdict                string            `json:"verdict"`
-	CommitSHA              string            `json:"commit_sha,omitempty"`
-	Branch                 string            `json:"branch,omitempty"`
-	StartedAt              string            `json:"started_at,omitempty"`
-	FindingsCount          int               `json:"findings_count"`
-	ViolationsCount        int               `json:"violations_count"`
-	CoveragePercent        *float64          `json:"coverage_percent,omitempty"`
-	NewCodeCoveragePercent float64           `json:"new_code_coverage_percent"`
-	CoverageByFile         []fileCoverageDTO `json:"coverage_by_file,omitempty"`
-	Rulings                []rulingDTO       `json:"rulings"`
-	Findings               []findingDTO      `json:"findings"`
+	Name                   string             `json:"name"`
+	Verdict                string             `json:"verdict"`
+	CommitSHA              string             `json:"commit_sha,omitempty"`
+	Branch                 string             `json:"branch,omitempty"`
+	StartedAt              string             `json:"started_at,omitempty"`
+	FindingsCount          int                `json:"findings_count"`
+	ViolationsCount        int                `json:"violations_count"`
+	CoveragePercent        *float64           `json:"coverage_percent,omitempty"`
+	NewCodeCoveragePercent float64            `json:"new_code_coverage_percent"`
+	CoverageByFile         []fileCoverageDTO  `json:"coverage_by_file,omitempty"`
+	Rulings                []rulingDTO        `json:"rulings"`
+	Findings               []findingDTO       `json:"findings"`
 	CoverageTree           *tree.CoverageNode `json:"coverage_tree,omitempty"`
 	FindingsTree           *tree.FindingsNode `json:"findings_tree,omitempty"`
 	Violations             []violationDTO     `json:"violations,omitempty"`
@@ -136,6 +140,7 @@ func toFileCoverageDTOs(result pipeline.Result) []fileCoverageDTO {
 	if result.CoverageSkipped {
 		return nil
 	}
+	previous := previousPercents(result.PreviousCoverageByFile)
 	out := make([]fileCoverageDTO, 0, len(result.CoverageByFile))
 	for _, fileCov := range result.CoverageByFile {
 		covered := len(fileCov.Covered)
@@ -144,14 +149,44 @@ func toFileCoverageDTOs(result pipeline.Result) []fileCoverageDTO {
 		if total > 0 {
 			percent = roundPercent(float64(covered) / float64(total) * percentScale)
 		}
-		out = append(out, fileCoverageDTO{
+		dto := fileCoverageDTO{
 			FilePath:     fileCov.FilePath,
 			CoveredLines: covered,
 			TotalLines:   total,
 			Percent:      percent,
 			Covered:      fileCov.Covered,
 			Uncovered:    fileCov.Uncovered,
-		})
+		}
+		applyCoverageDiff(&dto, result.Delta.HasPrevious, previous, percent)
+		out = append(out, dto)
+	}
+	return out
+}
+
+func applyCoverageDiff(dto *fileCoverageDTO, hasPrevious bool, previous map[string]float64, percent float64) {
+	if !hasPrevious {
+		return
+	}
+	prev, ok := previous[dto.FilePath]
+	if !ok {
+		dto.IsNew = true
+		return
+	}
+	delta := roundPercent(percent - prev)
+	dto.PreviousPercent = &prev
+	dto.CoverageDelta = &delta
+}
+
+func previousPercents(entries []evidencedto.FileCoverage) map[string]float64 {
+	out := make(map[string]float64, len(entries))
+	for _, e := range entries {
+		covered := len(e.Covered)
+		total := covered + len(e.Uncovered)
+		var percent float64
+		if total > 0 {
+			percent = roundPercent(float64(covered) / float64(total) * percentScale)
+		}
+		out[e.FilePath] = percent
 	}
 	return out
 }

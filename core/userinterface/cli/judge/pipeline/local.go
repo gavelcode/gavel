@@ -50,6 +50,13 @@ func RunLocal(
 	return result, nil
 }
 
+func coverageDelta(current float64, previous *float64, quick bool) float64 {
+	if quick || previous == nil {
+		return 0
+	}
+	return current - *previous
+}
+
 func mapSubmitResult(res submit.Result, collected collectevidence.Result, projectName string, opts Options) Result {
 	return Result{
 		Name:                   projectName,
@@ -60,6 +67,7 @@ func mapSubmitResult(res submit.Result, collected collectevidence.Result, projec
 		CoverageSkipped:        opts.Quick,
 		NewCodeCoveragePercent: collected.NCCPercent,
 		CoverageByFile:         collected.CoverageByFile,
+		PreviousCoverageByFile: res.Delta.PreviousFileCoverage,
 		Rulings:                res.Verdict.Rulings,
 		Findings:               collected.Findings,
 		Violations:             collected.Violations,
@@ -69,6 +77,7 @@ func mapSubmitResult(res submit.Result, collected collectevidence.Result, projec
 			ExistingCount:           res.Delta.ExistingCount,
 			NewFingerprints:         res.Delta.NewFingerprints,
 			HasPrevious:             res.Delta.HasPrevious,
+			CoverageDelta:           coverageDelta(collected.CovPercent, res.Delta.PreviousCoveragePercent, opts.Quick),
 			NewViolationsCount:      res.Delta.NewViolationsCount,
 			FixedViolationsCount:    res.Delta.FixedViolationsCount,
 			ExistingViolationsCount: res.Delta.ExistingViolationsCount,

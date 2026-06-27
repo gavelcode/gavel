@@ -80,6 +80,75 @@ func TestWrite_IncludesCoverageByFile(t *testing.T) {
 	assert.Equal(t, []any{float64(3), float64(4)}, file["uncovered"])
 }
 
+func TestWrite_IncludesPerFileCoverageDiff(t *testing.T) {
+	var buf bytes.Buffer
+	results := []pipeline.Result{
+		{
+			Name:            "backend",
+			Verdict:         "pass",
+			CoveragePercent: 100.0,
+			CoverageByFile: []evidencedto.FileCoverage{
+				{FilePath: "main.go", Covered: []int{1, 2, 3, 4}, Uncovered: []int{}},
+				{FilePath: "new.go", Covered: []int{1}, Uncovered: []int{2}},
+			},
+			PreviousCoverageByFile: []evidencedto.FileCoverage{
+				{FilePath: "main.go", Covered: []int{1, 2}, Uncovered: []int{3, 4}},
+			},
+			Delta: pipeline.Delta{HasPrevious: true},
+		},
+	}
+
+	err := json.Write(&buf, results)
+
+	require.NoError(t, err)
+	var got map[string]any
+	require.NoError(t, encjson.Unmarshal(buf.Bytes(), &got))
+	first := got["projects"].([]any)[0].(map[string]any)
+	byPath := map[string]map[string]any{}
+	for _, f := range first["coverage_by_file"].([]any) {
+		m := f.(map[string]any)
+		byPath[m["file_path"].(string)] = m
+	}
+
+	main := byPath["main.go"]
+	assert.Equal(t, 50.0, main["previous_percent"])
+	assert.Equal(t, 50.0, main["coverage_delta"])
+	_, mainIsNew := main["is_new"]
+	assert.False(t, mainIsNew, "unchanged-baseline file is not new")
+
+	newFile := byPath["new.go"]
+	assert.Equal(t, true, newFile["is_new"])
+	_, hasPrev := newFile["previous_percent"]
+	assert.False(t, hasPrev, "new file has no previous_percent")
+}
+
+func TestWrite_OmitsPerFileDiffOnFirstRun(t *testing.T) {
+	var buf bytes.Buffer
+	results := []pipeline.Result{
+		{
+			Name:            "backend",
+			Verdict:         "pass",
+			CoveragePercent: 100.0,
+			CoverageByFile: []evidencedto.FileCoverage{
+				{FilePath: "main.go", Covered: []int{1, 2}, Uncovered: []int{}},
+			},
+			Delta: pipeline.Delta{HasPrevious: false},
+		},
+	}
+
+	err := json.Write(&buf, results)
+
+	require.NoError(t, err)
+	var got map[string]any
+	require.NoError(t, encjson.Unmarshal(buf.Bytes(), &got))
+	first := got["projects"].([]any)[0].(map[string]any)
+	file := first["coverage_by_file"].([]any)[0].(map[string]any)
+	_, hasPrev := file["previous_percent"]
+	assert.False(t, hasPrev, "first run: no previous_percent")
+	_, isNew := file["is_new"]
+	assert.False(t, isNew, "first run: files are not flagged new")
+}
+
 func TestWrite_OmitsCoverageByFileWhenSkipped(t *testing.T) {
 	var buf bytes.Buffer
 	results := []pipeline.Result{

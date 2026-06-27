@@ -66,17 +66,17 @@ type judgeProject struct {
 	CoverageTree    *judgeCoverageNode  `json:"coverage_tree,omitempty"`
 	FindingsTree    *judgeFindingsNode  `json:"findings_tree,omitempty"`
 	Rulings         []judgeRuling       `json:"rulings"`
-	Violations      []judgeViolation   `json:"violations,omitempty"`
+	Violations      []judgeViolation    `json:"violations,omitempty"`
 	Delta           *judgeDelta         `json:"delta,omitempty"`
 }
 
 type judgeCoverageNode struct {
-	Path         string               `json:"path"`
-	CoveredLines int                  `json:"covered_lines"`
-	TotalLines   int                  `json:"total_lines"`
-	Percent      float64              `json:"percent"`
-	Children     []judgeCoverageNode   `json:"children,omitempty"`
-	Files        []judgeCoverageFile   `json:"files,omitempty"`
+	Path         string              `json:"path"`
+	CoveredLines int                 `json:"covered_lines"`
+	TotalLines   int                 `json:"total_lines"`
+	Percent      float64             `json:"percent"`
+	Children     []judgeCoverageNode `json:"children,omitempty"`
+	Files        []judgeCoverageFile `json:"files,omitempty"`
 }
 
 type judgeCoverageFile struct {
@@ -90,8 +90,8 @@ type judgeFindingsNode struct {
 	Path       string              `json:"path"`
 	Count      int                 `json:"count"`
 	BySeverity map[string]int      `json:"by_severity,omitempty"`
-	Children   []judgeFindingsNode  `json:"children,omitempty"`
-	Files      []judgeFindingsFile  `json:"files,omitempty"`
+	Children   []judgeFindingsNode `json:"children,omitempty"`
+	Files      []judgeFindingsFile `json:"files,omitempty"`
 }
 
 type judgeFindingsFile struct {
@@ -101,12 +101,15 @@ type judgeFindingsFile struct {
 }
 
 type judgeFileCoverage struct {
-	FilePath     string  `json:"file_path"`
-	CoveredLines int     `json:"covered_lines"`
-	TotalLines   int     `json:"total_lines"`
-	Percent      float64 `json:"percent"`
-	Covered      []int   `json:"covered"`
-	Uncovered    []int   `json:"uncovered"`
+	FilePath        string   `json:"file_path"`
+	CoveredLines    int      `json:"covered_lines"`
+	TotalLines      int      `json:"total_lines"`
+	Percent         float64  `json:"percent"`
+	Covered         []int    `json:"covered"`
+	Uncovered       []int    `json:"uncovered"`
+	PreviousPercent *float64 `json:"previous_percent,omitempty"`
+	CoverageDelta   *float64 `json:"coverage_delta,omitempty"`
+	IsNew           bool     `json:"is_new,omitempty"`
 }
 
 type judgeViolation struct {

@@ -59,6 +59,37 @@ func TestExecuteDeltaComputedAgainstBaseline(t *testing.T) {
 	assert.True(t, result.Delta.NewFingerprints["fp-new"])
 }
 
+func TestExecuteSurfacesPreviousCoverageFromBaseline(t *testing.T) {
+	cfRepo := newFakeCaseFileRepo()
+	projRepo := newFakeProjectRepo()
+
+	project := mustProject(t, "test", "test", "//test/...")
+	prevPct := 80.0
+	entry, err := projectmodel.NewFileCoverageEntry("a.go", []int{1, 2}, []int{3, 4})
+	require.NoError(t, err)
+	project.UpdateBaseline("main", []string{"fp-1"}, nil, &prevPct, []projectmodel.FileCoverageEntry{entry})
+	projRepo.seed(project)
+
+	caseF := mustCaseFileWithFindings(t, project.ID(), "main", []string{"fp-1"})
+	require.NoError(t, cfRepo.Save(context.Background(), caseF))
+
+	handler := newHandler(cfRepo, projRepo)
+	cmd, err := finalize.NewCommand(caseF.ID().String(),
+		finalize.WithFingerprints([]string{"fp-1"}),
+	)
+	require.NoError(t, err)
+
+	result, err := handler.Execute(context.Background(), cmd)
+	require.NoError(t, err)
+
+	require.NotNil(t, result.Delta.PreviousCoveragePercent)
+	assert.InDelta(t, 80.0, *result.Delta.PreviousCoveragePercent, 0.001)
+	require.Len(t, result.Delta.PreviousFileCoverage, 1)
+	assert.Equal(t, "a.go", result.Delta.PreviousFileCoverage[0].FilePath)
+	assert.Equal(t, []int{1, 2}, result.Delta.PreviousFileCoverage[0].Covered)
+	assert.Equal(t, []int{3, 4}, result.Delta.PreviousFileCoverage[0].Uncovered)
+}
+
 func TestExecuteDeltaEmptyWhenNoBaseline(t *testing.T) {
 	cfRepo := newFakeCaseFileRepo()
 	projRepo := newFakeProjectRepo()
@@ -197,9 +228,9 @@ func TestExecuteArchDeltaIncludedInResult(t *testing.T) {
 
 	cmd, err := finalize.NewCommand(caseF.ID().String(),
 		finalize.WithArchDelta(finalize.ArchDeltaInput{
-			NewCount:  2,
+			NewCount:   2,
 			FixedCount: 1,
-			NewIDs:    map[string]bool{"v1": true, "v2": true},
+			NewIDs:     map[string]bool{"v1": true, "v2": true},
 		}),
 	)
 	require.NoError(t, err)

@@ -37,6 +37,7 @@ this index maps them. Start here and follow the links.
 * [Gavel and rules_lint integration](design/rules-lint-integration.md) — Where `aspect_rules_lint` fits relative to the native SARIF aspects.
 * [Web and server alignment](design/web-server-alignment.md) — Aligning the frontend against core server DTOs and query ports.
 * [PostgreSQL connection pool tuning](design/postgres-pool-tuning.md) — Sizing the server's pgx pool.
+* [Coverage exclusion policy](design/coverage-exclusion-policy.md) — Why Gavel mirrors what the tools measure (no per-line pragma) and where legitimate exclusions belong.
 
 ## Related
 

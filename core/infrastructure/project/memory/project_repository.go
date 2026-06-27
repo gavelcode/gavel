@@ -59,7 +59,7 @@ func (r *ProjectRepository) Save(_ context.Context, project model.Project) error
 		} else {
 			bl := r.baselineStore.Load(project.Name())
 			if bl.HasPrevious() {
-				project.UpdateBaseline(project.DefaultBranch(), bl.Fingerprints(), bl.ArchIDs(), bl.CoveragePercent(), nil)
+				project.UpdateBaseline(project.DefaultBranch(), bl.Fingerprints(), bl.ArchIDs(), bl.CoveragePercent(), bl.FileCoverage())
 			}
 		}
 	}

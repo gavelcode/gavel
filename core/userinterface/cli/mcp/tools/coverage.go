@@ -96,13 +96,13 @@ func formatCoverageDiff(resp judgeResponse) string {
 
 func writeCoverageDiff(builder *strings.Builder, byFile []judgeFileCoverage) {
 	var changed bool
-	for _, fc := range byFile {
+	for _, file := range byFile {
 		switch {
-		case fc.IsNew:
-			fmt.Fprintf(builder, "  %s — %.1f%% (new)\n", fc.FilePath, fc.Percent)
+		case file.IsNew:
+			fmt.Fprintf(builder, "  %s — %.1f%% (new)\n", file.FilePath, file.Percent)
 			changed = true
-		case fc.CoverageDelta != nil && *fc.CoverageDelta != 0 && fc.PreviousPercent != nil:
-			fmt.Fprintf(builder, "  %s — %.1f%% (%+.1f%% from baseline %.1f%%)\n", fc.FilePath, fc.Percent, *fc.CoverageDelta, *fc.PreviousPercent)
+		case file.CoverageDelta != nil && *file.CoverageDelta != 0 && file.PreviousPercent != nil:
+			fmt.Fprintf(builder, "  %s — %.1f%% (%+.1f%% from baseline %.1f%%)\n", file.FilePath, file.Percent, *file.CoverageDelta, *file.PreviousPercent)
 			changed = true
 		}
 	}

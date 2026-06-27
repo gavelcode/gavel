@@ -17,12 +17,13 @@ func RunAspect(ctx context.Context, workspace string, targets []string, asp cata
 
 func runAspect(ctx context.Context, cmd CommandRunner, workspace string, targets []string, asp catalog.Aspect) ([][]byte, error) {
 	args := []string{"build"}
-	args = append(args, targets...)
 	args = append(args,
 		"--aspects="+asp.Path,
 		"--output_groups=gavel_submissions",
 		"--keep_going",
 	)
+	args = append(args, "--")
+	args = append(args, targets...)
 
 	stdout, stderr, runErr := cmd.Run(ctx, workspace, "bazel", args...)
 	output := string(stdout) + string(stderr)

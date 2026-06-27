@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -11,6 +12,25 @@ import (
 
 	"github.com/usegavel/gavel/core/infrastructure/platform/bazel/catalog"
 )
+
+func TestBuildBazelArgs_TargetsAfterOptionsMarker(t *testing.T) {
+	config := AnalysisConfig{
+		Targets: []string{"//core/...", "-//core/gen/..."},
+		Aspects: []catalog.Aspect{{Path: "p"}},
+	}
+
+	args := buildBazelArgs(config)
+
+	marker := slices.Index(args, "--")
+	require.GreaterOrEqual(t, marker, 0, "args must contain the -- options-end marker")
+	assert.Greater(t, slices.Index(args, "//core/..."), marker, "positive target must follow --")
+	assert.Greater(t, slices.Index(args, "-//core/gen/..."), marker, "negative target must follow -- so Bazel does not read it as an option")
+	for i, a := range args {
+		if i > marker && len(a) > 1 && a[0] == '-' && a[1] == '-' {
+			t.Fatalf("flag %q must appear before the -- marker", a)
+		}
+	}
+}
 
 func TestBuildBazelArgs_CoverageMode(t *testing.T) {
 	config := AnalysisConfig{

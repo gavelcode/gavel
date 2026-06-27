@@ -21,8 +21,9 @@ func RunCoverage(ctx context.Context, workspace string, targets []string) (*Cove
 
 func runCoverage(ctx context.Context, cmd CommandRunner, workspace string, targets []string) (*CoverageResult, error) {
 	args := []string{"coverage"}
-	args = append(args, targets...)
 	args = append(args, "--combined_report=lcov", "--keep_going")
+	args = append(args, "--")
+	args = append(args, targets...)
 
 	_, _, runErr := cmd.Run(ctx, workspace, "bazel", args...)
 

@@ -13,10 +13,10 @@ import (
 const defaultTestSizeFilters = "small,medium"
 
 type AnalysisConfig struct {
-	Workspace             string
-	Targets               []string
-	Aspects               []catalog.Aspect
-	IncludeCoverage       bool
+	Workspace       string
+	Targets         []string
+	Aspects         []catalog.Aspect
+	IncludeCoverage bool
 	TestSizeFilters string
 	TestTagFilters  string
 }
@@ -76,7 +76,6 @@ func buildBazelArgs(config AnalysisConfig) []string {
 	} else {
 		args = append(args, "build")
 	}
-	args = append(args, config.Targets...)
 	args = append(args,
 		"--aspects="+catalog.AspectPaths(config.Aspects),
 		"--output_groups=gavel_submissions",
@@ -96,6 +95,9 @@ func buildBazelArgs(config AnalysisConfig) []string {
 	if config.TestTagFilters != "" {
 		args = append(args, "--test_tag_filters="+config.TestTagFilters)
 	}
+
+	args = append(args, "--")
+	args = append(args, config.Targets...)
 	return args
 }
 

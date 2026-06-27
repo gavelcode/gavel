@@ -87,6 +87,8 @@ A directory or Bazel target scope within a Gavelspace that Gavel analyzes.
 - `key` — unique slug identifier (lowercase, hyphens, 1–64 chars, regex `^[a-z0-9]([a-z0-9-]*[a-z0-9])?$`)
 - `name` — human-readable name
 - `targetPattern` — Bazel recursive target (e.g. `//core/...`)
+- `excludePatterns` — optional Bazel patterns dropped from the project's scope
+  (generated/vendored code). Each must resolve within `targetPattern`.
 - `languages` — list of Language in the project
 - `defaultBranch` — branch used as baseline for tracking (default: `main`)
 - `qualityGate` — quality gate configuration (VO)
@@ -98,17 +100,20 @@ Project by `ProjectID` (not contained in memory).
 **Behavior:**
 - `UpdateQualityGate(qualityGate)` — replaces quality gate config, emits `QualityGateUpdated`
 - `UpdateLanguages(languages)` — replaces language list, emits `LanguagesUpdated`
+- `UpdateExcludePatterns(patterns)` — replaces the exclude list (validated within
+  `targetPattern`), emits `ExcludePatternsUpdated`
 
 #### Editing Project
 
 - **Invariants to preserve**: `ProjectID` non-zero; `key` 1–64 chars matching
   `^[a-z0-9]([a-z0-9-]*[a-z0-9])?$`; `name` non-empty;
   `targetPattern` valid Bazel pattern (`//pkg/...`, `//pkg:target`, `//pkg`);
+  each `excludePattern` valid and resolving within `targetPattern`;
   `defaultBranch` non-empty; `qualityGate` is a valid VO; each `Language`
   validated by its constructor.
 - **Events to keep emitting**: `QualityGateUpdated` on UpdateQualityGate,
-  `LanguagesUpdated` on UpdateLanguages. Wholesale replacement, not partial
-  mutation.
+  `LanguagesUpdated` on UpdateLanguages, `ExcludePatternsUpdated` on
+  UpdateExcludePatterns. Wholesale replacement, not partial mutation.
 - **Tests to re-run / extend**: `core/domain/project/model/*_test.go` for
   invariants and event emission. Sub-model: `core/domain/project/model/qualitygate/*_test.go`
   for strategy / rule validation. Application:
@@ -571,6 +576,7 @@ then dispatches to subscribers (logging, webhook delivery, read model updates).
 | `ProjectRemoved` | Gavelspace | `gavelspace.project_removed` | GavelspaceID, ProjectID |
 | `QualityGateUpdated` | Project | `project.quality_gate_updated` | ProjectID |
 | `LanguagesUpdated` | Project | `project.languages_updated` | ProjectID |
+| `ExcludePatternsUpdated` | Project | `project.exclude_patterns_updated` | ProjectID |
 | `ArchitecturePolicyUpdated` | Project | `project.architecture_policy_updated` | ProjectID |
 | `CaseFileOpened` | CaseFile | `casefile.opened` | CaseFileID, ProjectID, CommitSHA, Branch |
 | `EvidenceCollected` | CaseFile | `casefile.evidence_collected` | CaseFileID, ProjectID, Subtype, Source |

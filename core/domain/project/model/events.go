@@ -7,6 +7,7 @@ const (
 	EventNameLanguagesUpdated          = "project.languages_updated"
 	EventNameArchitecturePolicyUpdated = "project.architecture_policy_updated"
 	EventNameTargetPatternUpdated      = "project.target_pattern_updated"
+	EventNameExcludePatternsUpdated    = "project.exclude_patterns_updated"
 )
 
 type QualityGateUpdated struct {
@@ -47,6 +48,19 @@ func NewTargetPatternUpdated(projectID ProjectID, occurredAt time.Time) TargetPa
 func (e TargetPatternUpdated) EventName() string     { return EventNameTargetPatternUpdated }
 func (e TargetPatternUpdated) OccurredAt() time.Time { return e.occurredAt }
 func (e TargetPatternUpdated) ProjectID() ProjectID  { return e.projectID }
+
+type ExcludePatternsUpdated struct {
+	projectID  ProjectID
+	occurredAt time.Time
+}
+
+func NewExcludePatternsUpdated(projectID ProjectID, occurredAt time.Time) ExcludePatternsUpdated {
+	return ExcludePatternsUpdated{projectID: projectID, occurredAt: occurredAt}
+}
+
+func (e ExcludePatternsUpdated) EventName() string     { return EventNameExcludePatternsUpdated }
+func (e ExcludePatternsUpdated) OccurredAt() time.Time { return e.occurredAt }
+func (e ExcludePatternsUpdated) ProjectID() ProjectID  { return e.projectID }
 
 type ArchitecturePolicyUpdated struct {
 	projectID  ProjectID

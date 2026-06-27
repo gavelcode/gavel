@@ -95,6 +95,40 @@ projects:
 	assert.Equal(t, "typescript", frontend.Languages()[0].String())
 }
 
+func TestParseShouldProduceProjectWithExcludePatterns(t *testing.T) {
+	data := []byte(`
+name: my-monorepo
+projects:
+  - name: backend
+    pattern: //backend/...
+    exclude:
+      - //backend/gen/...
+    tooling: [go]
+`)
+
+	config, err := gavelconfig.Parse(data)
+	require.NoError(t, err)
+
+	backend := config.Projects()[0]
+	assert.Equal(t, []string{"//backend/gen/..."}, backend.ExcludePatterns())
+}
+
+func TestParseShouldRejectExcludeOutsideProjectScope(t *testing.T) {
+	data := []byte(`
+name: my-monorepo
+projects:
+  - name: backend
+    pattern: //backend/...
+    exclude:
+      - //web/...
+    tooling: [go]
+`)
+
+	_, err := gavelconfig.Parse(data)
+
+	require.Error(t, err)
+}
+
 func TestParseShouldProduceQualityGateWithZeroTolerance(t *testing.T) {
 	data := []byte(`
 name: my-monorepo
@@ -253,7 +287,6 @@ projects:
 	_, err := gavelconfig.Parse(data)
 	assert.Error(t, err, "license rule with empty forbidden list must be rejected")
 }
-
 
 func TestParseShouldProduceFindingsRuleWithMinResolved(t *testing.T) {
 	data := []byte(`
@@ -515,7 +548,6 @@ projects:
 	assert.Equal(t, evidence.SubtypeNewCodeCoverage, rule.Subtype())
 	assert.IsType(t, qualitygate.MinNewCodeCoverage{}, rule.Strategy())
 }
-
 
 func TestParseShouldRejectInvalidMinNewCodeCoverage(t *testing.T) {
 	data := []byte(`

@@ -16,6 +16,44 @@ var (
 	testTime = time.Date(2026, 5, 21, 12, 0, 0, 0, time.UTC)
 )
 
+func TestUpdateExcludePatterns_StoresValidPatternsWithinScope(t *testing.T) {
+	p, err := model.NewProject("core", "core", "//core/...")
+	require.NoError(t, err)
+
+	require.NoError(t, p.UpdateExcludePatterns([]string{"//core/gen/..."}, testTime))
+
+	assert.Equal(t, []string{"//core/gen/..."}, p.ExcludePatterns())
+}
+
+func TestUpdateExcludePatterns_RejectsPatternOutsideScope(t *testing.T) {
+	p, err := model.NewProject("core", "core", "//core/...")
+	require.NoError(t, err)
+
+	err = p.UpdateExcludePatterns([]string{"//apps/cli/..."}, testTime)
+
+	require.Error(t, err)
+}
+
+func TestUpdateExcludePatterns_RejectsMalformedPattern(t *testing.T) {
+	p, err := model.NewProject("core", "core", "//core/...")
+	require.NoError(t, err)
+
+	err = p.UpdateExcludePatterns([]string{"not a pattern"}, testTime)
+
+	require.Error(t, err)
+}
+
+func TestExcludePatterns_ReturnsDefensiveCopy(t *testing.T) {
+	project, err := model.NewProject("core", "core", "//core/...")
+	require.NoError(t, err)
+	require.NoError(t, project.UpdateExcludePatterns([]string{"//core/gen/..."}, testTime))
+
+	got := project.ExcludePatterns()
+	got[0] = "tampered"
+
+	assert.Equal(t, []string{"//core/gen/..."}, project.ExcludePatterns())
+}
+
 func TestNewProject(t *testing.T) {
 	tests := []struct {
 		name          string

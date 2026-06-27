@@ -24,6 +24,7 @@ type outputDTO struct {
 type projectDTO struct {
 	Name      string   `json:"name"`
 	Pattern   string   `json:"pattern"`
+	Exclude   []string `json:"exclude,omitempty"`
 	Languages []string `json:"languages"`
 	Gate      gateDTO  `json:"quality_gate"`
 }
@@ -83,6 +84,7 @@ func run(cmd *cobra.Command, explicitPath string, resolveWorkspace WorkspaceReso
 		out.Projects = append(out.Projects, projectDTO{
 			Name:      proj.Name,
 			Pattern:   proj.TargetPattern,
+			Exclude:   proj.ExcludePatterns,
 			Languages: proj.Languages,
 			Gate:      gateDTO{Rules: rules},
 		})

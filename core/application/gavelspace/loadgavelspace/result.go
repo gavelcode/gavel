@@ -20,14 +20,15 @@ type WorkspaceView struct {
 }
 
 type ProjectView struct {
-	ID            string
-	Name          string
-	TargetPattern string
-	DefaultBranch string
-	Languages     []string
-	GateRules     []GateRuleView
-	Baseline      BaselineView
-	ArchPolicy    *ArchPolicyView
+	ID              string
+	Name            string
+	TargetPattern   string
+	ExcludePatterns []string
+	DefaultBranch   string
+	Languages       []string
+	GateRules       []GateRuleView
+	Baseline        BaselineView
+	ArchPolicy      *ArchPolicyView
 }
 
 type GateRuleView struct {
@@ -100,14 +101,15 @@ func buildView(gavelspace gavelspacemodel.Gavelspace, projects []projectmodel.Pr
 		}
 
 		view.Projects = append(view.Projects, ProjectView{
-			ID:            project.ID().String(),
-			Name:          project.Name(),
-			TargetPattern: project.TargetPattern(),
-			DefaultBranch: project.DefaultBranch(),
-			Languages:     langs,
-			GateRules:     rules,
-			Baseline:      baselineView,
-			ArchPolicy:    archPolicyView,
+			ID:              project.ID().String(),
+			Name:            project.Name(),
+			TargetPattern:   project.TargetPattern(),
+			ExcludePatterns: project.ExcludePatterns(),
+			DefaultBranch:   project.DefaultBranch(),
+			Languages:       langs,
+			GateRules:       rules,
+			Baseline:        baselineView,
+			ArchPolicy:      archPolicyView,
 		})
 	}
 	return view

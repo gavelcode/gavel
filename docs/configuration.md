@@ -31,6 +31,8 @@ name: <string>                              # workspace name (required)
 projects:                                    # list of projects (required, at least one)
   - name: <string>                           # project name (required)
     pattern: <string>                        # Bazel target pattern (required, e.g. "//..." or "//payments/...")
+    exclude:                                 # paths to drop from the whole gate (optional)
+      - <pattern>                            # Bazel pattern within `pattern`, e.g. "//payments/gen/..."
     tooling:                                 # languages to analyze (required, at least one)
       - <string>                             # go | java | kotlin | python | typescript | rust
 
@@ -67,6 +69,15 @@ and a set of languages.
 Bazel target pattern defining the scope of analysis. Use `//...` for the entire
 workspace or `//payments/...` for a subtree. Must be a valid Bazel target
 pattern.
+
+**`projects[].exclude`** (list of strings, optional)
+Bazel target patterns to drop from the project's scope. Each must be a valid
+pattern that resolves **within** `pattern` (an out-of-scope exclude is a config
+error). Excluded targets count for nothing across the **whole gate** — not
+findings, not coverage, not architecture — so it is the right home for generated
+or vendored code (e.g. `//payments/gen/...`). This is a coarse, file/dir-level
+scope decision, never a per-line coverage exclusion; see
+[coverage exclusion policy](design/coverage-exclusion-policy.md).
 
 **`projects[].tooling`** (list of strings, required)
 Languages to analyze. Determines which lint aspects and architecture checks run.

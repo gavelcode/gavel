@@ -106,6 +106,34 @@ func TestProjectRepositoryBaselinePersistsToDisk(t *testing.T) {
 	assert.Equal(t, []string{"arch-1"}, baseline.ArchIDs())
 }
 
+func TestProjectRepositoryReconstitutesFileCoverageFromDisk(t *testing.T) {
+	workspace := t.TempDir()
+	store := memory.NewBaselineStore(workspace)
+	repo := memory.NewProjectRepositoryWithBaseline(store)
+	ctx := context.Background()
+
+	project, err := projectmodel.NewProject("core", "core", "//core/...")
+	require.NoError(t, err)
+	pct := 75.0
+	entry, err := projectmodel.NewFileCoverageEntry("core/a.go", []int{1, 2, 3}, []int{4})
+	require.NoError(t, err)
+	project.UpdateBaseline("main", []string{"fp-1"}, nil, &pct, []projectmodel.FileCoverageEntry{entry})
+	require.NoError(t, repo.Save(ctx, project))
+
+	repo2 := memory.NewProjectRepositoryWithBaseline(store)
+	project2, err := projectmodel.NewProject("core", "core", "//core/...")
+	require.NoError(t, err)
+	require.NoError(t, repo2.Save(ctx, project2))
+
+	found, err := repo2.FindByName(ctx, "core")
+	require.NoError(t, err)
+	baseline := found.Baseline("main")
+	require.Len(t, baseline.FileCoverage(), 1, "per-file coverage must survive the disk round-trip")
+	assert.Equal(t, "core/a.go", baseline.FileCoverage()[0].FilePath())
+	assert.Equal(t, []int{1, 2, 3}, baseline.FileCoverage()[0].Covered())
+	assert.Equal(t, []int{4}, baseline.FileCoverage()[0].Uncovered())
+}
+
 func TestProjectRepositoryWithoutBaselineStoreDoesNotPersist(t *testing.T) {
 	repo := memory.NewProjectRepository()
 	ctx := context.Background()

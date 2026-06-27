@@ -51,13 +51,13 @@ func (fc Content) Merge(other evidence.Content) (evidence.Content, error) {
 	merged := make([]Finding, 0, capacity)
 	seen := make(map[string]struct{}, capacity)
 	for _, group := range [][]Finding{fc.findings, otherFindings.findings} {
-		for _, f := range group {
-			id := f.ID().Value()
+		for _, candidate := range group {
+			id := candidate.ID().Value()
 			if _, dup := seen[id]; dup {
 				continue
 			}
 			seen[id] = struct{}{}
-			merged = append(merged, f)
+			merged = append(merged, candidate)
 		}
 	}
 	return NewContent(fc.subtype, merged)

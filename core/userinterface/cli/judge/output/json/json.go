@@ -179,14 +179,14 @@ func applyCoverageDiff(dto *fileCoverageDTO, hasPrevious bool, previous map[stri
 
 func previousPercents(entries []evidencedto.FileCoverage) map[string]float64 {
 	out := make(map[string]float64, len(entries))
-	for _, e := range entries {
-		covered := len(e.Covered)
-		total := covered + len(e.Uncovered)
+	for _, entry := range entries {
+		covered := len(entry.Covered)
+		total := covered + len(entry.Uncovered)
 		var percent float64
 		if total > 0 {
 			percent = roundPercent(float64(covered) / float64(total) * percentScale)
 		}
-		out[e.FilePath] = percent
+		out[entry.FilePath] = percent
 	}
 	return out
 }

@@ -112,9 +112,10 @@ and maps onto Bazel's native negative target patterns
 than "subtract this from the coverage denominator" — which is precisely the
 distinction that keeps it out of the gaming category the research flags.
 
-This mechanism is **proposed, not yet built**; it is specced separately as a
-small feature. Until it lands, generated code is kept out of scope via the
-project `pattern` itself.
+This mechanism is **implemented**: `projects[].exclude` in `gavel.yaml` (see
+[configuration](../configuration.md)). Each exclude must resolve within the
+project's `pattern`; excluded targets are dropped before analysis via Bazel
+negative target patterns, so they affect no gate dimension.
 
 ## References
 

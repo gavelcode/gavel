@@ -15,6 +15,7 @@ type Command struct {
 	absolute        bool
 	baselineArchIDs []string
 	scopedTargets   []string
+	excludePatterns []string
 }
 
 type CommandOption func(*Command)
@@ -22,6 +23,12 @@ type CommandOption func(*Command)
 func WithScopedTargets(targets []string) CommandOption {
 	return func(c *Command) {
 		c.scopedTargets = append([]string(nil), targets...)
+	}
+}
+
+func WithExcludePatterns(patterns []string) CommandOption {
+	return func(c *Command) {
+		c.excludePatterns = append([]string(nil), patterns...)
 	}
 }
 
@@ -48,12 +55,13 @@ func NewCommand(workspace, targetPattern, projectName, defaultBranch string, lan
 	return cmd, nil
 }
 
-func (c Command) Workspace() string     { return c.workspace }
-func (c Command) TargetPattern() string { return c.targetPattern }
-func (c Command) Languages() []string   { return c.languages }
-func (c Command) DefaultBranch() string { return c.defaultBranch }
-func (c Command) ProjectName() string   { return c.projectName }
-func (c Command) Quick() bool              { return c.quick }
-func (c Command) Absolute() bool           { return c.absolute }
+func (c Command) Workspace() string         { return c.workspace }
+func (c Command) TargetPattern() string     { return c.targetPattern }
+func (c Command) Languages() []string       { return c.languages }
+func (c Command) DefaultBranch() string     { return c.defaultBranch }
+func (c Command) ProjectName() string       { return c.projectName }
+func (c Command) Quick() bool               { return c.quick }
+func (c Command) Absolute() bool            { return c.absolute }
 func (c Command) BaselineArchIDs() []string { return c.baselineArchIDs }
-func (c Command) ScopedTargets() []string    { return c.scopedTargets }
+func (c Command) ScopedTargets() []string   { return c.scopedTargets }
+func (c Command) ExcludePatterns() []string { return c.excludePatterns }

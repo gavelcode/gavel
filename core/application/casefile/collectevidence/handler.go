@@ -64,6 +64,9 @@ func (h *Handler) Execute(ctx context.Context, cmd Command) (Result, error) {
 	targets := cmd.ScopedTargets()
 	if len(targets) == 0 {
 		targets = []string{cmd.TargetPattern()}
+		for _, exclude := range cmd.ExcludePatterns() {
+			targets = append(targets, "-"+exclude)
+		}
 	}
 
 	findingsEvidences, rawSARIF, buildWarning, err := h.collectFindings(ctx, cmd, targets)

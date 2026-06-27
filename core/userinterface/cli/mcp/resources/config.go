@@ -32,6 +32,7 @@ type configOutput struct {
 type configProject struct {
 	Name      string     `json:"name"`
 	Pattern   string     `json:"pattern"`
+	Exclude   []string   `json:"exclude,omitempty"`
 	Languages []string   `json:"languages"`
 	Gate      configGate `json:"quality_gate"`
 }
@@ -66,6 +67,9 @@ func readConfig(ctx context.Context, cli *executor.CLI) (*mcp.ReadResourceResult
 	for _, proj := range cfg.Projects {
 		fmt.Fprintf(&builder, "## %s\n", proj.Name)
 		fmt.Fprintf(&builder, "  Pattern: %s\n", proj.Pattern)
+		if len(proj.Exclude) > 0 {
+			fmt.Fprintf(&builder, "  Exclude: %s\n", strings.Join(proj.Exclude, ", "))
+		}
 		if len(proj.Languages) > 0 {
 			fmt.Fprintf(&builder, "  Languages: %s\n", strings.Join(proj.Languages, ", "))
 		}

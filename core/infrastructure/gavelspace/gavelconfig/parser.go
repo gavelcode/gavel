@@ -116,6 +116,12 @@ func buildProject(dto projectDTO, now time.Time) (projectmodel.Project, error) {
 		project.UpdateQualityGate(qg, now)
 	}
 
+	if len(dto.Exclude) > 0 {
+		if err := project.UpdateExcludePatterns(dto.Exclude, now); err != nil {
+			return projectmodel.Project{}, fmt.Errorf("exclude: %w", err)
+		}
+	}
+
 	return project, nil
 }
 

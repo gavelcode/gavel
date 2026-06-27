@@ -27,6 +27,7 @@ type Project struct {
 	key                string
 	name               string
 	targetPattern      string
+	excludePatterns    []string
 	languages          []coverage.Language
 	defaultBranch      string
 	qualityGate        qualitygate.Gate
@@ -135,6 +136,30 @@ func (p *Project) UpdateLanguages(languages []coverage.Language, occurredAt time
 	p.events = append(p.events, NewLanguagesUpdated(p.id, occurredAt))
 }
 
+func (p *Project) UpdateExcludePatterns(excludePatterns []string, occurredAt time.Time) error {
+	if err := validateExcludePatterns(p.targetPattern, excludePatterns); err != nil {
+		return err
+	}
+	copied := make([]string, len(excludePatterns))
+	copy(copied, excludePatterns)
+	p.excludePatterns = copied
+	p.events = append(p.events, NewExcludePatternsUpdated(p.id, occurredAt))
+	return nil
+}
+
+func validateExcludePatterns(targetPattern string, excludePatterns []string) error {
+	scope := strings.TrimSuffix(targetPattern, "...")
+	for _, pattern := range excludePatterns {
+		if err := validateTargetPattern(pattern); err != nil {
+			return fmt.Errorf("%w: exclude %q is not a valid Bazel pattern", ErrInvalidProject, pattern)
+		}
+		if !strings.HasPrefix(pattern, scope) {
+			return fmt.Errorf("%w: exclude %q must resolve within %q", ErrInvalidProject, pattern, targetPattern)
+		}
+	}
+	return nil
+}
+
 func (p Project) ID() ProjectID {
 	return p.id
 }
@@ -149,6 +174,12 @@ func (p Project) Name() string {
 
 func (p Project) TargetPattern() string {
 	return p.targetPattern
+}
+
+func (p Project) ExcludePatterns() []string {
+	copied := make([]string, len(p.excludePatterns))
+	copy(copied, p.excludePatterns)
+	return copied
 }
 
 func (p Project) DefaultBranch() string {

@@ -10,19 +10,19 @@ import (
 
 	"github.com/spf13/cobra"
 
+	apiclient "github.com/usegavel/gavel/core/userinterface/api/v1/client"
 	outputjson "github.com/usegavel/gavel/core/userinterface/cli/judge/output/json"
 	"github.com/usegavel/gavel/core/userinterface/cli/judge/output/render"
 	"github.com/usegavel/gavel/core/userinterface/cli/judge/output/sarif"
 	"github.com/usegavel/gavel/core/userinterface/cli/judge/pipeline"
-	apiclient "github.com/usegavel/gavel/core/userinterface/api/v1/client"
 	"github.com/usegavel/gavel/core/userinterface/cli/ui"
 
 	"github.com/usegavel/gavel/core/application/casefile/collectevidence"
+	ingestcov "github.com/usegavel/gavel/core/application/casefile/ingestcoverage"
+	ingestfind "github.com/usegavel/gavel/core/application/casefile/ingestfindings"
 	"github.com/usegavel/gavel/core/application/casefile/submit"
 	"github.com/usegavel/gavel/core/application/gavelspace/loadgavelspace"
 	"github.com/usegavel/gavel/core/application/project/preparebaseline"
-	ingestcov "github.com/usegavel/gavel/core/application/casefile/ingestcoverage"
-	ingestfind "github.com/usegavel/gavel/core/application/casefile/ingestfindings"
 )
 
 var ErrVerdictFail = errors.New("one or more projects failed the quality gate")
@@ -360,7 +360,7 @@ func runProject(
 			if affErr != nil {
 				return pipeline.Result{}, fmt.Errorf("find affected targets: %writer", affErr)
 			}
-			scoped := scopeTargetsToPattern(affected, project.TargetPattern)
+			scoped := scopeTargetsToPattern(affected, project.TargetPattern, project.ExcludePatterns)
 			if len(scoped) > 0 {
 				cmdOpts = append(cmdOpts, collectevidence.WithScopedTargets(scoped))
 			}
@@ -369,6 +369,10 @@ func runProject(
 				"affected_targets", len(affected),
 				"scoped_targets", len(scoped))
 		}
+	}
+
+	if len(project.ExcludePatterns) > 0 {
+		cmdOpts = append(cmdOpts, collectevidence.WithExcludePatterns(project.ExcludePatterns))
 	}
 
 	collectCmd, err := collectevidence.NewCommand(workspace, project.TargetPattern, project.Name, project.DefaultBranch, project.Languages, opts.Quick, opts.Absolute, project.Baseline.ArchIDs, cmdOpts...)

@@ -14,11 +14,6 @@ bazel_dep(name = "aspect_rules_esbuild", version = "0.25.1")
 bazel_dep(name = "rules_nodejs", version = "6.7.4")
 bazel_dep(name = "rules_rust", version = "0.70.0")
 bazel_dep(name = "gavel_tools", version = "0.1.0")
-git_override(
-    module_name = "gavel_tools",
-    remote = "https://github.com/gavelcode/gavel-tools.git",
-    commit = "c02d01a2ff9523511d83ddf3db9807a0a1f6db20",
-)
 
 go_sdk = use_extension("@rules_go//go:extensions.bzl", "go_sdk")
 go_sdk.download(version = "1.25.0")

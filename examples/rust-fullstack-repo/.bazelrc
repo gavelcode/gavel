@@ -1,4 +1,4 @@
-common --registry=file:///%workspace%/../../hack/registry
+common --registry=https://gavelcode.github.io/registry
 common --registry=https://bcr.bazel.build
 common --experimental_isolated_extension_usages
 

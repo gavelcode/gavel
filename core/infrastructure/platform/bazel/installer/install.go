@@ -167,11 +167,8 @@ const (
 	bcrRegistryLine   = "common --registry=https://bcr.bazel.build"
 )
 
-// ensureRegistryLines points .bazelrc at the gavel registry (which hosts the
-// gavel_tools module) while keeping the Bazel Central Registry reachable for
-// every other dependency. Declaring any --registry flag drops Bazel's implicit
-// BCR default, so adding the gavel registry obliges us to declare BCR
-// explicitly too — otherwise rules_go and friends would stop resolving.
+// Bazel drops its implicit BCR default as soon as any --registry is declared,
+// so the gavel registry and BCR must both be listed explicitly.
 func ensureRegistryLines(root string) (bool, error) {
 	path := filepath.Join(root, ".bazelrc")
 	existing, err := os.ReadFile(path)

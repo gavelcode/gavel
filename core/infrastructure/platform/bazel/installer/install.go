@@ -64,14 +64,19 @@ func (i *Installer) installBazelrc(root string, tooling []string) (map[string]bo
 		return nil, fmt.Errorf("write %s: %w", GavelBazelrc, err)
 	}
 
-	changed, err := ensureIncludeLine(root, ".bazelrc", bazelrcInclude)
+	registryChanged, err := ensureRegistryLines(root)
+	if err != nil {
+		return nil, err
+	}
+
+	includeChanged, err := ensureIncludeLine(root, ".bazelrc", bazelrcInclude)
 	if err != nil {
 		return nil, err
 	}
 
 	return map[string]bool{
 		GavelBazelrc: true,
-		".bazelrc":   changed,
+		".bazelrc":   registryChanged || includeChanged,
 	}, nil
 }
 
@@ -153,6 +158,48 @@ func installLintConfigFilegroup(root string) (bool, error) {
 	}
 	builder.WriteString(lintConfigFilegroup)
 	builder.WriteString("\n")
+
+	return true, os.WriteFile(path, []byte(builder.String()), filePermission)
+}
+
+const (
+	gavelRegistryLine = "common --registry=https://gavelcode.github.io/registry"
+	bcrRegistryLine   = "common --registry=https://bcr.bazel.build"
+)
+
+// ensureRegistryLines points .bazelrc at the gavel registry (which hosts the
+// gavel_tools module) while keeping the Bazel Central Registry reachable for
+// every other dependency. Declaring any --registry flag drops Bazel's implicit
+// BCR default, so adding the gavel registry obliges us to declare BCR
+// explicitly too — otherwise rules_go and friends would stop resolving.
+func ensureRegistryLines(root string) (bool, error) {
+	path := filepath.Join(root, ".bazelrc")
+	existing, err := os.ReadFile(path)
+	if err != nil && !os.IsNotExist(err) {
+		return false, fmt.Errorf("read .bazelrc: %w", err)
+	}
+	content := string(existing)
+
+	missing := make([]string, 0, 2)
+	if !strings.Contains(content, gavelRegistryLine) {
+		missing = append(missing, gavelRegistryLine)
+	}
+	if !strings.Contains(content, bcrRegistryLine) {
+		missing = append(missing, bcrRegistryLine)
+	}
+	if len(missing) == 0 {
+		return false, nil
+	}
+
+	var builder strings.Builder
+	if content != "" {
+		builder.WriteString(strings.TrimRight(content, "\n"))
+		builder.WriteString("\n")
+	}
+	for _, line := range missing {
+		builder.WriteString(line)
+		builder.WriteString("\n")
+	}
 
 	return true, os.WriteFile(path, []byte(builder.String()), filePermission)
 }

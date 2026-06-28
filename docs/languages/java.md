@@ -18,7 +18,7 @@ Error Prone).
 | **Archtest** | `java_archtest_submission_aspect` |
 | **Bazel rule kinds** | `java_library`, `java_binary`, `java_test` |
 | **SARIF suffixes** | `.pmd.sarif`, `.cpd.sarif`, `.spotbugs.sarif`, `.errorprone.sarif` |
-| **Wrappers** | `tools/java/{pmd,cpd,spotbugs,error_prone}/wrapper/main.go` |
+| **Wrappers** | `lint/lang/java/{pmd,cpd,spotbugs,error_prone}/wrapper/main.go` |
 | **Coverage** | LCOV via `bazel coverage` |
 
 ## Tool overview
@@ -125,7 +125,7 @@ They are marked in `gavelExclusiveAspects` in `catalog/aspect.go`.
 
 | Wrapper | Flags |
 |---------|-------|
-| `tools/java/pmd/wrapper/main.go` | `--pmd <binary> --out <sarif> <files...>` |
-| `tools/java/cpd/wrapper/main.go` | `--pmd <binary> --out <sarif> <files...>` |
-| `tools/java/spotbugs/wrapper/main.go` | `--spotbugs <binary> --out <sarif> <jars...>` |
-| `tools/java/error_prone/wrapper/main.go` | `--error-prone-jar <jar> --dataflow-jar <jar> --out <sarif> [--classpath <cp>] <files...>` |
+| `lint/lang/java/pmd/wrapper/main.go` | `--pmd <binary> --out <sarif> <files...>` |
+| `lint/lang/java/cpd/wrapper/main.go` | `--pmd <binary> --out <sarif> <files...>` |
+| `lint/lang/java/spotbugs/wrapper/main.go` | `--spotbugs <binary> --out <sarif> <jars...>` |
+| `lint/lang/java/error_prone/wrapper/main.go` | `--error-prone-jar <jar> --dataflow-jar <jar> --out <sarif> [--classpath <cp>] <files...>` |

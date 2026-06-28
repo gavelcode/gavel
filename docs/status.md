@@ -8,7 +8,7 @@ description: What is built today across core/, server, and cli — bounded conte
 
 Snapshot of what exists today. The design contract lives elsewhere —
 [`model/`](model/domain-model.md) is the canonical domain/application model and
-[`specs/`](specs/01-project-structure.md) the structure rules. This file records
+[`specs/`](specs/project-structure.md) the structure rules. This file records
 the *current build* against that contract, so it ages and is updated as the code
 moves.
 

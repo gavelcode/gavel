@@ -11,8 +11,16 @@ description: Why Gavel relies on Bazel's action cache for incrementality instead
 | Phase | Description | Status |
 |-------|-------------|--------|
 | Phase 1 | Baseline comparison via `--diff-base` | DONE |
-| Phase 2 | Make baseline the default + committed baseline files | IN PROGRESS |
-| Phase 3 | Server-based baseline (shared/CI) | NOT STARTED |
+| Phase 2 | Make baseline the default + committed baseline files | DONE |
+| Phase 3 | Server-based baseline (shared/CI) | DONE (CLI fetches via `--server`) |
+
+> **Implementation note (updated):** two decisions below were reversed once
+> the feature landed. Coverage **is** stored in the baseline today — an overall
+> `coverage` value plus a per-file `coverage.json` (see [baseline.md](../baseline.md))
+> — used for the coverage delta. And "coverage on new code" is **implemented**
+> (the `new_code_coverage` gate rule). The original rationale (avoid an escapable
+> window) is preserved for the *gate* threshold, which remains absolute; the
+> stored numbers feed the delta/diff, not the pass/fail gate.
 
 ## Decisions
 
@@ -118,7 +126,7 @@ quality_gate:
   min_new_code_coverage: 80    # applies to changed lines only
 ```
 
-**Not yet implemented.** Algorithm:
+**Implemented** (the `new_code_coverage` gate rule). Algorithm:
 
 1. `git diff --unified=0 $(git merge-base <default-branch> HEAD)...HEAD` → changed lines per file
 2. LCOV `DA:<line>,<hitcount>` records → coverable lines per file with hit counts
@@ -137,7 +145,7 @@ LCOV handles "what's coverable" automatically: lines without `DA:` records
 | Component | Lines | Location |
 |-----------|-------|----------|
 | Extend LCOV parser with `DA:` records | ~30 | `core/infrastructure/casefile/lcov/` |
-| Git diff parser (hunk headers → line numbers) | ~60 | `cli/internal/git/` |
+| Git diff parser (hunk headers → line numbers) | ~60 | `core/infrastructure/platform/git/` |
 | Intersection logic | ~30 | New application use case |
 | Types / value objects | ~20 | |
 | Tests | ~150 | |
@@ -199,23 +207,22 @@ $ gavel judge
 - Coverage on new code: `git merge-base` at runtime
 - Suitable for: local development, teams without server
 
-### World 2: Server (future, Phase 3)
+### World 2: Server (implemented)
 
 - Baseline source: database (last successful run on default branch)
 - Shared: yes, authoritative
 - Suitable for: CI gates, dashboards, cross-repo visibility
-- Server is next after CLI is stable
-
-CI pipelines wait for server (Phase 3). Current use is local-only.
-
-## Impact on existing design docs
-
-- **`baseline-strategy.md`**: Phase 2 is no longer "Bazel-aware git diff".
-  It becomes "committed baseline files + default baseline mode".
-- **`scoped-analysis.md`**: SUPERSEDED. rdeps approach proven counterproductive
-  by benchmarks. Bazel cache provides sufficient incrementality.
+- The CLI fetches the baseline via `--server URL --token TOKEN` and submits
+  results back; it falls back to the committed local baseline when the server
+  is unreachable.
 
 ## Supersedes
 
-- `scoped-analysis.md` — rdeps/bazel-diff target scoping (eliminated)
-- Parts of `baseline-strategy.md` — Strategy 2 redefined
+This record replaced two earlier design notes (since removed):
+
+- **Scoped analysis** (rdeps / bazel-diff target scoping) — eliminated; the
+  benchmarks above proved it counterproductive, and Bazel's action cache
+  provides sufficient incrementality.
+- **Baseline strategy** — its "Bazel-aware git diff" phase became "committed
+  baseline files + default baseline mode" (now the live behaviour; see
+  [baseline.md](../baseline.md)).

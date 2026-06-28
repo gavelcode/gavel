@@ -32,11 +32,15 @@ Gavel registers aspects via `.gavel/gavel.bazelrc`, which is included in
 the workspace's `.bazelrc`. When `gavel judge` runs, it executes:
 
 ```
-bazel build <targets> \
+bazel build \
   --aspects=@gavel_tools//lint/aspects:defs.bzl%<lang>_<tool>_submission_aspect \
   --output_groups=gavel_submissions \
-  --keep_going
+  --keep_going \
+  -- <targets>
 ```
+
+(The `--` marker precedes the targets so that excluded packages can be passed
+as Bazel negative patterns; see [configuration](../configuration.md) `exclude`.)
 
 > The lint aspects, per-tool wrappers, and the archtest library live in the
 > external **`gavel_tools`** Bazel module, not in this repo. Paths below

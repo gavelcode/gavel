@@ -42,8 +42,7 @@ apps/server/
         └── frontend/          # Embedded web frontend loader (Bazel runfiles)
 ```
 
-The Postgres connection, dbkit wrapper, and testcontainer helper formerly
-in `core/infrastructure (per BC)/` now live in
+The Postgres connection, dbkit wrapper, and testcontainer helper live in
 `core/infrastructure/platform/database/`. Postgres adapters per BC live
 under `core/infrastructure/<bc>/postgres/`. The HTTP router, bootstrap,
 SPA fallback, and middleware live under

@@ -13,8 +13,8 @@ this index maps them. Start here and follow the links.
 * [Configuration reference](configuration.md) — The `gavel.yaml` and `architecture.yml` schema: projects, quality-gate rules, DDD layer definitions.
 * [Domain model](model/domain-model.md) — The canonical aggregates, value objects, invariants, identity types, and events (Vernon IDDD strict).
 * [Application model](model/application-model.md) — The Simple CQRS commands and queries that orchestrate the aggregates.
-* [Project structure](specs/01-project-structure.md) — Product boundaries, the four-layer architecture, package rules, and the canonical directory tree.
-* [Server architecture](specs/14-server-architecture.md) · [CLI architecture](specs/15-cli-architecture.md) · [Web architecture](specs/16-web-architecture.md) — Current structure of each composition root.
+* [Project structure](specs/project-structure.md) — Product boundaries, the four-layer architecture, package rules, and the canonical directory tree.
+* [Server architecture](specs/server-architecture.md) · [CLI architecture](specs/cli-architecture.md) · [Web architecture](specs/web-architecture.md) — Current structure of each composition root.
 * [Language support](languages/index.md) — Languages, tools per language, how lint aspects flow to SARIF, coverage. Per-language: [Go](languages/go.md) · [Java & Kotlin](languages/java.md) · [Python](languages/python.md) · [TypeScript](languages/typescript.md) · [Rust](languages/rust.md).
 * [Implementation status](status.md) — A snapshot of what is built today across `core/`, server, and CLI.
 
@@ -32,8 +32,6 @@ this index maps them. Start here and follow the links.
 ### Decision records (`design/`)
 
 * [Incrementality decision record](design/incrementality-decision.md) — Why Gavel relies on Bazel's action cache instead of rdeps/diff scoping.
-* [Scoped analysis and the hybrid scoping model](design/scoped-analysis.md) — *Superseded by the incrementality decision.*
-* [Baseline strategy, new vs existing findings](design/baseline-strategy.md) — *Partially superseded.*
 * [Gavel and rules_lint integration](design/rules-lint-integration.md) — Where `aspect_rules_lint` fits relative to the native SARIF aspects.
 * [Web and server alignment](design/web-server-alignment.md) — Aligning the frontend against core server DTOs and query ports.
 * [PostgreSQL connection pool tuning](design/postgres-pool-tuning.md) — Sizing the server's pgx pool.

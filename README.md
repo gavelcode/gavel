@@ -105,16 +105,13 @@ Working today:
 - `gavel judge --findings-source=rules_lint` — read pre-existing SARIF from `bazel-bin/` instead of running Gavel's own aspects (auto-detected when omitted)
 - `gavel judge --server URL --token TOKEN` — fetch baseline from server, submit results back
 - `gavel validate` — checks Bazel integration health
+- `gavel judge --affected` — scope analysis to targets affected by changed files
+- `gavel judge --output-sarif report.sarif` — export SARIF 2.1.0 for IDEs and GitHub Code Scanning
 - `gavel watch` — re-analyzes on file changes, emitting a JSONL event stream
 - `gavel mcp` — Model Context Protocol server for editor/agent integration
 - Baseline mode (default): fingerprint-based new/fixed/existing classification, committed to git for team sharing
 - Analyzers: golangci-lint, PMD, CPD, SpotBugs, Error Prone, Ruff, Bandit, ESLint, Clippy
 - Server: web dashboard, centralized history, team baselines, API token auth
-
-Coming next:
-
-- Scoped analysis — Bazel-aware diff (only affected targets)
-- SARIF export for IDE integration
 
 ## License
 

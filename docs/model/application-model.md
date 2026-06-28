@@ -28,8 +28,8 @@ Key rules applied throughout the application layer:
    aggregates, the application service saves them sequentially, accepting
    the eventual consistency window.
 6. **Two-level DTOs** — Application Commands/Results are pure Go types (no
-   `json:` tags). The Published Language layer in `core/userinterface/api/v1/<bc>/ (per BC)` defines
-   JSON-tagged DTOs and translates between the two.
+   `json:` tags). The Published Language layer in `core/userinterface/api/v1/<bc>/`
+   (per BC) defines JSON-tagged DTOs and translates between the two.
 
 ## Use cases
 
@@ -66,10 +66,10 @@ core/application/
     └── search/                                   # Supporting Subdomain
 ```
 
-Cada query usa el patrón **Finder** (Evans/Vernon CQRS read side): un
-`finder.go` con un `type Finder interface` de un solo método. La
-implementación Postgres vive en `core/infrastructure/<bc>/postgres/`
-(o `core/infrastructure/supporting/search/` para el search cross-BC).
+Every query uses the **Finder** pattern (Evans/Vernon CQRS read side): a
+`finder.go` with a single-method `type Finder interface`. The Postgres
+implementation lives in `core/infrastructure/<bc>/postgres/` (or
+`core/infrastructure/supporting/search/` for the cross-BC search).
 
 ### Configuration use cases (Gavelspace / Project)
 
@@ -326,12 +326,12 @@ to exercise failure paths. Tests verify behavior, not implementation.
 
 ## What is NOT in the application layer
 
-- HTTP routing, multipart parsing, auth middleware → `apps/server/internal/core/userinterface/api/v1/<bc>/ (per BC)`
+- HTTP routing, multipart parsing, auth middleware → `core/userinterface/api/v1/<bc>/` (per BC) + `platform/middleware/`
 - SQL queries → `core/infrastructure/<bc>/postgres/`
-- Bazel/git invocations → `apps/cli/internal/bazel/`
-- Cobra command wiring → `apps/cli/internal/command/`
-- JSON serialization → `core/userinterface/api/v1/dto/` (Published Language)
-- Format-specific parsing (SARIF, LCOV) → `core/infrastructure/{sarif,lcov}/`
+- Bazel/git invocations → `core/infrastructure/platform/{bazel,git}/`
+- Cobra command wiring → `core/userinterface/cli/<command>/`
+- JSON serialization → `core/userinterface/api/v1/<bc>/` DTOs (Published Language)
+- Format-specific parsing (SARIF, LCOV) → `core/infrastructure/casefile/{sarif,lcov}/`
 
 The application layer is pure orchestration: load → mutate → save → dispatch
 events. Anything mechanical or technology-specific lives outside it.

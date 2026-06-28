@@ -12,16 +12,17 @@ existing debt is tracked separately and reduced over time.
 
 ## What it is
 
-A baseline is a snapshot stored in `.gavel/baseline/<project>/` containing
-three files:
+A baseline is a snapshot stored in `.gavel/baseline/<project>/`:
 
 | File | Content |
 |------|---------|
 | `findings` | One fingerprint per line — identifies each known finding |
 | `architecture` | One violation ID per line (`rule:sourcePkg:targetPkg`) |
-| `coverage` | A single number — coverage percentage at snapshot time |
+| `coverage` | A single number — overall coverage percentage at snapshot time |
+| `coverage.json` | Per-file coverage (covered/uncovered lines) — feeds the per-file coverage diff |
 
-These files are plain text and can be inspected directly.
+The `findings`, `architecture`, and `coverage` files are plain text and can be
+inspected directly; `coverage.json` is JSON.
 
 ## When it is created
 

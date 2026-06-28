@@ -37,7 +37,7 @@ apps/
 
 Dependency direction is inward only: userinterface → application → domain.
 Infrastructure implements domain and application interfaces. See
-`docs/specs/01-project-structure.md` for full rules.
+`docs/specs/project-structure.md` for full rules.
 
 ## Code conventions
 
@@ -49,8 +49,10 @@ Infrastructure implements domain and application interfaces. See
 - `gofmt` and `go vet` clean
 - `bazel run //:gazelle` after adding/removing files
 
-The full coding specifications are in `docs/specs/` (20 documents covering
-Go style, testing, persistence, security, observability, and more).
+The architectural specs live in `docs/specs/` — project structure, the
+server/CLI/web composition roots, and how to write a spec. Language-level
+coding standards (Go style, testing, persistence, security, observability)
+are enforced by `gavel judge` itself rather than restated here.
 
 ## Architecture rules
 

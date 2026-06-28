@@ -18,7 +18,7 @@ Terraform.
 | **Archtest** | `go_archtest_submission_aspect` |
 | **Bazel rule kinds** | `go_library`, `go_binary`, `go_test` |
 | **SARIF suffix** | `.golangci.sarif` |
-| **Wrapper** | `tools/go/golangci_lint/wrapper/main.go` |
+| **Wrapper** | `lint/lang/go/golangci_lint/wrapper/main.go` |
 | **Coverage** | LCOV via `bazel coverage` |
 
 ## State of the art: Go linting in Bazel
@@ -169,8 +169,8 @@ fingerprint before counting, so each finding is counted once.
 
 | File | Role |
 |------|------|
-| `tools/aspects/defs.bzl` | Dual-aspect + `GavelGoSrcInfo` sibling-source tracking |
-| `tools/go/golangci_lint/wrapper/main.go` | `--skip-tests` flag → `--tests=false` to golangci-lint |
+| `lint/aspects/defs.bzl` | Dual-aspect + `GavelGoSrcInfo` sibling-source tracking |
+| `lint/lang/go/golangci_lint/wrapper/main.go` | `--skip-tests` flag → `--tests=false` to golangci-lint |
 | `core/application/casefile/evidencedto/finding.go` | `ExtractFindings` dedup by fingerprint |
 
 ## Aspect mechanics
@@ -253,7 +253,7 @@ Gavel quality gate rules that apply to Go findings:
 ## Wrapper reference
 
 ```
-tools/go/golangci_lint/wrapper/main.go
+lint/lang/go/golangci_lint/wrapper/main.go
 ```
 
 | Flag | Default | Description |

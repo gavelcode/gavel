@@ -41,6 +41,14 @@ interpretation. Key Vernon rules applied throughout:
 
 ## Aggregates
 
+> **Scope of this document.** This canonical model details the three judicial
+> aggregates that form the analysis core: **Gavelspace**, **Project**, and
+> **CaseFile**. Two further bounded contexts exist as full Vernon-strict BCs and
+> are not re-documented here: **Pleading** (`core/domain/pleading/` — the petition
+> to judge a change, surfaced as "pull request"; `open → merged | closed`) and
+> **IAM** (`core/domain/iam/` — `Tenant`, `User`, `Session`, `APIToken`). See
+> [status.md](../status.md) for their current shape.
+
 ### Gavelspace
 
 The monorepo-level container. Owns the collection of Projects.
@@ -93,6 +101,8 @@ A directory or Bazel target scope within a Gavelspace that Gavel analyzes.
 - `defaultBranch` — branch used as baseline for tracking (default: `main`)
 - `qualityGate` — quality gate configuration (VO)
 - `architecturePolicy` — optional ArchitecturePolicy (layers + deny rules)
+- `baselines` — per-branch Baseline snapshots (fingerprints, arch IDs, coverage
+  percent, per-file coverage). Updated when the verdict passes; ratcheted on fail.
 
 **References:** Gavelspace by `GavelspaceID`. Historical CaseFiles reference
 Project by `ProjectID` (not contained in memory).
@@ -100,8 +110,12 @@ Project by `ProjectID` (not contained in memory).
 **Behavior:**
 - `UpdateQualityGate(qualityGate)` — replaces quality gate config, emits `QualityGateUpdated`
 - `UpdateLanguages(languages)` — replaces language list, emits `LanguagesUpdated`
+- `UpdateTargetPattern(pattern)` — replaces the target pattern, emits `TargetPatternUpdated`
 - `UpdateExcludePatterns(patterns)` — replaces the exclude list (validated within
   `targetPattern`), emits `ExcludePatternsUpdated`
+- `UpdateArchitecturePolicy(policy)` — sets the arch policy, emits `ArchitecturePolicyUpdated`
+- `UpdateBaseline` / `RatchetBaseline` — replace or shrink a branch baseline (no event;
+  persistence concern surfaced through the repository)
 
 #### Editing Project
 
@@ -111,9 +125,9 @@ Project by `ProjectID` (not contained in memory).
   each `excludePattern` valid and resolving within `targetPattern`;
   `defaultBranch` non-empty; `qualityGate` is a valid VO; each `Language`
   validated by its constructor.
-- **Events to keep emitting**: `QualityGateUpdated` on UpdateQualityGate,
-  `LanguagesUpdated` on UpdateLanguages, `ExcludePatternsUpdated` on
-  UpdateExcludePatterns. Wholesale replacement, not partial mutation.
+- **Events to keep emitting**: `QualityGateUpdated`, `LanguagesUpdated`,
+  `TargetPatternUpdated`, `ExcludePatternsUpdated`, `ArchitecturePolicyUpdated`
+  on the matching `Update*`. Wholesale replacement, not partial mutation.
 - **Tests to re-run / extend**: `core/domain/project/model/*_test.go` for
   invariants and event emission. Sub-model: `core/domain/project/model/qualitygate/*_test.go`
   for strategy / rule validation. Application:
@@ -576,6 +590,7 @@ then dispatches to subscribers (logging, webhook delivery, read model updates).
 | `ProjectRemoved` | Gavelspace | `gavelspace.project_removed` | GavelspaceID, ProjectID |
 | `QualityGateUpdated` | Project | `project.quality_gate_updated` | ProjectID |
 | `LanguagesUpdated` | Project | `project.languages_updated` | ProjectID |
+| `TargetPatternUpdated` | Project | `project.target_pattern_updated` | ProjectID |
 | `ExcludePatternsUpdated` | Project | `project.exclude_patterns_updated` | ProjectID |
 | `ArchitecturePolicyUpdated` | Project | `project.architecture_policy_updated` | ProjectID |
 | `CaseFileOpened` | CaseFile | `casefile.opened` | CaseFileID, ProjectID, CommitSHA, Branch |

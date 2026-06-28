@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
+	"strings"
 	"testing"
 
 	"github.com/spf13/cobra"
@@ -232,4 +234,20 @@ func TestNewCommand_ReturnsCommand(t *testing.T) {
 	)
 	assert.Equal(t, "init", cmd.Use)
 	assert.NotNil(t, cmd.RunE)
+}
+
+func TestNewCommand_HelpOnlyMentionsRealFlags(t *testing.T) {
+	cmd := NewCommand(
+		func() (string, error) { return "/tmp", nil },
+		&fakeInstaller{},
+		&fakeCatalog{},
+	)
+
+	help := cmd.Long + "\n" + cmd.Example
+	flagRef := regexp.MustCompile(`--[a-z][a-z-]*`)
+	for _, token := range flagRef.FindAllString(help, -1) {
+		name := strings.TrimPrefix(token, "--")
+		assert.NotNilf(t, cmd.Flags().Lookup(name),
+			"help text references %s but no such flag is registered", token)
+	}
 }

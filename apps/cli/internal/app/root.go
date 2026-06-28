@@ -86,7 +86,7 @@ Start with 'gavel init' to set up a workspace, then 'gavel judge' to analyze.`,
 	root.AddCommand(config.NewCommand(deps.WorkspaceResolver, deps.LoadWsHandler))
 	root.AddCommand(projects.NewCommand(deps.WorkspaceResolver, deps.LoadWsHandler))
 	root.AddCommand(trends.NewCommand())
-	root.AddCommand(gavelmcp.NewCommand())
+	root.AddCommand(gavelmcp.NewCommand(deps.Version))
 
 	return root
 }

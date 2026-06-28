@@ -1,6 +1,7 @@
 package app_test
 
 import (
+	"bytes"
 	"log/slog"
 	"testing"
 
@@ -54,6 +55,27 @@ func TestVerboseFlagSetsDebugLogLevel(t *testing.T) {
 	require.NoError(t, root.Execute())
 
 	assert.Equal(t, slog.LevelDebug, logLevel.Level())
+}
+
+func TestNewRootCommandSetsVersion(t *testing.T) {
+	deps := minimalDeps()
+	deps.Version = "1.2.3"
+	root := app.NewRootCommand(deps)
+
+	assert.Equal(t, "1.2.3", root.Version)
+}
+
+func TestVersionFlagPrintsVersion(t *testing.T) {
+	deps := minimalDeps()
+	deps.Version = "1.2.3"
+	root := app.NewRootCommand(deps)
+
+	var out bytes.Buffer
+	root.SetOut(&out)
+	root.SetArgs([]string{"--version"})
+	require.NoError(t, root.Execute())
+
+	assert.Contains(t, out.String(), "1.2.3")
 }
 
 func minimalDeps() app.Deps {

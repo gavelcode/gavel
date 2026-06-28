@@ -38,6 +38,10 @@ import (
 	"github.com/usegavel/gavel/core/userinterface/cli/judge"
 )
 
+// version is the CLI version. It defaults to "dev" for local builds and is
+// overridden at release time via -ldflags "-X main.version=<tag>" (goreleaser).
+var version = "dev"
+
 func main() {
 	catalog.SetModulePrefix("@gavel_tools")
 
@@ -101,6 +105,7 @@ func main() {
 	analyzeHandler := analyzetarget.NewHandler(targetAnalyzer)
 
 	deps := app.Deps{
+		Version:             version,
 		WorkspaceResolver:   bazel.WorkspaceDir,
 		Logger:              logger,
 		LogLevel:            logLevel,

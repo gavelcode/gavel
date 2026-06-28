@@ -23,6 +23,8 @@ import (
 )
 
 type Deps struct {
+	Version string
+
 	WorkspaceResolver func() (string, error)
 	Logger            *slog.Logger
 	LogLevel          *slog.LevelVar
@@ -49,8 +51,9 @@ type Deps struct {
 func NewRootCommand(deps Deps) *cobra.Command {
 	var verbose bool
 	root := &cobra.Command{
-		Use:   "gavel",
-		Short: "Gavel CLI — monorepo Bazel quality analyzer",
+		Use:     "gavel",
+		Version: deps.Version,
+		Short:   "Gavel CLI — monorepo Bazel quality analyzer",
 		Long: `Gavel is a quality gate tool for Bazel monorepos. It runs static analyzers
 (PMD, SpotBugs, golangci-lint, ESLint, Clippy, Ruff, Bandit, and more) as Bazel
 aspects, collects coverage via bazel coverage, enforces architecture constraints,

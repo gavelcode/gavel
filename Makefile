@@ -6,7 +6,7 @@ V1_GEN_DIR := $(V1_DIR)/gen
 V1_SPEC := openapi/v1/openapi.yaml
 V1_BUNDLE := /tmp/gavel-openapi-bundled.yaml
 
-.PHONY: openapi-bundle openapi-gen openapi-gen-ts openapi-check clispec-gen clispec-check e2e
+.PHONY: openapi-bundle openapi-gen openapi-gen-ts openapi-check clispec-gen clispec-check e2e release
 
 # openapi-bundle uses @redocly/cli to inline the split spec under openapi/v1/
 # into a single self-contained YAML. Both code generators (Go via oapi-codegen,
@@ -35,3 +35,9 @@ clispec-check: clispec-gen
 e2e:
 	bazel build //apps/server/cmd/gavel-server
 	cd apps/web && npx playwright test
+
+# release tags and publishes a CLI release. It only validates and tags; the
+# release workflow does the build/publish. Usage: make release VERSION=X.Y.Z
+release:
+	@test -n "$(VERSION)" || { echo "usage: make release VERSION=X.Y.Z"; exit 1; }
+	@bash hack/release.sh $(VERSION)

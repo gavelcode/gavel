@@ -15,6 +15,11 @@ import (
 
 const gavelDepLine = `bazel_dep(name = "gavel_tools", version = "0.1.0")`
 
+const (
+	gavelRegistryLine = "common --registry=https://gavelcode.github.io/registry"
+	bcrRegistryLine   = "common --registry=https://bcr.bazel.build"
+)
+
 func TestInstall_DownstreamRepo_InjectsBazelDep(t *testing.T) {
 	root := setupWorkspace(t, `module(name = "consumer-app", version = "1.0.0")`+"\n")
 
@@ -107,6 +112,54 @@ func TestInstall_DoesNotDuplicateFilegroup(t *testing.T) {
 	build := readFile(t, filepath.Join(root, "BUILD.bazel"))
 	assert.Equal(t, 1, strings.Count(build, "gavel_lint_config"),
 		"filegroup must not be duplicated on repeated installs")
+}
+
+func TestInstall_AddsGavelRegistry(t *testing.T) {
+	root := setupWorkspace(t, `module(name = "consumer-app", version = "1.0.0")`+"\n")
+
+	_, err := installer.NewInstaller().Install(root, []string{"go"})
+	require.NoError(t, err)
+
+	bazelrc := readFile(t, filepath.Join(root, ".bazelrc"))
+	assert.Contains(t, bazelrc, gavelRegistryLine,
+		"init must point .bazelrc at the gavel registry so gavel_tools resolves")
+}
+
+func TestInstall_KeepsBcrAlongsideGavelRegistry(t *testing.T) {
+	root := setupWorkspace(t, `module(name = "consumer-app", version = "1.0.0")`+"\n")
+
+	_, err := installer.NewInstaller().Install(root, []string{"go"})
+	require.NoError(t, err)
+
+	bazelrc := readFile(t, filepath.Join(root, ".bazelrc"))
+	assert.Contains(t, bazelrc, bcrRegistryLine,
+		"declaring any registry drops Bazel's BCR default, so BCR must be added explicitly")
+}
+
+func TestInstall_ExistingBcr_NotDuplicated(t *testing.T) {
+	root := setupWorkspace(t, `module(name = "consumer-app", version = "1.0.0")`+"\n")
+	require.NoError(t, os.WriteFile(filepath.Join(root, ".bazelrc"), []byte(bcrRegistryLine+"\n"), 0o644))
+
+	_, err := installer.NewInstaller().Install(root, []string{"go"})
+	require.NoError(t, err)
+
+	bazelrc := readFile(t, filepath.Join(root, ".bazelrc"))
+	assert.Contains(t, bazelrc, gavelRegistryLine)
+	assert.Equal(t, 1, strings.Count(bazelrc, bcrRegistryLine),
+		"must not duplicate an existing BCR registry line")
+}
+
+func TestInstall_DoesNotDuplicateGavelRegistry(t *testing.T) {
+	root := setupWorkspace(t, `module(name = "consumer-app", version = "1.0.0")`+"\n")
+
+	_, err := installer.NewInstaller().Install(root, []string{"go"})
+	require.NoError(t, err)
+	_, err = installer.NewInstaller().Install(root, []string{"go"})
+	require.NoError(t, err)
+
+	bazelrc := readFile(t, filepath.Join(root, ".bazelrc"))
+	assert.Equal(t, 1, strings.Count(bazelrc, gavelRegistryLine),
+		"registry line must not be duplicated on repeated installs")
 }
 
 func TestVerifyStructure_AllPresent(t *testing.T) {

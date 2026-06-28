@@ -12,7 +12,7 @@ import (
 	"github.com/usegavel/gavel/core/userinterface/cli/mcp/tools"
 )
 
-func NewCommand() *cobra.Command {
+func NewCommand(version string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "mcp",
 		Short: "Start MCP server for LLM agent integration",
@@ -24,24 +24,31 @@ LLM agents such as Claude Code, Cursor, and VS Code Copilot.
 Configure in Claude Code settings.json:
   { "mcpServers": { "gavel": { "command": "gavel", "args": ["mcp"] } } }`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return run(cmd)
+			return run(cmd, version)
 		},
 	}
 	return cmd
 }
 
-func run(cmd *cobra.Command) error {
+func run(cmd *cobra.Command, version string) error {
 	workspace := os.Getenv("GAVEL_WORKSPACE")
 	cli := executor.New(workspace)
-	server := NewServer(cli)
+	server := NewServer(cli, version)
 	return server.Run(cmd.Context(), &mcpsdk.StdioTransport{})
 }
 
-func NewServer(cli *executor.CLI) *mcpsdk.Server {
-	server := mcpsdk.NewServer(&mcpsdk.Implementation{
+// implementation builds the MCP server identity. The version is threaded from
+// the CLI's ldflags-injected build version, so the release tag is the single
+// source of truth and there is no hardcoded version to drift.
+func implementation(version string) *mcpsdk.Implementation {
+	return &mcpsdk.Implementation{
 		Name:    "gavel",
-		Version: "0.1.0",
-	}, nil)
+		Version: version,
+	}
+}
+
+func NewServer(cli *executor.CLI, version string) *mcpsdk.Server {
+	server := mcpsdk.NewServer(implementation(version), nil)
 
 	resources.RegisterConfig(server, cli)
 	resources.RegisterProjects(server, cli)

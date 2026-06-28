@@ -60,7 +60,7 @@ func connectServerAndClient(t *testing.T, cli *executor.CLI) *mcpsdk.ClientSessi
 	t.Helper()
 	ctx := context.Background()
 
-	server := gavelmcp.NewServer(cli)
+	server := gavelmcp.NewServer(cli, "test")
 	cTransport, sTransport := mcpsdk.NewInMemoryTransports()
 
 	ss, err := server.Connect(ctx, sTransport, nil)

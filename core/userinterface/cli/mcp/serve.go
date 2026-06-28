@@ -37,9 +37,6 @@ func run(cmd *cobra.Command, version string) error {
 	return server.Run(cmd.Context(), &mcpsdk.StdioTransport{})
 }
 
-// implementation builds the MCP server identity. The version is threaded from
-// the CLI's ldflags-injected build version, so the release tag is the single
-// source of truth and there is no hardcoded version to drift.
 func implementation(version string) *mcpsdk.Implementation {
 	return &mcpsdk.Implementation{
 		Name:    "gavel",

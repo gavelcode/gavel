@@ -38,8 +38,7 @@ import (
 	"github.com/usegavel/gavel/core/userinterface/cli/judge"
 )
 
-// version is the CLI version. It defaults to "dev" for local builds and is
-// overridden at release time via -ldflags "-X main.version=<tag>" (goreleaser).
+// Overridden at release time via -ldflags "-X main.version".
 var version = "dev"
 
 func main() {

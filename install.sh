@@ -80,7 +80,8 @@ fi
 tar -xzf "${tmp}/${archive}" -C "$tmp" gavel || err "extract failed"
 
 bindir=${GAVEL_BIN_DIR:-/usr/local/bin}
-if [ ! -d "$bindir" ] || [ ! -w "$bindir" ]; then
+mkdir -p "$bindir" 2>/dev/null || true
+if [ ! -w "$bindir" ]; then
 	if [ -z "${GAVEL_BIN_DIR:-}" ]; then
 		bindir="${HOME}/.local/bin"
 		mkdir -p "$bindir"

@@ -1,3 +1,4 @@
+common --registry=https://gavelcode.github.io/registry
 common --registry=https://bcr.bazel.build
 
 # Testcontainers reaper (Ryuk) requires a "bridge" network that not every

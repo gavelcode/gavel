@@ -9,6 +9,12 @@ description: Decision record for aligning the web frontend against core server D
 Executed May 2026. Aligned the web frontend (`apps/web/`) against the core
 server DTOs and query ports in 5 phases.
 
+> **Note:** the route table below shows the original `/api/` (v0) surface. The
+> HTTP API has since moved to `/api/v1` (snake_case, cursor pagination,
+> sub-resources) — see the CHANGELOG. The decisions here (IDs, severities,
+> quality-gate embedding, key-based routing, fingerprint identity) still hold;
+> only the path prefix and pagination shape changed.
+
 ## Decisions
 
 | Decision | Choice | Rationale |

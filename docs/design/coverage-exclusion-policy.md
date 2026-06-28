@@ -128,6 +128,6 @@ negative target patterns, so they affect no gate dimension.
   statically unreachable code (Unplanned).
 - golang/go [#53271](https://github.com/golang/go/issues/53271) — proposal for
   a `//go:cover ignore` comment (frozen).
-- [baseline-strategy.md](baseline-strategy.md),
+- [baseline.md](../baseline.md),
   [incrementality-decision.md](incrementality-decision.md) — how existing debt
   is handled without editing the number.

@@ -16,7 +16,7 @@ a composite coverage strategy that handles vitest-based projects.
 | **Archtest** | `typescript_archtest_submission_aspect` |
 | **Bazel rule kinds** | `ts_project`, `ts_library`, `js_library`, `js_binary`, `js_test` |
 | **SARIF suffix** | `.eslint.sarif` |
-| **Wrapper** | `tools/typescript/eslint/wrapper/main.go` |
+| **Wrapper** | `lint/lang/typescript/eslint/wrapper/main.go` |
 | **Coverage** | Vitest JSON + LCOV fallback (composite) |
 
 ## Aspect mechanics
@@ -87,7 +87,7 @@ Config files are tracked via the `gavel_lint_config` filegroup.
 ## Wrapper reference
 
 ```
-tools/typescript/eslint/wrapper/main.go
+lint/lang/typescript/eslint/wrapper/main.go
 ```
 
 | Flag | Default | Description |

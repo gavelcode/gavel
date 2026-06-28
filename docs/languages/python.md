@@ -17,7 +17,7 @@ Gavel-exclusive.
 | **Archtest** | `python_archtest_submission_aspect` |
 | **Bazel rule kinds** | `py_library`, `py_binary`, `py_test` |
 | **SARIF suffixes** | `.ruff.sarif`, `.bandit.sarif`, `.pycompile.sarif` |
-| **Wrappers** | `tools/python/{ruff,bandit,pycompile}/wrapper/main.go` |
+| **Wrappers** | `lint/lang/python/{ruff,bandit,pycompile}/wrapper/main.go` |
 | **Coverage** | LCOV via `bazel coverage` |
 
 ## Tool overview
@@ -93,12 +93,12 @@ run. Marked in `gavelExclusiveAspects` in `catalog/aspect.go`.
    isolation without access to installed packages. Type-checking rules
    that require import resolution may not work.
 3. **Bandit site-packages is pinned.** The Bandit version and its
-   plugins are pinned in `tools/python/bandit/repositories.bzl`.
+   plugins are pinned in `lint/lang/python/bandit/repositories.bzl`.
 
 ## Wrapper reference
 
 | Wrapper | Flags |
 |---------|-------|
-| `tools/python/ruff/wrapper/main.go` | `--ruff <binary> --out <sarif> <files...>` |
-| `tools/python/bandit/wrapper/main.go` | `--site-packages <dir> --out <sarif> <files...>` |
-| `tools/python/pycompile/wrapper/main.go` | `--out <sarif> <files...>` |
+| `lint/lang/python/ruff/wrapper/main.go` | `--ruff <binary> --out <sarif> <files...>` |
+| `lint/lang/python/bandit/wrapper/main.go` | `--site-packages <dir> --out <sarif> <files...>` |
+| `lint/lang/python/pycompile/wrapper/main.go` | `--out <sarif> <files...>` |

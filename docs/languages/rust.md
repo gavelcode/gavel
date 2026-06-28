@@ -20,7 +20,7 @@ from `rules_rust` — the same aspect used by the broader Bazel+Rust ecosystem.
 | **Archtest** | `rust_archtest_submission_aspect` |
 | **Bazel rule kinds** | `rust_library`, `rust_binary`, `rust_test` |
 | **SARIF suffix** | `.clippy.sarif` |
-| **Converter** | `tools/rust/clippy/converter/` |
+| **Converter** | `lint/lang/rust/clippy/converter/` |
 | **Coverage** | LCOV via `bazel coverage` |
 
 ## Architecture: delegated aspect
@@ -106,7 +106,7 @@ build:gavel-rust-clippy --@rules_rust//rust/settings:clippy_output_diagnostics=T
 ## Converter reference
 
 ```
-tools/rust/clippy/converter/
+lint/lang/rust/clippy/converter/
 ├── converter.go       # Convert() function: rustc JSON → SARIF
 ├── converter_test.go  # Unit tests
 ├── BUILD.bazel        # Library target

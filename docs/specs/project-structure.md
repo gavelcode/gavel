@@ -87,9 +87,9 @@ type Finder interface {
 type CaseFileFinder struct { db *database.DB }
 ```
 
-Write side (Repository) carga agregados. Read side (Finder) devuelve
-proyecciones de lectura optimizadas para la UI sin reconstruir agregados.
-Ambos viven en el mismo paquete de infraestructura del BC.
+The write side (Repository) loads aggregates. The read side (Finder) returns
+read projections optimized for the UI without reconstructing aggregates.
+Both live in the same BC infrastructure package.
 
 ### Rule 3: Application depends on domain only
 
@@ -121,19 +121,19 @@ Inside each of `core/application/`, `core/infrastructure/`, and
 `core/userinterface/api/v1/` we use three named wrappers with explicit
 Vernon vocabulary, **not** generic dumping grounds:
 
-- `shared/` — **Shared Kernel** (Vernon IDDD ch. 14): contratos cross-BC
-  que todos los BCs dependen. Ej. `application/shared/event/` (Event DTO).
-  Domain también tiene su `core/domain/shared/` con `event/` + `failure/`.
-- `supporting/` — **Supporting Subdomain** (Vernon/Evans): use cases o
-  endpoints cross-BC sin agregado dueño propio. Ej. `application/supporting/search/`,
+- `shared/` — **Shared Kernel** (Vernon IDDD ch. 14): cross-BC contracts that
+  every BC depends on. E.g. `application/shared/event/` (Event DTO). Domain has
+  its own `core/domain/shared/` with `event/` + `failure/`.
+- `supporting/` — **Supporting Subdomain** (Vernon/Evans): cross-BC use cases or
+  endpoints with no owning aggregate. E.g. `application/supporting/search/`,
   `infrastructure/supporting/search/`, `userinterface/api/v1/supporting/{search,source}/`.
-- `platform/` — infraestructura de plataforma sin semántica de dominio.
-  Ej. `infrastructure/platform/{bazel/catalog,database,sourceblob}/` y
+- `platform/` — platform infrastructure with no domain semantics. E.g.
+  `infrastructure/platform/{bazel/catalog,database,sourceblob}/` and
   `userinterface/api/v1/platform/{middleware,bootstrap,router,spa}/`.
 
-Estos tres nombres están reservados a esos significados. No los uses como
-"miscelánea". Si una pieza no encaja en BC, shared, supporting, o platform,
-para y revisa el diseño.
+These three names are reserved for those meanings. Do not use them as a
+miscellany. If a piece does not fit a BC, shared, supporting, or platform,
+stop and revisit the design.
 
 ## Bounded context organization
 
@@ -154,15 +154,15 @@ core/domain/repositories/
 core/userinterface/api/v1/{dto,handlers}/   # flat by tech type
 ```
 
-Los BCs son tan independientes como sea posible. Imports directos entre
-BCs están permitidos pero minimizados. Para acoplamiento bajo: eventos
-de dominio. Nunca compartir tabla SQL entre BCs.
+BCs are as independent as possible. Direct imports between BCs are allowed but
+minimized. For low coupling, prefer domain events. Never share a SQL table
+between BCs.
 
-### Feature Folders en userinterface
+### Feature Folders in userinterface
 
-La capa userinterface usa **Feature Folders** (Bogard, Microsoft eShopOn
-Containers) — cada BC tiene su propia carpeta con sus handlers HTTP y sus
-DTOs JSON juntos, no separados por tipo técnico:
+The userinterface layer uses **Feature Folders** (Bogard, Microsoft eShopOn
+Containers) — each BC has its own folder keeping its HTTP handlers and JSON
+DTOs together, not split by technical type:
 
 ```
 userinterface/api/v1/casefile/
@@ -178,9 +178,9 @@ userinterface/api/v1/casefile/
 
 ## Composition roots
 
-`apps/cli/cmd/gavel/main.go` y `apps/server/cmd/gavel-server/main.go` son
-los composition roots. Solo wiring. Sin lógica de negocio. Sin condicional
-más allá de la selección de features por config.
+`apps/cli/cmd/gavel/main.go` and `apps/server/cmd/gavel-server/main.go` are the
+composition roots. Wiring only. No business logic. No conditionals beyond
+feature selection by config.
 
 ## Build system: Bazel
 

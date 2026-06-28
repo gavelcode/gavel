@@ -6,6 +6,12 @@ description: Where aspect_rules_lint fits relative to Gavel's native SARIF aspec
 
 # Integration Strategy: Gavel + rules_lint
 
+> **Status: implemented.** The dual-mode design below shipped — `gavel judge`
+> auto-detects rules_lint reports in `bazel-bin/` and falls back to Gavel's own
+> aspects, overridable with `--findings-source=auto|gavel|rules_lint`. The
+> "Proposed architecture" / "Implementation plan" sections are kept as the
+> rationale of record; the open questions at the end are the remaining nits.
+
 ## Context
 
 Gavel currently runs its own Bazel aspects to execute linters (PMD, SpotBugs,
@@ -44,7 +50,7 @@ machine-readable reports stored in `bazel-bin/`. Reports can be found at:
 find $(bazel info bazel-bin) -name "*AspectRulesLint*report"
 ```
 
-Gavel already has a SARIF 2.1.0 parser (`core/infrastructure/sarif/`). The
+Gavel already has a SARIF 2.1.0 parser (`core/infrastructure/casefile/sarif/`). The
 normalization layer is already solved.
 
 ## Proposed architecture: dual mode
@@ -136,7 +142,7 @@ Even in integrated mode, Gavel provides:
 - **Structured verdict** — pass / pass_with_warnings / fail with per-rule rulings
 - **Historical tracking** — trends over time (server mode)
 - **Dashboard** — web UI for cross-project visibility (server mode)
-- **Baseline comparison** — new vs existing findings (see baseline-strategy.md)
+- **Baseline comparison** — new vs existing findings (see [baseline.md](../baseline.md))
 
 rules_lint answers: "does this code have lint errors?"
 Gavel answers: "is this code ready to ship?"

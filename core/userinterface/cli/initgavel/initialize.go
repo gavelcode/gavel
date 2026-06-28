@@ -28,14 +28,10 @@ func NewCommand(resolveWorkspace WorkspaceResolver, inst ConfigInstaller, catalo
 project definitions, registers analysis aspects in .bazelrc, and installs tool
 dependencies in MODULE.bazel.
 
-Interactive by default: prompts for project name, target patterns, and languages.
-
-Non-interactive modes (CI, scripting, piped input):
-  --from         Load from an existing gavel.yaml
-  --name/--pattern/--tooling   Define a single project via flags`,
+Interactive by default: prompts for the project name and project definitions.
+Use --from to re-apply an existing gavel.yaml non-interactively (CI, scripting).`,
 		Example: `  gavel init
   gavel init --from=gavel.yaml
-  gavel init --name=myproject --pattern="//..." --tooling=go,java
   gavel init --force`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return run(cmd, opts, resolveWorkspace, inst, catalog)

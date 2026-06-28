@@ -1,0 +1,67 @@
+version: 2
+
+project_name: gavel
+
+builds:
+  - id: gavel
+    main: ./apps/cli/cmd/gavel
+    binary: gavel
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w -X main.version={{ .Version }}
+    mod_timestamp: "{{ .CommitTimestamp }}"
+
+archives:
+  - id: gavel
+    formats: [tar.gz]
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    files:
+      - LICENSE
+      - README.md
+
+checksum:
+  name_template: checksums.txt
+
+snapshot:
+  version_template: "{{ incpatch .Version }}-snapshot"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^chore:"
+      - "^style:"
+
+homebrew_casks:
+  - name: gavel
+    binaries:
+      - gavel
+    homepage: "https://github.com/gavelcode/gavel"
+    description: "Quality governance for Bazel monorepos"
+    repository:
+      owner: gavelcode
+      name: homebrew-tap
+      branch: main
+      token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
+    # Binaries are unsigned; strip the macOS quarantine flag on install so
+    # Gatekeeper does not block the first run.
+    hooks:
+      post:
+        install: |
+          if OS.mac?
+            system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/gavel"]
+          end
+
+release:
+  github:
+    owner: gavelcode
+    name: gavel

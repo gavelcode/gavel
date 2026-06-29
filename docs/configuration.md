@@ -117,13 +117,8 @@ requires a minimum number of violations to be resolved per run.
 
 ### Supported languages and tools
 
-| Language | Lint tools | Versions |
-|----------|-----------|----------|
-| Go | golangci-lint | 2.11.4 |
-| Java/Kotlin | PMD, CPD, SpotBugs, Error Prone | PMD 7.24.0, SpotBugs 4.9.8, Error Prone 2.49.0 |
-| Python | Ruff, Bandit, pycompile | Ruff 0.15.12, Bandit 1.9.4 |
-| TypeScript | ESLint | — |
-| Rust | Clippy | — |
+See [Language support](languages/index.md) for the tools and pinned versions
+per language (the single source of truth for that table).
 
 ### Examples
 

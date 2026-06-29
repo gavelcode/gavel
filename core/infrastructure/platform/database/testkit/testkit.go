@@ -32,7 +32,7 @@ const truncateSQL = `
 	TRUNCATE gavelspace_projects, gavelspaces,
 	         pleadings,
 	         rulings,
-	         architecture_violations, new_code_coverage_data,
+	         architecture_violations, tool_execution_failures, new_code_coverage_data,
 	         coverage_by_language, coverage_data,
 	         findings, evidences, casefile_file_coverage, casefiles,
 	         project_baselines, project_quality_gate_rules, project_languages, projects,
@@ -84,7 +84,7 @@ func startPostgresContainer(ctx context.Context) (*database.DB, string, error) {
 		tcpg.WithDatabase("gaveltest"),
 		tcpg.WithUsername("gavel"),
 		tcpg.WithPassword("gavel"),
-		testcontainers.WithReuseByName("gavel-database-test-v3"),
+		testcontainers.WithReuseByName("gavel-database-test-v4"),
 		testcontainers.WithWaitStrategy(
 			wait.ForLog("database system is ready to accept connections").
 				WithOccurrence(pgReadyLogOccurrences).

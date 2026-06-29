@@ -21,6 +21,7 @@ go_library(
         "//core/domain/casefile/model/evidence/architecture",
         "//core/domain/casefile/model/evidence/coverage",
         "//core/domain/casefile/model/evidence/finding",
+        "//core/domain/casefile/model/evidence/toolexecution",
         "//core/domain/casefile/model/verdict",
         "//core/domain/project/model",
         "//core/domain/shared/failure",

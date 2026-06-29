@@ -14,6 +14,7 @@ import (
 	"github.com/usegavel/gavel/core/domain/casefile/model/evidence/architecture"
 	"github.com/usegavel/gavel/core/domain/casefile/model/evidence/coverage"
 	"github.com/usegavel/gavel/core/domain/casefile/model/evidence/finding"
+	"github.com/usegavel/gavel/core/domain/casefile/model/evidence/toolexecution"
 	"github.com/usegavel/gavel/core/domain/casefile/model/verdict"
 	projectmodel "github.com/usegavel/gavel/core/domain/project/model"
 	"github.com/usegavel/gavel/core/domain/shared/failure"
@@ -113,6 +114,8 @@ func (r *Repository) saveEvidenceContent(ctx context.Context, transaction *datab
 		return r.saveNewCodeCoverage(ctx, transaction, evidenceID, typedContent)
 	case architecture.Content:
 		return r.saveArchViolations(ctx, transaction, evidenceID, typedContent)
+	case toolexecution.Content:
+		return r.saveToolExecutions(ctx, transaction, evidenceID, typedContent)
 	}
 	return nil
 }
@@ -180,6 +183,22 @@ func (r *Repository) saveArchViolations(ctx context.Context, transaction *databa
 			INSERT INTO architecture_violations (evidence_id, rule, source_pkg, target_pkg, message)
 			VALUES (?, ?, ?, ?, ?)
 		`, evidenceID, v.Rule(), v.SourcePkg(), v.TargetPkg(), v.Message())
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (r *Repository) saveToolExecutions(ctx context.Context, transaction *database.Tx, evidenceID uuid.UUID, tec toolexecution.Content) error {
+	if _, err := transaction.ExecContext(ctx, "DELETE FROM tool_execution_failures WHERE evidence_id = ?", evidenceID); err != nil {
+		return fmt.Errorf("clear existing tool execution failures: %w", err)
+	}
+	for _, failed := range tec.Failures() {
+		_, err := transaction.ExecContext(ctx, `
+			INSERT INTO tool_execution_failures (evidence_id, tool, reason)
+			VALUES (?, ?, ?)
+		`, evidenceID, failed.Tool(), failed.Reason())
 		if err != nil {
 			return err
 		}
@@ -334,6 +353,8 @@ func (r *Repository) loadEvidenceContent(ctx context.Context, evidenceID uuid.UU
 		return r.loadNewCodeCoverageContent(ctx, evidenceID)
 	case evidence.SubtypeArchitecture:
 		return r.loadArchitectureContent(ctx, evidenceID)
+	case evidence.SubtypeToolExecution:
+		return r.loadToolExecutionContent(ctx, evidenceID)
 	}
 	return nil, nil
 }
@@ -462,6 +483,35 @@ func (r *Repository) loadArchitectureContent(ctx context.Context, evidenceID uui
 	}
 
 	return architecture.NewContent(violations)
+}
+
+func (r *Repository) loadToolExecutionContent(ctx context.Context, evidenceID uuid.UUID) (evidence.Content, error) {
+	rows, err := r.db.QueryContext(ctx, `
+		SELECT tool, reason
+		FROM tool_execution_failures WHERE evidence_id = ?
+	`, evidenceID)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = rows.Close() }()
+
+	var failures []toolexecution.Failure
+	for rows.Next() {
+		var tool, reason string
+		if err := rows.Scan(&tool, &reason); err != nil {
+			return nil, err
+		}
+		failed, err := toolexecution.NewFailure(tool, reason)
+		if err != nil {
+			return nil, err
+		}
+		failures = append(failures, failed)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return toolexecution.NewContent(failures)
 }
 
 func (r *Repository) loadVerdict(ctx context.Context, caseFileID uuid.UUID, outcomeStr, evaluatedAtStr string) (verdict.Result, error) {

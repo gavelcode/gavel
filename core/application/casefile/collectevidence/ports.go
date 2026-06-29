@@ -21,3 +21,7 @@ type ArchitectureCollector interface {
 type ChangedLinesSource interface {
 	ChangedLines(ctx context.Context, workspace, baseRef string) (map[string][]int, error)
 }
+
+type ToolExecutionParser interface {
+	ParseToolExecutions(data []byte) ([]evidencedto.ToolFailure, error)
+}

@@ -19,6 +19,7 @@ var (
 	SubtypeCoverage        = Subtype{value: "coverage", parentType: TypeCoverage}
 	SubtypeNewCodeCoverage = Subtype{value: "new_code_coverage", parentType: TypeCoverage}
 	SubtypeArchitecture    = Subtype{value: "architecture", parentType: TypeArchitecture}
+	SubtypeToolExecution   = Subtype{value: "tool_execution", parentType: TypeAnalysis}
 )
 
 var validSubtypes = map[string]Subtype{
@@ -33,6 +34,7 @@ var validSubtypes = map[string]Subtype{
 	"coverage":          SubtypeCoverage,
 	"new_code_coverage": SubtypeNewCodeCoverage,
 	"architecture":      SubtypeArchitecture,
+	"tool_execution":    SubtypeToolExecution,
 }
 
 var nonFindingBasedSubtypes = map[Subtype]bool{
@@ -40,6 +42,7 @@ var nonFindingBasedSubtypes = map[Subtype]bool{
 	SubtypeNewCodeCoverage: true,
 	SubtypeLicense:         true,
 	SubtypeArchitecture:    true,
+	SubtypeToolExecution:   true,
 }
 
 func NewSubtype(s string) (Subtype, error) {

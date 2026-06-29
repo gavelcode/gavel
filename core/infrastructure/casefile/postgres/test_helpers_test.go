@@ -17,6 +17,7 @@ import (
 	"github.com/usegavel/gavel/core/domain/casefile/model/evidence/architecture"
 	"github.com/usegavel/gavel/core/domain/casefile/model/evidence/coverage"
 	"github.com/usegavel/gavel/core/domain/casefile/model/evidence/finding"
+	"github.com/usegavel/gavel/core/domain/casefile/model/evidence/toolexecution"
 	"github.com/usegavel/gavel/core/domain/casefile/model/verdict"
 	projectmodel "github.com/usegavel/gavel/core/domain/project/model"
 )
@@ -101,6 +102,19 @@ func newNewCodeCoverageEvidence(t *testing.T) evidence.Evidence {
 	ncc, err := coverage.NewPatchContent(45, 50)
 	require.NoError(t, err)
 	ev, err := evidence.NewEvidence(evidence.SubtypeNewCodeCoverage, "diff-cover", ncc, time.Now().UTC())
+	require.NoError(t, err)
+	return ev
+}
+
+func newToolExecutionEvidence(t *testing.T) evidence.Evidence {
+	t.Helper()
+	f1, err := toolexecution.NewFailure("pmd", "exit code 1: analyzer crashed")
+	require.NoError(t, err)
+	f2, err := toolexecution.NewFailure("spotbugs", "timed out after 300s")
+	require.NoError(t, err)
+	tec, err := toolexecution.NewContent([]toolexecution.Failure{f1, f2})
+	require.NoError(t, err)
+	ev, err := evidence.NewEvidence(evidence.SubtypeToolExecution, "sarif", tec, time.Now().UTC())
 	require.NoError(t, err)
 	return ev
 }

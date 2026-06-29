@@ -15,6 +15,7 @@ import (
 	"github.com/usegavel/gavel/core/domain/casefile/model/evidence/architecture"
 	"github.com/usegavel/gavel/core/domain/casefile/model/evidence/coverage"
 	"github.com/usegavel/gavel/core/domain/casefile/model/evidence/finding"
+	"github.com/usegavel/gavel/core/domain/casefile/model/evidence/toolexecution"
 	casefilepostgres "github.com/usegavel/gavel/core/infrastructure/casefile/postgres"
 )
 
@@ -151,6 +152,36 @@ func TestCaseFileRepoSaveWithArchitectureEvidence(t *testing.T) {
 	assert.Equal(t, "no-domain-to-infra", ac.Violations()[0].Rule())
 	assert.Equal(t, "domain.user", ac.Violations()[0].SourcePkg())
 	assert.Equal(t, "infra.db", ac.Violations()[0].TargetPkg())
+}
+
+func TestCaseFileRepoSaveWithToolExecutionEvidence(t *testing.T) {
+	db := setupDB(t)
+	project := insertTestProject(t, db)
+	repo := casefilepostgres.NewRepository(db)
+	ctx := context.Background()
+
+	caseFile := newTestCaseFile(t, project.ID(), "abc123", "main")
+	ev := newToolExecutionEvidence(t)
+	require.NoError(t, caseFile.AddEvidence(ev, time.Now().UTC()))
+	require.NoError(t, repo.Save(ctx, caseFile))
+
+	found, err := repo.FindByID(ctx, caseFile.ID())
+	require.NoError(t, err)
+	require.Len(t, found.Evidences(), 1)
+
+	loadedEv := found.Evidences()[0]
+	assert.Equal(t, evidence.SubtypeToolExecution, loadedEv.Subtype())
+
+	tec, ok := loadedEv.Content().(toolexecution.Content)
+	require.True(t, ok)
+	require.Len(t, tec.Failures(), 2)
+
+	byTool := map[string]string{}
+	for _, failed := range tec.Failures() {
+		byTool[failed.Tool()] = failed.Reason()
+	}
+	assert.Equal(t, "exit code 1: analyzer crashed", byTool["pmd"])
+	assert.Equal(t, "timed out after 300s", byTool["spotbugs"])
 }
 
 func TestCaseFileRepoSaveWithNewCodeCoverageEvidence(t *testing.T) {

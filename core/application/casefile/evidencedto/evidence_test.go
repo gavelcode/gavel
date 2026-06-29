@@ -12,6 +12,7 @@ import (
 	"github.com/usegavel/gavel/core/domain/casefile/model/evidence/coverage"
 	"github.com/usegavel/gavel/core/domain/casefile/model/evidence/finding"
 	"github.com/usegavel/gavel/core/domain/casefile/model/evidence/license"
+	"github.com/usegavel/gavel/core/domain/casefile/model/evidence/toolexecution"
 )
 
 func TestFindingsEvidenceRoundTrip(t *testing.T) {
@@ -78,6 +79,46 @@ func TestArchitectureEvidenceRoundTrip(t *testing.T) {
 	ac, ok := back.Content().(architecture.Content)
 	require.True(t, ok)
 	assert.Len(t, ac.Violations(), 1)
+}
+
+func TestToolExecutionEvidenceRoundTrip(t *testing.T) {
+	original := buildToolExecutionEvidence(t)
+
+	dto := evidencedto.EvidenceFromDomain(original)
+	require.NotNil(t, dto.ToolExecution)
+	require.Len(t, dto.ToolExecution.Failures, 2)
+	assert.Equal(t, "pmd", dto.ToolExecution.Failures[0].Tool)
+	assert.Equal(t, "exit code 1: analyzer crashed", dto.ToolExecution.Failures[0].Reason)
+
+	back, err := evidencedto.EvidenceToDomain(dto)
+	require.NoError(t, err)
+	tec, ok := back.Content().(toolexecution.Content)
+	require.True(t, ok)
+	require.Len(t, tec.Failures(), 2)
+	assert.Equal(t, "spotbugs", tec.Failures()[1].Tool())
+	assert.Equal(t, "timed out after 300s", tec.Failures()[1].Reason())
+}
+
+func TestEvidenceToDomainToolExecutionMissingPayloadRejected(t *testing.T) {
+	dto := evidencedto.Evidence{
+		Subtype:     evidence.SubtypeToolExecution.String(),
+		Source:      "sarif",
+		CollectedAt: time.Now().UTC(),
+	}
+	_, err := evidencedto.EvidenceToDomain(dto)
+	require.Error(t, err)
+	assert.ErrorIs(t, err, evidencedto.ErrIncompatibleEvidence)
+}
+
+func TestEvidenceToDomainToolExecutionInvalidFailureRejected(t *testing.T) {
+	dto := evidencedto.Evidence{
+		Subtype:       evidence.SubtypeToolExecution.String(),
+		Source:        "sarif",
+		CollectedAt:   time.Now().UTC(),
+		ToolExecution: &evidencedto.ToolExecution{Failures: []evidencedto.ToolFailure{{Tool: "", Reason: "x"}}},
+	}
+	_, err := evidencedto.EvidenceToDomain(dto)
+	require.Error(t, err)
 }
 
 func TestEvidenceToDomainArchitectureMissingPayloadRejected(t *testing.T) {
@@ -164,6 +205,19 @@ func buildArchitectureEvidence(t *testing.T) evidence.Evidence {
 	content, err := architecture.NewContent([]architecture.Violation{av})
 	require.NoError(t, err)
 	ev, err := evidence.NewEvidence(evidence.SubtypeArchitecture, "archtest", content, time.Now().UTC())
+	require.NoError(t, err)
+	return ev
+}
+
+func buildToolExecutionEvidence(t *testing.T) evidence.Evidence {
+	t.Helper()
+	f1, err := toolexecution.NewFailure("pmd", "exit code 1: analyzer crashed")
+	require.NoError(t, err)
+	f2, err := toolexecution.NewFailure("spotbugs", "timed out after 300s")
+	require.NoError(t, err)
+	content, err := toolexecution.NewContent([]toolexecution.Failure{f1, f2})
+	require.NoError(t, err)
+	ev, err := evidence.NewEvidence(evidence.SubtypeToolExecution, "sarif", content, time.Now().UTC())
 	require.NoError(t, err)
 	return ev
 }

@@ -122,8 +122,9 @@ bounded context in `core/`.
   the `AuthMiddleware` (backed by `resolveprincipal`), the
   `SessionCookie` helper, and the body-size middleware.
 
-Bootstrap (`apps/server/cmd/gavel-server/main.go`) creates the `default`
-tenant + first admin via use cases on a fresh database.
+Bootstrap is seeded by `seed.sql` (applied by `database.Migrate()`): the
+`default` tenant + admin `admin@gavel.local` (password `changeme`,
+`must_change_password=true`) on a fresh database.
 
 > Pull requests took the same path: once the model grew real behaviour
 > (status transitions with rules, invariants on filing, domain events) the
@@ -134,9 +135,9 @@ tenant + first admin via use cases on a fresh database.
 ## `apps/server/` (composition root)
 
 - Backend starts with `bazel run //apps/server/cmd/gavel-server -- serve`.
-- Auto-migrations on startup (single bootstrap SQL, applied once).
-- Bootstrap creates `default` tenant and the first admin user (random
-  password to stdout) on a fresh database via `core/iam` use cases.
+- Auto-migrations on startup (`bootstrap.sql` schema + `seed.sql`, applied once).
+- Seeds the `default` tenant and admin `admin@gavel.local` (password
+  `changeme`, `must_change_password=true`) on a fresh database.
 - The server is a composition root in three layers:
   - `cmd/gavel-server/main.go` — instantiates IAM + core repositories
     against PostgreSQL, wires every application handler, mounts the

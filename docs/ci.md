@@ -9,6 +9,17 @@ description: Running gavel judge in CI pipelines using the single static binary.
 Gavel is designed to run in CI pipelines. The CLI is a single static Go
 binary with no external dependencies beyond Bazel.
 
+## Installing in CI
+
+Most CI runners don't ship `gavel`. Add an install step before running it:
+
+```yaml
+- name: Install Gavel
+  run: curl -fsSL https://raw.githubusercontent.com/gavelcode/gavel/main/install.sh | sh
+```
+
+On macOS runners, `brew install gavelcode/tap/gavel` also works.
+
 ## Exit codes
 
 | Code | Meaning |

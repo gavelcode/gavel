@@ -207,7 +207,7 @@ gavel/
 │   ├── infrastructure/<bc>/{memory,postgres,…}/  # adapters; platform/{bazel,git,database,sourceblob}; supporting/
 │   └── userinterface/
 │       ├── api/v1/                            #   OpenAPI-first HTTP: gen/ (generated) + per-BC handlers + shared/
-│       └── cli/                               #   Cobra: judge · init · validate · watch · config · projects · mcp
+│       └── cli/                               #   Cobra: judge · init · validate · watch · config · projects · trends · mcp
 ├── clispec/v1/clispec.yaml                    # CLI spec — commands · flags · exit codes
 ├── apps/                                      # composition roots (wiring only)
 │   ├── cli/cmd/gavel/                         #   CLI entry — wires core deps + commands

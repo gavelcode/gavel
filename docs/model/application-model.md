@@ -187,7 +187,7 @@ submit.NewHandler(
 ```
 
 Wiring lives at the deployment edge (`apps/server/cmd/gavel-server/main.go`,
-`apps/cli/cmd/gavel/main.go`). Each binary instantiates SQLite / in-memory /
+`apps/cli/cmd/gavel/main.go`). Each binary instantiates Postgres / in-memory /
 HTTP-client repository adapters and injects them into handlers.
 
 ## The submit flow

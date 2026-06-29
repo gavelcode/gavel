@@ -34,7 +34,7 @@ and bare `Ping()` without a timeout (could block indefinitely at startup).
 **pgxpool (native pgx pool):** Faster than `database/sql` due to binary
 protocol and no reflection overhead. However, Gavel uses `database/sql` to
 keep repositories driver-agnostic (`dbkit.DB` auto-rebinds `?` → `$N`). The
-native pool would tie repos to PostgreSQL, breaking the CLI's SQLite path.
+native pool would tie repos to PostgreSQL, giving up that abstraction.
 Acceptable trade-off for now.
 
 **PgBouncer (external pooler):** Offloads pool management to a sidecar. Adds

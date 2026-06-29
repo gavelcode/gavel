@@ -17,6 +17,14 @@ func validFailure(t *testing.T, tool, reason string) toolexecution.Failure {
 	return failed
 }
 
+type foreignContent struct{}
+
+func (foreignContent) Type() evidence.Type       { return evidence.TypeAnalysis }
+func (foreignContent) Subtype() evidence.Subtype { return evidence.SubtypeToolExecution }
+func (foreignContent) Merge(evidence.Content) (evidence.Content, error) {
+	return nil, nil
+}
+
 func TestNewToolExecutionContent(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -57,6 +65,17 @@ func TestToolExecutionContentMerge(t *testing.T) {
 	mergedContent, ok := merged.(toolexecution.Content)
 	require.True(t, ok)
 	assert.Equal(t, 2, len(mergedContent.Failures()))
+}
+
+func TestToolExecutionContentMergeIncompatibleTypeRejected(t *testing.T) {
+	content, err := toolexecution.NewContent([]toolexecution.Failure{validFailure(t, "ruff", "a")})
+	require.NoError(t, err)
+
+	merged, err := content.Merge(foreignContent{})
+
+	require.Error(t, err)
+	assert.ErrorIs(t, err, toolexecution.ErrInvalidFailure)
+	assert.Nil(t, merged)
 }
 
 func TestToolExecutionContentDefensiveCopy(t *testing.T) {

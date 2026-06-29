@@ -45,6 +45,7 @@ go_test(
         "//core/domain/casefile/model/evidence/coverage",
         "//core/domain/casefile/model/evidence/finding",
         "//core/domain/casefile/model/evidence/license",
+        "//core/domain/casefile/model/evidence/toolexecution",
         "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//require",
     ],

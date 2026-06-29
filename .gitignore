@@ -24,6 +24,12 @@ __pycache__/
 # Gavel temporary output (not committed)
 **/.gavel/results/
 
+# Local dev database artifacts (never commit)
+data/
+*.db
+*.db-shm
+*.db-wal
+
 # Binaries
 /gavel
 /gavel-server

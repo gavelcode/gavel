@@ -72,7 +72,7 @@ jobs:
           node-version: "22"
 
       - name: Install pnpm
-        run: npm install -g pnpm
+        run: npm install -g pnpm@9.15.4
 
       - name: Install web deps
         run: cd apps/web && pnpm install --frozen-lockfile

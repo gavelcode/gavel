@@ -28,9 +28,9 @@ type Options struct {
 	Quick bool
 	RequireSubmit bool
 	ServerURL string
+	TargetFile string
 	Timeout time.Duration
 	ServerToken string
-	TargetFile string
 }
 
 // RegisterFlags binds all judge flags to the given Options struct.
@@ -53,8 +53,8 @@ func RegisterFlags(cmd *cobra.Command, opts *Options) {
 	cmd.Flags().BoolVarP(&opts.Quick, "quick", "q", false, "Run findings only, skip coverage and architecture checks.")
 	cmd.Flags().BoolVar(&opts.RequireSubmit, "require-submit", false, "Exit with error if server submission fails. Default behavior is warn and continue.")
 	cmd.Flags().StringVar(&opts.ServerURL, "server", envOrDefault("GAVEL_SERVER_URL", ""), "Gavel server URL for shared baseline and result submission.")
-	cmd.Flags().DurationVar(&opts.Timeout, "timeout", 30 * time.Minute, "Maximum time for the entire judge run.")
 	cmd.Flags().StringVar(&opts.TargetFile, "target-file", "", "File path relative to workspace root. Resolves the owning Bazel package and analyzes only that target. Implies --quick.")
+	cmd.Flags().DurationVar(&opts.Timeout, "timeout", 30 * time.Minute, "Maximum time for the entire judge run.")
 	cmd.Flags().StringVar(&opts.ServerToken, "token", envOrDefault("GAVEL_TOKEN", ""), "API token for server authentication.")
 }
 

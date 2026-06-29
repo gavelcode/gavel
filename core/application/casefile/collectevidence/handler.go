@@ -3,26 +3,29 @@ package collectevidence
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/usegavel/gavel/core/application/casefile/classifyarch"
 	"github.com/usegavel/gavel/core/application/casefile/evidencedto"
 	ingestcov "github.com/usegavel/gavel/core/application/casefile/ingestcoverage"
 	ingestfind "github.com/usegavel/gavel/core/application/casefile/ingestfindings"
 	"github.com/usegavel/gavel/core/application/casefile/ingestncc"
+	"github.com/usegavel/gavel/core/domain/casefile/model/evidence"
 )
 
 const percentageMultiplier = 100
 
 type Handler struct {
-	findings     FindingsCollector
-	coverage     CoverageCollector
-	architecture ArchitectureCollector
-	ingestFind   *ingestfind.Handler
-	ingestCov    *ingestcov.Handler
-	classifyArch *classifyarch.Handler
-	ingestNCC    *ingestncc.Handler
-	changedLines ChangedLinesSource
-	perLine      ingestncc.PerLineParser
+	findings      FindingsCollector
+	coverage      CoverageCollector
+	architecture  ArchitectureCollector
+	ingestFind    *ingestfind.Handler
+	ingestCov     *ingestcov.Handler
+	classifyArch  *classifyarch.Handler
+	ingestNCC     *ingestncc.Handler
+	changedLines  ChangedLinesSource
+	perLine       ingestncc.PerLineParser
+	toolExecution ToolExecutionParser
 }
 
 type HandlerOption func(*Handler)
@@ -33,6 +36,10 @@ func WithChangedLinesSource(cls ChangedLinesSource) HandlerOption {
 
 func WithPerLineParser(p ingestncc.PerLineParser) HandlerOption {
 	return func(h *Handler) { h.perLine = p }
+}
+
+func WithToolExecutionParser(p ToolExecutionParser) HandlerOption {
+	return func(h *Handler) { h.toolExecution = p }
 }
 
 func NewHandler(
@@ -84,6 +91,7 @@ func (h *Handler) Execute(ctx context.Context, cmd Command) (Result, error) {
 
 	var evidences []evidencedto.Evidence
 	evidences = append(evidences, findingsEvidences...)
+	evidences = h.appendToolExecutionEvidence(evidences, rawSARIF)
 
 	var covPercent float64
 	var rawLCOV []byte
@@ -142,6 +150,32 @@ func (h *Handler) Execute(ctx context.Context, cmd Command) (Result, error) {
 		ArchDelta:       archDelta,
 		BuildWarning:    buildWarning,
 	}, nil
+}
+
+// appendToolExecutionEvidence reads the analyzer invocations from the collected
+// SARIF and, if any analyzer did not complete, adds a tool_execution evidence
+// carrying the failures. CaseFile.Judge turns that into a failing verdict.
+func (h *Handler) appendToolExecutionEvidence(evidences []evidencedto.Evidence, rawSARIF []RawFile) []evidencedto.Evidence {
+	if h.toolExecution == nil {
+		return evidences
+	}
+	var failures []evidencedto.ToolFailure
+	for _, raw := range rawSARIF {
+		parsed, err := h.toolExecution.ParseToolExecutions(raw.Data)
+		if err != nil {
+			continue
+		}
+		failures = append(failures, parsed...)
+	}
+	if len(failures) == 0 {
+		return evidences
+	}
+	return append(evidences, evidencedto.Evidence{
+		Subtype:       evidence.SubtypeToolExecution.String(),
+		Source:        "sarif",
+		CollectedAt:   time.Now(),
+		ToolExecution: &evidencedto.ToolExecution{Failures: failures},
+	})
 }
 
 func (h *Handler) collectFindings(ctx context.Context, cmd Command, targets []string) ([]evidencedto.Evidence, []RawFile, string, error) {

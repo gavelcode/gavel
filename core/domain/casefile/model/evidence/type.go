@@ -12,6 +12,7 @@ var (
 	TypeSupplyChain  = Type{value: "supply_chain"}
 	TypeCoverage     = Type{value: "coverage"}
 	TypeArchitecture = Type{value: "architecture"}
+	TypeAnalysis     = Type{value: "analysis"}
 )
 
 var validTypes = map[string]Type{
@@ -20,6 +21,7 @@ var validTypes = map[string]Type{
 	"supply_chain": TypeSupplyChain,
 	"coverage":     TypeCoverage,
 	"architecture": TypeArchitecture,
+	"analysis":     TypeAnalysis,
 }
 
 func NewType(s string) (Type, error) {

@@ -1,0 +1,30 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "toolexecution",
+    srcs = [
+        "content.go",
+        "errors.go",
+        "failure.go",
+    ],
+    importpath = "github.com/usegavel/gavel/core/domain/casefile/model/evidence/toolexecution",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//core/domain/casefile/model/evidence",
+        "//core/domain/shared/failure",
+    ],
+)
+
+go_test(
+    name = "toolexecution_test",
+    srcs = [
+        "content_test.go",
+        "failure_test.go",
+    ],
+    deps = [
+        ":toolexecution",
+        "//core/domain/casefile/model/evidence",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

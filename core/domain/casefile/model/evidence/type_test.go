@@ -19,6 +19,7 @@ func TestNewEvidenceType(t *testing.T) {
 		{name: "supply_chain", input: "supply_chain", expected: evidence.TypeSupplyChain},
 		{name: "coverage", input: "coverage", expected: evidence.TypeCoverage},
 		{name: "architecture", input: "architecture", expected: evidence.TypeArchitecture},
+		{name: "analysis", input: "analysis", expected: evidence.TypeAnalysis},
 	}
 
 	for _, tcase := range tests {

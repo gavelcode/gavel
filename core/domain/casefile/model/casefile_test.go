@@ -12,6 +12,7 @@ import (
 	"github.com/usegavel/gavel/core/domain/casefile/model/evidence"
 	"github.com/usegavel/gavel/core/domain/casefile/model/evidence/coverage"
 	"github.com/usegavel/gavel/core/domain/casefile/model/evidence/finding"
+	"github.com/usegavel/gavel/core/domain/casefile/model/evidence/toolexecution"
 	"github.com/usegavel/gavel/core/domain/casefile/model/tracking"
 	"github.com/usegavel/gavel/core/domain/casefile/model/verdict"
 	projectmodel "github.com/usegavel/gavel/core/domain/project/model"
@@ -298,6 +299,64 @@ func TestCaseFileJudgeSimpleFail(t *testing.T) {
 	assert.Equal(t, "fail", verdict.Outcome().String())
 }
 
+func TestCaseFileJudgeFailsOnToolExecutionFailure(t *testing.T) {
+	caseF := mustNewCaseFile(t)
+	require.NoError(t, caseF.AddEvidence(mustCodeQualityEvidenceWithFindings(t, "pmd", testTime, nil), testTime))
+	failed := mustFailure(t, "golangci-lint", "compilation errors prevented analysis")
+	require.NoError(t, caseF.AddEvidence(mustToolExecutionEvidence(t, "golangci-lint", testTime, []toolexecution.Failure{failed}), testTime))
+
+	qGate := mustQualityGate(t, qualitygate.NewZeroTolerance())
+
+	result, err := caseF.Judge(qGate, nil, testTime, nil)
+
+	require.NoError(t, err)
+	assert.Equal(t, "fail", result.Outcome().String())
+	ruling := findRuling(t, result, evidence.SubtypeToolExecution)
+	assert.False(t, ruling.Passed())
+	assert.Contains(t, ruling.Detail(), "golangci-lint")
+}
+
+func TestCaseFileJudgeToolExecutionRulingAlwaysPresent(t *testing.T) {
+	caseF := mustNewCaseFile(t)
+	require.NoError(t, caseF.AddEvidence(mustCodeQualityEvidenceWithFindings(t, "pmd", testTime, nil), testTime))
+
+	qGate := mustQualityGate(t, qualitygate.NewZeroTolerance())
+
+	result, err := caseF.Judge(qGate, nil, testTime, nil)
+
+	require.NoError(t, err)
+	assert.Equal(t, "pass", result.Outcome().String())
+	ruling := findRuling(t, result, evidence.SubtypeToolExecution)
+	assert.True(t, ruling.Passed())
+}
+
+func mustFailure(t *testing.T, tool, reason string) toolexecution.Failure {
+	t.Helper()
+	failed, err := toolexecution.NewFailure(tool, reason)
+	require.NoError(t, err)
+	return failed
+}
+
+func mustToolExecutionEvidence(t *testing.T, source string, collectedAt time.Time, failures []toolexecution.Failure) evidence.Evidence {
+	t.Helper()
+	content, err := toolexecution.NewContent(failures)
+	require.NoError(t, err)
+	evid, err := evidence.NewEvidence(evidence.SubtypeToolExecution, source, content, collectedAt)
+	require.NoError(t, err)
+	return evid
+}
+
+func findRuling(t *testing.T, result verdict.Result, subtype evidence.Subtype) verdict.Ruling {
+	t.Helper()
+	for _, ruling := range result.Rulings() {
+		if ruling.Subtype().Equal(subtype) {
+			return ruling
+		}
+	}
+	t.Fatalf("no ruling for subtype %s", subtype)
+	return verdict.Ruling{}
+}
+
 func TestCaseFileJudgeTwice(t *testing.T) {
 	caseF := mustNewCaseFile(t)
 	evid := mustCodeQualityEvidenceWithFindings(t, "pmd", testTime, nil)
@@ -516,7 +575,7 @@ func TestCaseFileJudgeMinResolvedFails(t *testing.T) {
 	assert.Equal(t, "fail", v.Outcome().String())
 
 	rulings := v.Rulings()
-	require.Len(t, rulings, 1)
+	require.Len(t, rulings, 2)
 	assert.Contains(t, rulings[0].Detail(), "resolved 2")
 	assert.Contains(t, rulings[0].Detail(), "min 5")
 }
@@ -649,7 +708,7 @@ func TestCaseFileJudgeCompoundFailAbsoluteAndDelta(t *testing.T) {
 	assert.Equal(t, "fail", v.Outcome().String())
 
 	rulings := v.Rulings()
-	require.Len(t, rulings, 1)
+	require.Len(t, rulings, 2)
 	assert.False(t, rulings[0].Passed())
 	assert.Contains(t, rulings[0].Detail(), "resolved 1")
 }

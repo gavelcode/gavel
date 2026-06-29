@@ -1,6 +1,7 @@
 package sarif
 
 type run struct {
-	Tool    tool     `json:"tool"`
-	Results []result `json:"results"`
+	Tool        tool         `json:"tool"`
+	Results     []result     `json:"results"`
+	Invocations []invocation `json:"invocations"`
 }

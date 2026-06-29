@@ -9,6 +9,7 @@ import (
 	"github.com/usegavel/gavel/core/domain/casefile/model/evidence/coverage"
 	"github.com/usegavel/gavel/core/domain/casefile/model/evidence/finding"
 	"github.com/usegavel/gavel/core/domain/casefile/model/evidence/license"
+	"github.com/usegavel/gavel/core/domain/casefile/model/evidence/toolexecution"
 )
 
 type Evidence struct {
@@ -21,6 +22,7 @@ type Evidence struct {
 	NewCodeCoverage *NewCodeCoverage
 	License         *License
 	Architecture    *Architecture
+	ToolExecution   *ToolExecution
 }
 
 func EvidenceFromDomain(domainEvidence evidence.Evidence) Evidence {
@@ -45,6 +47,9 @@ func EvidenceFromDomain(domainEvidence evidence.Evidence) Evidence {
 	case architecture.Content:
 		arch := fromDomainArchitecture(content)
 		out.Architecture = &arch
+	case toolexecution.Content:
+		exec := fromDomainToolExecution(content)
+		out.ToolExecution = &exec
 	}
 	return out
 }
@@ -132,6 +137,11 @@ func toDomainContent(subtype evidence.Subtype, input Evidence) (evidence.Content
 			return nil, fmt.Errorf("%w: architecture subtype requires architecture payload", ErrIncompatibleEvidence)
 		}
 		return toDomainArchitecture(*input.Architecture)
+	case evidence.SubtypeToolExecution:
+		if input.ToolExecution == nil {
+			return nil, fmt.Errorf("%w: tool_execution subtype requires tool_execution payload", ErrIncompatibleEvidence)
+		}
+		return toDomainToolExecution(*input.ToolExecution)
 	default:
 		findings, err := toDomainFindings(input.Findings)
 		if err != nil {

@@ -24,6 +24,7 @@ func TestNewEvidenceSubtype(t *testing.T) {
 		{name: "license", input: "license", expected: evidence.SubtypeLicense},
 		{name: "coverage", input: "coverage", expected: evidence.SubtypeCoverage},
 		{name: "architecture", input: "architecture", expected: evidence.SubtypeArchitecture},
+		{name: "tool_execution", input: "tool_execution", expected: evidence.SubtypeToolExecution},
 	}
 
 	for _, tcase := range tests {
@@ -59,6 +60,7 @@ func TestEvidenceSubtypeString(t *testing.T) {
 		{name: "license", subtype: evidence.SubtypeLicense, expected: "license"},
 		{name: "coverage", subtype: evidence.SubtypeCoverage, expected: "coverage"},
 		{name: "architecture", subtype: evidence.SubtypeArchitecture, expected: "architecture"},
+		{name: "tool_execution", subtype: evidence.SubtypeToolExecution, expected: "tool_execution"},
 	}
 
 	for _, tcase := range tests {
@@ -84,6 +86,7 @@ func TestEvidenceSubtypeType(t *testing.T) {
 		{name: "license belongs to supply_chain", subtype: evidence.SubtypeLicense, parentType: evidence.TypeSupplyChain},
 		{name: "coverage belongs to coverage", subtype: evidence.SubtypeCoverage, parentType: evidence.TypeCoverage},
 		{name: "architecture belongs to architecture", subtype: evidence.SubtypeArchitecture, parentType: evidence.TypeArchitecture},
+		{name: "tool_execution belongs to analysis", subtype: evidence.SubtypeToolExecution, parentType: evidence.TypeAnalysis},
 	}
 
 	for _, tcase := range tests {
@@ -126,6 +129,7 @@ func TestIsSubtypeFindingBased(t *testing.T) {
 		{name: "license is not finding-based", subtype: evidence.SubtypeLicense, expected: false},
 		{name: "coverage is not finding-based", subtype: evidence.SubtypeCoverage, expected: false},
 		{name: "architecture is not finding-based", subtype: evidence.SubtypeArchitecture, expected: false},
+		{name: "tool_execution is not finding-based", subtype: evidence.SubtypeToolExecution, expected: false},
 	}
 
 	for _, tcase := range tests {

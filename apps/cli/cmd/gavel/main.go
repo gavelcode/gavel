@@ -90,6 +90,7 @@ func main() {
 		classifyArchHandler, nccHandler,
 		collectevidence.WithChangedLinesSource(sourceContext),
 		collectevidence.WithPerLineParser(lcovParser),
+		collectevidence.WithToolExecutionParser(sarifParser),
 	)
 	inst := installer.NewInstaller()
 	submitHandler := submit.NewHandler(createCFHandler, ingestEvHandler, finalizeHandler)

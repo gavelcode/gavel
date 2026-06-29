@@ -9,6 +9,7 @@ import (
 
 	"github.com/usegavel/gavel/core/domain/casefile/model/evidence"
 	"github.com/usegavel/gavel/core/domain/casefile/model/evidence/finding"
+	"github.com/usegavel/gavel/core/domain/casefile/model/evidence/toolexecution"
 	"github.com/usegavel/gavel/core/domain/casefile/model/tracking"
 	"github.com/usegavel/gavel/core/domain/casefile/model/verdict"
 	projectmodel "github.com/usegavel/gavel/core/domain/project/model"
@@ -92,6 +93,7 @@ func (cf *CaseFile) Judge(qualityGate qualitygate.Gate, tracking *tracking.Resul
 	grouped := cf.groupEvidenceBySubtype()
 	cf.applyTrackingFilter(grouped, tracking)
 	rulings := cf.evaluateRules(qualityGate, grouped, delta)
+	rulings = append(rulings, cf.toolExecutionRuling(grouped))
 
 	result, err := verdict.Compose(rulings, evaluatedAt)
 	if err != nil {
@@ -102,6 +104,34 @@ func (cf *CaseFile) Judge(qualityGate qualitygate.Gate, tracking *tracking.Resul
 	cf.emitVerdictEvents(result, rulings, evaluatedAt)
 
 	return result, nil
+}
+
+// toolExecutionRuling enforces the invariant that any analyzer which did not run
+// to completion fails the verdict — always, regardless of gate configuration. It
+// is appended on every Judge: a clean run shows it passing, a degraded run shows
+// it failing with the concrete reason.
+func (cf *CaseFile) toolExecutionRuling(grouped map[evidence.Subtype]evidence.Content) verdict.Ruling {
+	failures := toolExecutionFailures(grouped)
+	if len(failures) == 0 {
+		return verdict.NewRuling(evidence.SubtypeToolExecution, true, "")
+	}
+	reasons := make([]string, 0, len(failures))
+	for _, failed := range failures {
+		reasons = append(reasons, fmt.Sprintf("%s: %s", failed.Tool(), failed.Reason()))
+	}
+	return verdict.NewRuling(evidence.SubtypeToolExecution, false, strings.Join(reasons, "; "))
+}
+
+func toolExecutionFailures(grouped map[evidence.Subtype]evidence.Content) []toolexecution.Failure {
+	content, ok := grouped[evidence.SubtypeToolExecution]
+	if !ok {
+		return nil
+	}
+	executions, ok := content.(toolexecution.Content)
+	if !ok {
+		return nil
+	}
+	return executions.Failures()
 }
 
 func (cf *CaseFile) RecordVerdict(v verdict.Result) error {

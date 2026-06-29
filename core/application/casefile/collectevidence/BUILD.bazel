@@ -17,6 +17,7 @@ go_library(
         "//core/application/casefile/ingestcoverage",
         "//core/application/casefile/ingestfindings",
         "//core/application/casefile/ingestncc",
+        "//core/domain/casefile/model/evidence",
         "//core/domain/shared/failure",
     ],
 )
@@ -25,10 +26,11 @@ go_test(
     name = "collectevidence_test",
     srcs = [
         "command_test.go",
+        "executions_internal_test.go",
         "handler_test.go",
     ],
+    embed = [":collectevidence"],
     deps = [
-        ":collectevidence",
         "//core/application/casefile/classifyarch",
         "//core/application/casefile/evidencedto",
         "//core/application/casefile/ingestcoverage",

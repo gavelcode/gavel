@@ -188,6 +188,13 @@ CREATE TABLE architecture_violations (
     message     TEXT NOT NULL DEFAULT ''
 );
 
+CREATE TABLE tool_execution_failures (
+    id          INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    evidence_id UUID NOT NULL REFERENCES evidences(id) ON DELETE CASCADE,
+    tool        TEXT NOT NULL,
+    reason      TEXT NOT NULL
+);
+
 CREATE TABLE rulings (
     id          INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     casefile_id UUID NOT NULL REFERENCES casefiles(id) ON DELETE CASCADE,

@@ -49,13 +49,15 @@ gavel-server migrate
 
 ## First boot
 
-On a fresh database, the server automatically:
+On a fresh database, `database.Migrate()` applies the schema (`bootstrap.sql`)
+and a seed (`seed.sql`) that creates:
 
-1. Creates the `default` tenant
-2. Creates an admin user with a random password printed to stdout
+1. The `default` tenant
+2. An admin user `admin@gavel.local` with the password `changeme` and
+   `must_change_password=true`
 
-**Save this password** — it is shown only once. Use it to log in and
-create additional users or API tokens.
+**Change the password on first login.** The seeded `changeme` is public; the
+security control is the forced password change before the server is exposed.
 
 ## Health checks
 

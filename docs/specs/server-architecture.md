@@ -65,6 +65,7 @@ SPA fallback, and middleware live under
 - **Bootstrap migration.** No incremental goose. `bootstrap.sql` in
   `core/infrastructure/platform/database/` creates the full schema on a
   fresh database, idempotent on a non-fresh one.
-- **First-run tenant + admin seeding.** Bootstrap logic lives in
-  `core/userinterface/api/v1/platform/bootstrap.go` and is invoked from
-  the server's composition root once the DI graph is built.
+- **First-run tenant + admin seeding.** `seed.sql` (applied by
+  `database.Migrate()` alongside `bootstrap.sql`) creates the `default`
+  tenant and admin `admin@gavel.local` (password `changeme`,
+  `must_change_password=true`). There is no Go bootstrap function.

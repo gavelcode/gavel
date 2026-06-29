@@ -18,7 +18,7 @@
 ### Operations
 
 - **Breaking: first-run bootstrap moves into the schema.** The default
-  tenant (`slug=default`) and the first admin user (`admin@local`) are
+  tenant (`slug=default`) and the first admin user (`admin@gavel.local`) are
   now seeded by `seed.sql`, applied as part of `database.Migrate()`. The
   initial admin password is the literal `changeme` and the user is
   flagged `must_change_password=true`, so the first login is forced to

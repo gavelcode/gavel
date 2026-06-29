@@ -165,6 +165,7 @@ func installLintConfigFilegroup(root string) (bool, error) {
 const (
 	gavelRegistryLine = "common --registry=https://gavelcode.github.io/registry"
 	bcrRegistryLine   = "common --registry=https://bcr.bazel.build"
+	registryLineCount = 2
 )
 
 // Bazel drops its implicit BCR default as soon as any --registry is declared,
@@ -177,7 +178,7 @@ func ensureRegistryLines(root string) (bool, error) {
 	}
 	content := string(existing)
 
-	missing := make([]string, 0, 2)
+	missing := make([]string, 0, registryLineCount)
 	if !strings.Contains(content, gavelRegistryLine) {
 		missing = append(missing, gavelRegistryLine)
 	}

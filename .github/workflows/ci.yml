@@ -55,3 +55,36 @@ jobs:
           directory: test-results
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: false
+
+  # Guards generated artifacts against drift from their source of truth:
+  # OpenAPI (Go DTOs + TS client) and the clispec (CLI flags.gen.go).
+  drift:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.25"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install pnpm
+        run: npm install -g pnpm
+
+      - name: Install web deps
+        run: cd apps/web && pnpm install --frozen-lockfile
+
+      - name: Install Bazelisk
+        run: |
+          sudo curl -fsSL -o /usr/local/bin/bazel \
+            https://github.com/bazelbuild/bazelisk/releases/latest/download/bazelisk-linux-amd64
+          sudo chmod +x /usr/local/bin/bazel
+
+      - name: OpenAPI drift (Go + TS generated clients)
+        run: make openapi-check
+
+      - name: CLI spec drift (flags.gen.go)
+        run: make clispec-check

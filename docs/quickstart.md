@@ -11,11 +11,17 @@ with `MODULE.bazel` (bzlmod).
 
 ## 1. Install
 
-```bash
-# Build from source
-bazel build //apps/cli/cmd/gavel
-# Binary at bazel-bin/apps/cli/cmd/gavel/gavel_/gavel
+```sh
+# Homebrew — macOS & Linux
+brew install gavelcode/tap/gavel
+
+# or install script — Linux, CI, Docker
+curl -fsSL https://raw.githubusercontent.com/gavelcode/gavel/main/install.sh | sh
 ```
+
+Or download a binary from the [releases page](https://github.com/gavelcode/gavel/releases). Confirm with `gavel --version`.
+
+Building from source instead: `bazel build //apps/cli/cmd/gavel` (binary at `bazel-bin/apps/cli/cmd/gavel/gavel_/gavel`).
 
 ## 2. Initialize
 
@@ -38,7 +44,8 @@ This generates:
 - `.gavel/gavel.MODULE.bazel` — tool dependency declarations
 
 It also appends `try-import` and `include` lines to your `.bazelrc` and
-`MODULE.bazel` so Bazel loads Gavel's aspects automatically.
+`MODULE.bazel`, and adds `common --registry=https://gavelcode.github.io/registry`
+to your `.bazelrc` so Bazel can resolve `gavel_tools`.
 
 ## 3. Verify
 

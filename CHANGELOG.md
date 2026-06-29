@@ -1,5 +1,20 @@
 ## Unreleased
 
+## v0.1.0 — 2026-06-28
+
+### Distribution
+
+- **New: prebuilt CLI binaries.** `gavel` ships as static, CGO-free binaries
+  for linux/darwin on amd64/arm64, published to GitHub Releases with checksums
+  by goreleaser on each `v*` tag.
+- **New: install paths.** `brew install gavelcode/tap/gavel` (Homebrew tap) and
+  `curl -fsSL .../install.sh | sh`, plus direct binary downloads.
+- **New: `gavel --version`**, stamped into the binary at release time.
+- **Changed: `gavel_tools` distribution.** The lint/archtest aspects module is
+  published to a self-hosted Bazel registry (https://gavelcode.github.io/registry/)
+  and consumed via `bazel_dep` instead of a git override; `gavel init` now writes
+  the registry line into your `.bazelrc`.
+
 ### Operations
 
 - **Breaking: first-run bootstrap moves into the schema.** The default

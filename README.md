@@ -22,6 +22,36 @@ gavel judge
 
 ---
 
+## Install
+
+```sh
+# Homebrew — macOS & Linux
+brew install gavelcode/tap/gavel
+```
+
+```sh
+# Install script — Linux, CI, Docker
+curl -fsSL https://raw.githubusercontent.com/gavelcode/gavel/main/install.sh | sh
+```
+
+Prebuilt binaries for every platform are on the
+[releases page](https://github.com/gavelcode/gavel/releases).
+
+> [!TIP]
+> Verify the install with `gavel --version`.
+
+<details>
+<summary>Build from source</summary>
+
+Requires a Bazel (bzlmod) workspace.
+
+```sh
+bazel build //apps/cli/cmd/gavel
+# binary at bazel-bin/apps/cli/cmd/gavel/gavel_/gavel
+```
+
+</details>
+
 ## What it does
 
 **Runs analysis inside Bazel.** Analyzers (PMD, SpotBugs, Error Prone,
@@ -93,7 +123,7 @@ unit of analysis.
 
 ## Status
 
-> **Alpha** — under active development. APIs and config formats may change.
+> **Alpha — v0.1.0** — under active development. APIs and config formats may change.
 
 Working today:
 

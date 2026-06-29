@@ -40,4 +40,6 @@ this index maps them. Start here and follow the links.
 ## Related
 
 * Lint aspects and the `web_project` build macro live in the external
-  **`gavel_tools`** Bazel module, which carries its own OKF docs bundle.
+  **`gavel_tools`** Bazel module
+  ([github.com/gavelcode/gavel-tools](https://github.com/gavelcode/gavel-tools)),
+  which carries its own OKF docs bundle.

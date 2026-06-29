@@ -13,21 +13,8 @@ delegates every operation to the `gavel` CLI binary.
 
 ## Prerequisites
 
-Your Bazel workspace must already have Gavel configured:
-
-```starlark
-# MODULE.bazel
-bazel_dep(name = "gavel", version = "0.0.0")
-```
-
-And the generated files from `gavel init`:
-
-```
-.gavel/
-├── gavel.yaml           # project config
-├── gavel.bazelrc        # aspect registrations
-└── gavel.MODULE.bazel   # tool dependencies
-```
+- The `gavel` CLI installed and on your `PATH` (see [Install](../../README.md#install)).
+- A workspace where you have run `gavel init`.
 
 ## Claude Code
 
@@ -38,8 +25,8 @@ Add to `.claude/settings.json` (project-level) or `~/.claude/settings.json`
 {
   "mcpServers": {
     "gavel": {
-      "command": "bazel",
-      "args": ["run", "@gavel//apps/cli/cmd/gavel", "--", "mcp"],
+      "command": "gavel",
+      "args": ["mcp"],
       "env": {
         "GAVEL_WORKSPACE": "${workspaceFolder}"
       }
@@ -47,9 +34,6 @@ Add to `.claude/settings.json` (project-level) or `~/.claude/settings.json`
   }
 }
 ```
-
-The first invocation compiles the binary (Bazel cache cold). Subsequent
-invocations reuse the cached binary and start instantly.
 
 ## Other MCP clients
 
@@ -98,13 +82,9 @@ dependency:
 
 ## Troubleshooting
 
-**Slow first start** — Bazel compiles the binary on the first invocation.
-Run `bazel build @gavel//apps/cli/cmd/gavel` once to warm the cache.
+**`gavel` not found** — Ensure the CLI is installed and on your `PATH`
+(`gavel --version` should print a version).
 
 **`GAVEL_WORKSPACE` not set** — The MCP server uses this variable to locate
-the workspace root. If not set, it defaults to the working directory of the
-`bazel run` invocation (usually the workspace root).
-
-**Binary not found** — Verify the Gavel module is reachable:
-`bazel query @gavel//apps/cli/cmd/gavel`. If using a local registry, check
-that `.bazelrc` contains the `--registry` flag pointing to it.
+the workspace root. If not set, it defaults to the directory the client
+launches it from.

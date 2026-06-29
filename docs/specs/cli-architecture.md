@@ -40,6 +40,7 @@ core/userinterface/cli/        # Cobra commands (no core/domain or core/infrastr
 ├── validate/                  # gavel validate
 ├── watch/                     # gavel watch (JSONL event stream)
 ├── config/  · projects/       # read-only views over loadgavelspace
+├── trends/                    # gavel trends — analysis history
 ├── mcp/                       # gavel mcp — MCP server (subprocess wrapper over the CLI)
 └── ui/                        # terminal output formatting
 

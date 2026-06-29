@@ -76,3 +76,14 @@ These are enforced by `gavel judge` via archtest aspects.
 2. Run `bazel test //...` — all green
 3. Run `bazel run //:gazelle` if you added/removed files
 4. Keep changes focused — one responsibility per PR
+
+## Releases
+
+Maintainers cut a CLI release with:
+
+```sh
+make release VERSION=X.Y.Z
+```
+
+It validates (CI green for the commit, clean tree, tag unused) and tags; the
+release workflow builds and publishes the binaries and the Homebrew cask.

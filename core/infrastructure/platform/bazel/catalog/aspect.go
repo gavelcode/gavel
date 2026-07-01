@@ -14,10 +14,22 @@ func SetModulePrefix(prefix string) {
 
 const archtestAspectSuffix = "_archtest_submission_aspect"
 
+// exportStdlibFlag makes rules_go emit compiled export data for the standard
+// library. The hermetic golangci-lint aspect type-checks through a static
+// packages driver fed pre-built export data, so without it stdlib symbols
+// fail to resolve. It is go-only and adds build time, so it is scoped to the
+// one aspect that needs it rather than applied globally.
+const exportStdlibFlag = "--@rules_go//go/config:export_stdlib=True"
+
+var aspectBuildFlags = map[string][]string{
+	"go_golangci_lint_submission_aspect": {exportStdlibFlag},
+}
+
 type Aspect struct {
 	Name        string
 	Path        string
 	SARIFSuffix string
+	BuildFlags  []string
 }
 
 var languageAspects = map[string][]string{
@@ -53,8 +65,6 @@ var aspectSARIFSuffix = map[string]string{
 	"rust_archtest_submission_aspect":       ".archtest.sarif",
 }
 
-var defaultLanguages = []string{"go", "java", "python", "typescript", "rust"}
-
 func IsArchtestAspect(name string) bool {
 	return strings.HasSuffix(name, archtestAspectSuffix)
 }
@@ -82,9 +92,6 @@ func ArchtestAspectsForLanguages(languages []string) []Aspect {
 }
 
 func filterAspects(languages []string, keep func(string) bool) []Aspect {
-	if len(languages) == 0 {
-		languages = defaultLanguages
-	}
 	seen := make(map[string]bool)
 	var aspects []Aspect
 	for _, lang := range languages {
@@ -97,6 +104,7 @@ func filterAspects(languages []string, keep func(string) bool) []Aspect {
 				Name:        name,
 				Path:        modulePrefix + "//lint/aspects:defs.bzl%" + name,
 				SARIFSuffix: aspectSARIFSuffix[name],
+				BuildFlags:  aspectBuildFlags[name],
 			})
 		}
 	}
@@ -112,9 +120,6 @@ func AspectPaths(aspects []Aspect) string {
 }
 
 func AspectNames(languages []string) []string {
-	if len(languages) == 0 {
-		languages = defaultLanguages
-	}
 	var names []string
 	for _, lang := range languages {
 		names = append(names, languageAspects[lang]...)

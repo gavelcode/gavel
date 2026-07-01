@@ -10,9 +10,6 @@ var languageBinaries = map[string][]string{
 }
 
 func BinaryNames(languages []string) []string {
-	if len(languages) == 0 {
-		languages = defaultLanguages
-	}
 	seen := make(map[string]bool)
 	var names []string
 	for _, lang := range languages {

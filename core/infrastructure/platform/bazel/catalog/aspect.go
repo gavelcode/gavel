@@ -14,8 +14,6 @@ func SetModulePrefix(prefix string) {
 
 const archtestAspectSuffix = "_archtest_submission_aspect"
 
-// Aspect is a resolved lint or architecture aspect ready to invoke: its name,
-// its full defs.bzl path, the SARIF file it emits, and any build flags it needs.
 type Aspect struct {
 	Name        string
 	Path        string
@@ -49,4 +47,8 @@ func AspectPaths(aspects []Aspect) string {
 
 func AspectNames(languages []string) []string {
 	return active().aspectNames(languages)
+}
+
+func SelectedAspects(selection map[string][]string) ([]Aspect, error) {
+	return active().selectedAspects(selection)
 }

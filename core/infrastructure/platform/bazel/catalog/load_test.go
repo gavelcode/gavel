@@ -7,9 +7,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TestLoadFromRunfiles_ReadsPublishedCatalog exercises the real runfiles load
-// against gavel-tools' catalog (declared as test data), covering the path the
-// CLI uses at runtime.
 func TestLoadFromRunfiles_ReadsPublishedCatalog(t *testing.T) {
 	parsed, err := loadFromRunfiles()
 

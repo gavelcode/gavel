@@ -10,8 +10,6 @@ import (
 	"github.com/usegavel/gavel/core/infrastructure/platform/bazel/catalog"
 )
 
-// testCatalogYAML mirrors gavel-tools' published catalog so the selection logic
-// is exercised against the real shape without depending on runfiles.
 const testCatalogYAML = `
 version: 1
 aspects_bzl: //lint/aspects:defs.bzl
@@ -127,6 +125,53 @@ func TestLintAspectsForLanguages_EmptyReturnsNothing(t *testing.T) {
 
 func TestLintAspectsForLanguages_UnknownLanguage(t *testing.T) {
 	assert.Empty(t, catalog.LintAspectsForLanguages([]string{"cobol"}))
+}
+
+func TestSelectedAspects_ResolvesChosenToolsPerLanguage(t *testing.T) {
+	aspects, err := catalog.SelectedAspects(map[string][]string{"go": {"golangci-lint", "archtest"}})
+
+	require.NoError(t, err)
+	require.Len(t, aspects, 2)
+	assert.Equal(t, "go_golangci_lint_submission_aspect", aspects[0].Name)
+	assert.Equal(t, "go_archtest_submission_aspect", aspects[1].Name)
+	assert.Equal(t, []string{"--@rules_go//go/config:export_stdlib=True"}, aspects[0].BuildFlags)
+}
+
+func TestSelectedAspects_PreservesSelectionOrder(t *testing.T) {
+	aspects, err := catalog.SelectedAspects(map[string][]string{"go": {"archtest", "golangci-lint"}})
+
+	require.NoError(t, err)
+	require.Len(t, aspects, 2)
+	assert.Equal(t, "go_archtest_submission_aspect", aspects[0].Name, "the chosen order is preserved")
+}
+
+func TestSelectedAspects_OrdersLanguagesDeterministically(t *testing.T) {
+	aspects, err := catalog.SelectedAspects(map[string][]string{"python": {"ruff"}, "go": {"golangci-lint"}})
+
+	require.NoError(t, err)
+	require.Len(t, aspects, 2)
+	assert.Equal(t, "go_golangci_lint_submission_aspect", aspects[0].Name, "languages sorted alphabetically")
+	assert.Equal(t, "python_ruff_submission_aspect", aspects[1].Name)
+}
+
+func TestSelectedAspects_ErrorsOnUnknownTool(t *testing.T) {
+	_, err := catalog.SelectedAspects(map[string][]string{"go": {"clang-tidy"}})
+
+	assert.ErrorContains(t, err, "clang-tidy")
+	assert.ErrorContains(t, err, "go")
+}
+
+func TestSelectedAspects_ErrorsOnUnknownLanguage(t *testing.T) {
+	_, err := catalog.SelectedAspects(map[string][]string{"cobol": {"anything"}})
+
+	assert.ErrorContains(t, err, "anything")
+}
+
+func TestSelectedAspects_EmptySelectionReturnsNothing(t *testing.T) {
+	aspects, err := catalog.SelectedAspects(map[string][]string{})
+
+	require.NoError(t, err)
+	assert.Empty(t, aspects)
 }
 
 func TestAspectNames_AllLanguages(t *testing.T) {

@@ -41,18 +41,28 @@ func TestLintAspectsForLanguages_Go(t *testing.T) {
 	assert.Equal(t, "@gavel//lint/aspects:defs.bzl%go_golangci_lint_submission_aspect", aspects[0].Path)
 }
 
+func TestLintAspectsForLanguages_GoGolangciCarriesExportStdlibFlag(t *testing.T) {
+	aspects := catalog.LintAspectsForLanguages([]string{"go"})
+
+	assert.Equal(t, []string{"--@rules_go//go/config:export_stdlib=True"}, aspects[0].BuildFlags,
+		"golangci runs hermetic via the packages driver, which needs stdlib export data")
+}
+
+func TestLintAspectsForLanguages_NonGoAspectsHaveNoBuildFlags(t *testing.T) {
+	for _, asp := range catalog.LintAspectsForLanguages([]string{"java", "python", "rust", "typescript"}) {
+		assert.Empty(t, asp.BuildFlags, "%s must not force stdlib export — it is go-only and costly", asp.Name)
+	}
+}
+
 func TestLintAspectsForLanguages_DeduplicatesSharedAspects(t *testing.T) {
 	aspects := catalog.LintAspectsForLanguages([]string{"java", "kotlin"})
 
 	assert.Len(t, aspects, 4)
 }
 
-func TestLintAspectsForLanguages_DefaultsToAllLanguages(t *testing.T) {
-	aspects := catalog.LintAspectsForLanguages(nil)
-	emptyAspects := catalog.LintAspectsForLanguages([]string{})
-
-	assert.NotEmpty(t, aspects)
-	assert.Equal(t, aspects, emptyAspects)
+func TestLintAspectsForLanguages_EmptyReturnsNothing(t *testing.T) {
+	assert.Empty(t, catalog.LintAspectsForLanguages(nil))
+	assert.Empty(t, catalog.LintAspectsForLanguages([]string{}))
 }
 
 func TestLintAspectsForLanguages_UnknownLanguage(t *testing.T) {
@@ -62,13 +72,18 @@ func TestLintAspectsForLanguages_UnknownLanguage(t *testing.T) {
 }
 
 func TestAspectNames_AllLanguages(t *testing.T) {
-	names := catalog.AspectNames(nil)
+	names := catalog.AspectNames([]string{"go", "java", "python", "typescript", "rust"})
 
 	assert.Contains(t, names, "go_golangci_lint_submission_aspect")
 	assert.Contains(t, names, "java_pmd_submission_aspect")
 	assert.Contains(t, names, "python_ruff_submission_aspect")
 	assert.Contains(t, names, "typescript_eslint_submission_aspect")
 	assert.Contains(t, names, "rust_clippy_submission_aspect")
+}
+
+func TestAspectNames_EmptyReturnsNothing(t *testing.T) {
+	assert.Empty(t, catalog.AspectNames(nil))
+	assert.Empty(t, catalog.AspectNames([]string{}))
 }
 
 func TestAspectNames_SingleLanguage(t *testing.T) {
@@ -78,7 +93,7 @@ func TestAspectNames_SingleLanguage(t *testing.T) {
 }
 
 func TestBinaryNames_AllLanguages(t *testing.T) {
-	names := catalog.BinaryNames(nil)
+	names := catalog.BinaryNames([]string{"go", "java", "python", "typescript", "rust"})
 
 	assert.Equal(t, []string{
 		"golangci_lint_binary",
@@ -88,6 +103,11 @@ func TestBinaryNames_AllLanguages(t *testing.T) {
 		"ruff_binary",
 		"bandit_binary",
 	}, names)
+}
+
+func TestBinaryNames_EmptyReturnsNothing(t *testing.T) {
+	assert.Empty(t, catalog.BinaryNames(nil))
+	assert.Empty(t, catalog.BinaryNames([]string{}))
 }
 
 func TestBinaryNames_SingleLanguage(t *testing.T) {
@@ -148,9 +168,13 @@ func TestGavelExclusiveLintAspects_Go(t *testing.T) {
 }
 
 func TestGavelExclusiveLintAspects_AllLanguages(t *testing.T) {
-	aspects := catalog.GavelExclusiveLintAspects(nil)
+	aspects := catalog.GavelExclusiveLintAspects([]string{"go", "java", "python", "typescript", "rust"})
 
 	assert.Len(t, aspects, 3)
+}
+
+func TestGavelExclusiveLintAspects_EmptyReturnsNothing(t *testing.T) {
+	assert.Empty(t, catalog.GavelExclusiveLintAspects(nil))
 }
 
 func TestAllAspectsForLanguages_Go(t *testing.T) {

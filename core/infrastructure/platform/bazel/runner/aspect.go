@@ -22,6 +22,7 @@ func runAspect(ctx context.Context, cmd CommandRunner, workspace string, targets
 		"--output_groups=gavel_submissions",
 		"--keep_going",
 	)
+	args = append(args, asp.BuildFlags...)
 	args = append(args, "--")
 	args = append(args, targets...)
 

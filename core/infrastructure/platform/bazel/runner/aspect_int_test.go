@@ -26,6 +26,38 @@ func TestRunAspect_Success(t *testing.T) {
 	require.Len(t, results, 1)
 }
 
+func TestRunAspect_AppendsAspectBuildFlags(t *testing.T) {
+	binDir := t.TempDir()
+	createSARIFFile(t, binDir, "pkg", "pkg.golangci.sarif", `{"runs":[]}`)
+	fake := &fakeRunner{results: []fakeResult{
+		{Stdout: []byte("build ok\n")},
+		{Stdout: []byte(binDir + "\n")},
+	}}
+	asp := catalog.Aspect{
+		Name:        "golangci",
+		Path:        "@gavel//a:defs.bzl%lint",
+		SARIFSuffix: ".golangci.sarif",
+		BuildFlags:  []string{"--@rules_go//go/config:export_stdlib=True"},
+	}
+
+	_, err := runAspect(t.Context(), fake, "/ws", []string{"//pkg:lib"}, asp)
+
+	require.NoError(t, err)
+	buildArgs := fake.calls[0].Args
+	assert.Contains(t, buildArgs, "--@rules_go//go/config:export_stdlib=True")
+	assert.Less(t, indexOf(buildArgs, "--@rules_go//go/config:export_stdlib=True"), indexOf(buildArgs, "--"),
+		"build flags must precede the -- target separator")
+}
+
+func indexOf(args []string, want string) int {
+	for i, a := range args {
+		if a == want {
+			return i
+		}
+	}
+	return -1
+}
+
 func TestRunAspect_BuildAndBinDirError(t *testing.T) {
 	fake := &fakeRunner{results: []fakeResult{
 		{Stderr: []byte("build failed"), Err: fmt.Errorf("build error")},

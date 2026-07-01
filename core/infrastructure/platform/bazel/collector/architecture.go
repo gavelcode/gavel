@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/usegavel/gavel/core/infrastructure/platform/bazel/runner"
 	"github.com/usegavel/gavel/core/application/casefile/evidencedto"
 	coresarif "github.com/usegavel/gavel/core/infrastructure/casefile/sarif"
 	"github.com/usegavel/gavel/core/infrastructure/platform/bazel/catalog"
+	"github.com/usegavel/gavel/core/infrastructure/platform/bazel/runner"
 )
 
 type BazelArchitectureCollector struct {

@@ -3,9 +3,9 @@ package collector_test
 import (
 	"context"
 
-	"github.com/usegavel/gavel/core/infrastructure/platform/bazel/runner"
 	"github.com/usegavel/gavel/core/application/casefile/evidencedto"
 	ingestfind "github.com/usegavel/gavel/core/application/casefile/ingestfindings"
+	"github.com/usegavel/gavel/core/infrastructure/platform/bazel/runner"
 )
 
 type fakeAnalysisRunner struct {

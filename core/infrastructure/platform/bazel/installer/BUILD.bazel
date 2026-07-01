@@ -21,6 +21,7 @@ go_library(
 go_test(
     name = "installer_test",
     srcs = ["install_test.go"],
+    data = ["@gavel_tools//lint:catalog.yaml"],
     deps = [
         ":installer",
         "//core/infrastructure/platform/bazel/catalog",

@@ -2,14 +2,11 @@ package catalog
 
 import (
 	"fmt"
+	"sort"
 
 	"gopkg.in/yaml.v3"
 )
 
-// Tool is one linter gavel-tools can run for a language, as published in its
-// catalog. It is the identity gavel used to hardcode: which aspect runs it, what
-// SARIF file it emits, the build flags it needs, and the tool-binary repo it
-// depends on (both optional).
 type Tool struct {
 	Name        string
 	Aspect      string
@@ -18,8 +15,6 @@ type Tool struct {
 	Binary      string
 }
 
-// Catalog is the parsed gavel-tools menu: the tools available per language, plus
-// the module-relative label where the aspects live.
 type Catalog struct {
 	aspectsBzl string
 	languages  map[string][]Tool
@@ -39,9 +34,6 @@ type toolDTO struct {
 	Binary      string   `yaml:"binary"`
 }
 
-// ParseCatalog decodes the gavel-tools catalog.yaml. It is pure so the selection
-// logic is fully testable without runfiles, and lets a caller load a catalog
-// from a source other than the default runfiles location.
 func ParseCatalog(data []byte) (*Catalog, error) {
 	var dto catalogDTO
 	if err := yaml.Unmarshal(data, &dto); err != nil {
@@ -68,8 +60,6 @@ func ParseCatalog(data []byte) (*Catalog, error) {
 	return &Catalog{aspectsBzl: dto.AspectsBzl, languages: languages}, nil
 }
 
-// aspects selects, in the caller's language order and de-duplicated, the aspects
-// whose tool passes keep, resolving each to a full aspect path.
 func (c *Catalog) aspects(languages []string, keep func(Tool) bool) []Aspect {
 	seen := make(map[string]bool)
 	var selected []Aspect
@@ -79,15 +69,43 @@ func (c *Catalog) aspects(languages []string, keep func(Tool) bool) []Aspect {
 				continue
 			}
 			seen[tool.Aspect] = true
-			selected = append(selected, Aspect{
-				Name:        tool.Aspect,
-				Path:        modulePrefix + c.aspectsBzl + "%" + tool.Aspect,
-				SARIFSuffix: tool.SARIFSuffix,
-				BuildFlags:  tool.BuildFlags,
-			})
+			selected = append(selected, c.aspectFor(tool))
 		}
 	}
 	return selected
+}
+
+func (c *Catalog) aspectFor(tool Tool) Aspect {
+	return Aspect{
+		Name:        tool.Aspect,
+		Path:        modulePrefix + c.aspectsBzl + "%" + tool.Aspect,
+		SARIFSuffix: tool.SARIFSuffix,
+		BuildFlags:  tool.BuildFlags,
+	}
+}
+
+func (c *Catalog) selectedAspects(selection map[string][]string) ([]Aspect, error) {
+	languages := make([]string, 0, len(selection))
+	for language := range selection {
+		languages = append(languages, language)
+	}
+	sort.Strings(languages)
+
+	selected := make([]Aspect, 0)
+	for _, language := range languages {
+		byName := make(map[string]Tool, len(c.languages[language]))
+		for _, tool := range c.languages[language] {
+			byName[tool.Name] = tool
+		}
+		for _, toolName := range selection[language] {
+			tool, exists := byName[toolName]
+			if !exists {
+				return nil, fmt.Errorf("language %q: unknown tool %q", language, toolName)
+			}
+			selected = append(selected, c.aspectFor(tool))
+		}
+	}
+	return selected, nil
 }
 
 func (c *Catalog) aspectNames(languages []string) []string {

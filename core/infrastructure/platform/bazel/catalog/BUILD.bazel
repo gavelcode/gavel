@@ -6,18 +6,29 @@ go_library(
     name = "catalog",
     srcs = [
         "aspect.go",
+        "catalog.go",
         "language_rules.go",
+        "load.go",
         "tool_repo.go",
     ],
     importpath = "github.com/usegavel/gavel/core/infrastructure/platform/bazel/catalog",
     visibility = ["//visibility:public"],
+    deps = [
+        "@in_gopkg_yaml_v3//:yaml_v3",
+        "@rules_go//go/runfiles",
+    ],
 )
 
 go_test(
     name = "catalog_test",
-    srcs = ["catalog_test.go"],
+    srcs = [
+        "catalog_test.go",
+        "load_test.go",
+    ],
+    data = ["@gavel_tools//lint:catalog.yaml"],
+    embed = [":catalog"],
     deps = [
-        ":catalog",
         "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
     ],
 )

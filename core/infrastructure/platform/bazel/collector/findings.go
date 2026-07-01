@@ -4,11 +4,11 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/usegavel/gavel/core/infrastructure/platform/bazel/runner"
 	"github.com/usegavel/gavel/core/application/casefile/collectevidence"
 	"github.com/usegavel/gavel/core/application/casefile/evidencedto"
 	ingestfind "github.com/usegavel/gavel/core/application/casefile/ingestfindings"
 	"github.com/usegavel/gavel/core/infrastructure/platform/bazel/catalog"
+	"github.com/usegavel/gavel/core/infrastructure/platform/bazel/runner"
 )
 
 type AnalysisRunner interface {
@@ -30,10 +30,7 @@ func NewBazelFindingsCollector(r AnalysisRunner, p FindingsParser) *BazelFinding
 
 func (c *BazelFindingsCollector) CollectFindings(ctx context.Context, workspace string, targets []string, languages []string) ([]evidencedto.Evidence, []collectevidence.RawFile, string, error) {
 	lintAspects := catalog.LintAspectsForLanguages(languages)
-	exclusiveAspects := catalog.GavelExclusiveLintAspects(languages)
-
-	aspects := append(lintAspects, exclusiveAspects...)
-	if len(aspects) == 0 {
+	if len(lintAspects) == 0 {
 		return nil, nil, "", nil
 	}
 

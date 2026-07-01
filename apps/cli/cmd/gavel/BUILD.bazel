@@ -39,6 +39,7 @@ go_library(
 
 go_binary(
     name = "gavel",
+    data = ["@gavel_tools//lint:catalog.yaml"],
     embed = [":gavel_lib"],
     visibility = ["//visibility:public"],
 )

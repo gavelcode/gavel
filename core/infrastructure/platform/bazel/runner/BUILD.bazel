@@ -39,6 +39,7 @@ go_test(
         "query_test.go",
         "target_analyzer_test.go",
     ],
+    data = ["@gavel_tools//lint:catalog.yaml"],
     embed = [":runner"],
     deps = [
         "//core/infrastructure/platform/bazel/catalog",

@@ -81,6 +81,15 @@ func buildBazelArgs(config AnalysisConfig) []string {
 		"--output_groups=gavel_submissions",
 		"--keep_going",
 	)
+	seenFlag := make(map[string]bool)
+	for _, aspect := range config.Aspects {
+		for _, flag := range aspect.BuildFlags {
+			if !seenFlag[flag] {
+				seenFlag[flag] = true
+				args = append(args, flag)
+			}
+		}
+	}
 
 	if config.IncludeCoverage {
 		sizeFilters := config.TestSizeFilters

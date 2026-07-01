@@ -32,6 +32,43 @@ func TestBuildBazelArgs_TargetsAfterOptionsMarker(t *testing.T) {
 	}
 }
 
+func TestBuildBazelArgs_IncludesAspectBuildFlagsBeforeMarker(t *testing.T) {
+	config := AnalysisConfig{
+		Targets: []string{"//core/..."},
+		Aspects: []catalog.Aspect{
+			{Path: "golangci", BuildFlags: []string{"--@rules_go//go/config:export_stdlib=True"}},
+			{Path: "archtest"},
+		},
+	}
+
+	args := buildBazelArgs(config)
+
+	idx := slices.Index(args, "--@rules_go//go/config:export_stdlib=True")
+	require.GreaterOrEqual(t, idx, 0, "golangci's build flag must reach the combined invocation")
+	assert.Less(t, idx, slices.Index(args, "--"), "the flag must come before the -- marker")
+}
+
+func TestBuildBazelArgs_DeduplicatesSharedBuildFlags(t *testing.T) {
+	flag := "--@rules_go//go/config:export_stdlib=True"
+	config := AnalysisConfig{
+		Targets: []string{"//core/..."},
+		Aspects: []catalog.Aspect{
+			{Path: "a", BuildFlags: []string{flag}},
+			{Path: "b", BuildFlags: []string{flag}},
+		},
+	}
+
+	args := buildBazelArgs(config)
+
+	count := 0
+	for _, arg := range args {
+		if arg == flag {
+			count++
+		}
+	}
+	assert.Equal(t, 1, count, "a flag shared by two aspects must appear once")
+}
+
 func TestBuildBazelArgs_CoverageMode(t *testing.T) {
 	config := AnalysisConfig{
 		Targets:         []string{"//..."},

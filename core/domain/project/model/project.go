@@ -29,6 +29,7 @@ type Project struct {
 	targetPattern      string
 	excludePatterns    []string
 	languages          []coverage.Language
+	toolSelection      map[string][]string
 	defaultBranch      string
 	qualityGate        qualitygate.Gate
 	architecturePolicy *archpolicy.Policy
@@ -134,6 +135,28 @@ func (p *Project) UpdateLanguages(languages []coverage.Language, occurredAt time
 	copy(copied, languages)
 	p.languages = copied
 	p.events = append(p.events, NewLanguagesUpdated(p.id, occurredAt))
+}
+
+func (p *Project) UpdateToolSelection(selection map[string][]string, occurredAt time.Time) {
+	p.toolSelection = copyToolSelection(selection)
+	p.events = append(p.events, NewToolSelectionUpdated(p.id, occurredAt))
+}
+
+func (p Project) ToolSelection() map[string][]string {
+	return copyToolSelection(p.toolSelection)
+}
+
+func copyToolSelection(selection map[string][]string) map[string][]string {
+	if selection == nil {
+		return nil
+	}
+	copied := make(map[string][]string, len(selection))
+	for language, tools := range selection {
+		toolsCopy := make([]string, len(tools))
+		copy(toolsCopy, tools)
+		copied[language] = toolsCopy
+	}
+	return copied
 }
 
 func (p *Project) UpdateExcludePatterns(excludePatterns []string, occurredAt time.Time) error {

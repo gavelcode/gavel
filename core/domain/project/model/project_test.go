@@ -268,6 +268,35 @@ func TestProjectUpdateLanguages(t *testing.T) {
 	assert.True(t, project.ID().Equal(evt.ProjectID()))
 }
 
+func TestProjectUpdateToolSelection(t *testing.T) {
+	project, err := model.NewProject("my-service", "my-service", "//my-service/...")
+	require.NoError(t, err)
+	project.ClearEvents()
+
+	selection := map[string][]string{"go": {"golangci-lint", "archtest"}}
+	project.UpdateToolSelection(selection, testTime)
+
+	assert.Equal(t, selection, project.ToolSelection())
+
+	events := project.Events()
+	require.Len(t, events, 1)
+	evt, ok := events[0].(model.ToolSelectionUpdated)
+	require.True(t, ok)
+	assert.True(t, project.ID().Equal(evt.ProjectID()))
+}
+
+func TestProjectToolSelectionReturnsDefensiveCopy(t *testing.T) {
+	project, err := model.NewProject("my-service", "my-service", "//my-service/...")
+	require.NoError(t, err)
+	project.UpdateToolSelection(map[string][]string{"go": {"golangci-lint"}}, testTime)
+
+	mutated := project.ToolSelection()
+	mutated["go"][0] = "tampered"
+	mutated["java"] = []string{"pmd"}
+
+	assert.Equal(t, map[string][]string{"go": {"golangci-lint"}}, project.ToolSelection())
+}
+
 func TestProjectUpdateTargetPattern(t *testing.T) {
 	project, err := model.NewProject("my-service", "my-service", "//my-service/...")
 	require.NoError(t, err)

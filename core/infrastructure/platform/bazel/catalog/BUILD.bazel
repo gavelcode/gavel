@@ -7,7 +7,6 @@ go_library(
     srcs = [
         "aspect.go",
         "catalog.go",
-        "language_rules.go",
         "load.go",
         "tool_repo.go",
     ],

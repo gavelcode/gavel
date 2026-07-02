@@ -7,6 +7,7 @@ gazelle(name = "gazelle")
 
 exports_files([
     ".gavel/gavel.yaml",
+    "MODULE.bazel",
     "go.mod",
     "go.sum",
 ])

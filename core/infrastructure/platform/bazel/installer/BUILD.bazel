@@ -20,12 +20,19 @@ go_library(
 
 go_test(
     name = "installer_test",
-    srcs = ["install_test.go"],
-    data = ["@gavel_tools//lint:catalog.yaml"],
+    srcs = [
+        "install_test.go",
+        "version_test.go",
+    ],
+    data = [
+        "//:MODULE.bazel",
+        "@gavel_tools//lint:catalog.yaml",
+    ],
+    embed = [":installer"],
     deps = [
-        ":installer",
         "//core/infrastructure/platform/bazel/catalog",
         "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//require",
+        "@rules_go//go/runfiles",
     ],
 )

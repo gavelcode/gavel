@@ -26,6 +26,7 @@ type ProjectView struct {
 	ExcludePatterns []string
 	DefaultBranch   string
 	Languages       []string
+	ToolSelection   map[string][]string
 	GateRules       []GateRuleView
 	Baseline        BaselineView
 	ArchPolicy      *ArchPolicyView
@@ -107,6 +108,7 @@ func buildView(gavelspace gavelspacemodel.Gavelspace, projects []projectmodel.Pr
 			ExcludePatterns: project.ExcludePatterns(),
 			DefaultBranch:   project.DefaultBranch(),
 			Languages:       langs,
+			ToolSelection:   project.ToolSelection(),
 			GateRules:       rules,
 			Baseline:        baselineView,
 			ArchPolicy:      archPolicyView,

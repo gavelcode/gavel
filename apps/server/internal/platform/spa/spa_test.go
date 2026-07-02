@@ -13,7 +13,7 @@ import (
 
 func TestHandlerServesExistingFile(t *testing.T) {
 	frontend := fstest.MapFS{
-		"index.html":      {Data: []byte("<html>app</html>")},
+		"index.html":       {Data: []byte("<html>app</html>")},
 		"assets/style.css": {Data: []byte("body{}")},
 	}
 	handler := spa.Handler(frontend)

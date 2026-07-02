@@ -22,7 +22,7 @@ func validGavelYAML(t *testing.T) string {
 projects:
   - name: api
     pattern: //api/...
-    tooling: [go]
+    tooling: {go: [golangci-lint]}
 `
 	require.NoError(t, os.WriteFile(path, []byte(content), 0o644))
 	return path

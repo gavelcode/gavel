@@ -374,6 +374,9 @@ func runProject(
 	if len(project.ExcludePatterns) > 0 {
 		cmdOpts = append(cmdOpts, collectevidence.WithExcludePatterns(project.ExcludePatterns))
 	}
+	if len(project.ToolSelection) > 0 {
+		cmdOpts = append(cmdOpts, collectevidence.WithToolSelection(project.ToolSelection))
+	}
 
 	collectCmd, err := collectevidence.NewCommand(workspace, project.TargetPattern, project.Name, project.DefaultBranch, project.Languages, opts.Quick, opts.Absolute, project.Baseline.ArchIDs, cmdOpts...)
 	if err != nil {

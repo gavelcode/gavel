@@ -108,6 +108,14 @@ func (c *Catalog) selectedAspects(selection map[string][]string) ([]Aspect, erro
 	return selected, nil
 }
 
+func (c *Catalog) toolNames(language string) []string {
+	names := make([]string, 0, len(c.languages[language]))
+	for _, tool := range c.languages[language] {
+		names = append(names, tool.Name)
+	}
+	return names
+}
+
 func (c *Catalog) aspectNames(languages []string) []string {
 	var names []string
 	for _, language := range languages {

@@ -75,11 +75,11 @@ import (
 const (
 	defaultTenantSlug = "default"
 
-	readHeaderTimeout  = 10 * time.Second
-	writeTimeout       = 60 * time.Second
-	idleTimeout        = 120 * time.Second
-	shutdownTimeout    = 10 * time.Second
-	cleanupInterval    = 15 * time.Minute
+	readHeaderTimeout = 10 * time.Second
+	writeTimeout      = 60 * time.Second
+	idleTimeout       = 120 * time.Second
+	shutdownTimeout   = 10 * time.Second
+	cleanupInterval   = 15 * time.Minute
 )
 
 func main() {

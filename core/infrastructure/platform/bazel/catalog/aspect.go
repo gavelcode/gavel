@@ -52,3 +52,7 @@ func AspectNames(languages []string) []string {
 func SelectedAspects(selection map[string][]string) ([]Aspect, error) {
 	return active().selectedAspects(selection)
 }
+
+func ToolNamesForLanguage(language string) []string {
+	return active().toolNames(language)
+}

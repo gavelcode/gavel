@@ -15,15 +15,15 @@ import (
 	"github.com/usegavel/gavel/core/application/casefile/evidencedto"
 	"github.com/usegavel/gavel/core/application/casefile/finalize"
 	ingestcov "github.com/usegavel/gavel/core/application/casefile/ingestcoverage"
-	ingestfind "github.com/usegavel/gavel/core/application/casefile/ingestfindings"
 	"github.com/usegavel/gavel/core/application/casefile/ingestevidence"
+	ingestfind "github.com/usegavel/gavel/core/application/casefile/ingestfindings"
 	"github.com/usegavel/gavel/core/application/casefile/judge"
 	"github.com/usegavel/gavel/core/application/casefile/submit"
 	"github.com/usegavel/gavel/core/domain/casefile/model/evidence"
 	projectmodel "github.com/usegavel/gavel/core/domain/project/model"
 	"github.com/usegavel/gavel/core/domain/project/model/qualitygate"
-	memcasefile "github.com/usegavel/gavel/core/infrastructure/casefile/memory"
 	"github.com/usegavel/gavel/core/infrastructure/casefile/lcov"
+	memcasefile "github.com/usegavel/gavel/core/infrastructure/casefile/memory"
 	"github.com/usegavel/gavel/core/infrastructure/casefile/sarif"
 	memproject "github.com/usegavel/gavel/core/infrastructure/project/memory"
 	"github.com/usegavel/gavel/core/userinterface/cli/judge/pipeline"
@@ -162,4 +162,3 @@ func mustBuildZeroToleranceGate(t *testing.T) qualitygate.Gate {
 	require.NoError(t, err)
 	return gate
 }
-

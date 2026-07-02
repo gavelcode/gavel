@@ -19,8 +19,17 @@ func NewBazelArchitectureCollector(r AnalysisRunner) *BazelArchitectureCollector
 	return &BazelArchitectureCollector{runner: r}
 }
 
-func (c *BazelArchitectureCollector) CollectViolations(ctx context.Context, workspace string, targets []string, languages []string) (*evidencedto.Evidence, [][]byte, error) {
-	archAspects := catalog.ArchtestAspectsForLanguages(languages)
+func (c *BazelArchitectureCollector) CollectViolations(ctx context.Context, workspace string, targets []string, selection map[string][]string) (*evidencedto.Evidence, [][]byte, error) {
+	selected, err := catalog.SelectedAspects(selection)
+	if err != nil {
+		return nil, nil, err
+	}
+	archAspects := make([]catalog.Aspect, 0, len(selected))
+	for _, aspect := range selected {
+		if catalog.IsArchtestAspect(aspect.Name) {
+			archAspects = append(archAspects, aspect)
+		}
+	}
 	if len(archAspects) == 0 {
 		return nil, nil, nil
 	}

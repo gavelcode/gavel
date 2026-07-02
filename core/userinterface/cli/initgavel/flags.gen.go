@@ -8,8 +8,8 @@ import (
 // Options holds the parsed flag values for the init command.
 type Options struct {
 	Config string
-	Force bool
-	From string
+	Force  bool
+	From   string
 }
 
 // RegisterFlags binds all init flags to the given Options struct.

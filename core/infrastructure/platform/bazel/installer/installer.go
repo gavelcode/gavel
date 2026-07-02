@@ -37,6 +37,10 @@ func (i *Installer) Catalog(tooling []string) ([]string, []string) {
 	return catalog.AspectNames(tooling), catalog.BinaryNames(tooling)
 }
 
+func (i *Installer) ToolsForLanguage(language string) []string {
+	return catalog.ToolNamesForLanguage(language)
+}
+
 type bazelrcData struct {
 	Prefix     string
 	Go         bool

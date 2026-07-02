@@ -3,7 +3,7 @@ projects:
     - name: rest-api
       pattern: //backend/...
       tooling:
-        - rust
+        rust: [clippy, archtest]
       quality_gate:
         findings:
             max_error: 0
@@ -14,7 +14,7 @@ projects:
     - name: web-app
       pattern: //frontend/...
       tooling:
-        - typescript
+        typescript: [eslint, archtest]
       quality_gate:
         findings:
             max_error: 0

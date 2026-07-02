@@ -17,9 +17,9 @@ import (
 )
 
 type fakeFinder struct {
-	gavelspace       gavelspacemodel.Gavelspace
-	projects []projectmodel.Project
-	err      error
+	gavelspace gavelspacemodel.Gavelspace
+	projects   []projectmodel.Project
+	err        error
 }
 
 func (f *fakeFinder) LoadFromConfig(_ string) (gavelspacemodel.Gavelspace, []projectmodel.Project, error) {

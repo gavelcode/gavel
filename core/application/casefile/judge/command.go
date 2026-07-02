@@ -33,6 +33,6 @@ func WithDeltaInput(d *casefile.DeltaInput) CommandOption {
 	return func(c *Command) { c.deltaInput = d }
 }
 
-func (c Command) CaseFileID() string                { return c.caseFileID }
-func (c Command) Tracking() *evidencedto.Tracking   { return c.tracking }
+func (c Command) CaseFileID() string               { return c.caseFileID }
+func (c Command) Tracking() *evidencedto.Tracking  { return c.tracking }
 func (c Command) DeltaInput() *casefile.DeltaInput { return c.deltaInput }

@@ -70,7 +70,7 @@ func TestNewAPITokenRejectsInvalidInputs(t *testing.T) {
 		userID   user.UserID
 		toolName string
 		scopes   apitoken.Scopes
-		usedAt       time.Time
+		usedAt   time.Time
 		exp      time.Time
 	}{
 		{name: "empty name", secret: secret, tenantID: tenantID, userID: userID, toolName: "  ", scopes: scopes, usedAt: createdAt, exp: createdAt.Add(time.Hour)},

@@ -71,7 +71,7 @@ func TestRunJSON_AppendsFlag(t *testing.T) {
 func TestRunIn_UsesProvidedGavelspace(t *testing.T) {
 	cli := executor.NewWithBinary("pwd", "/tmp")
 
-	out, code, err := cli.RunIn(context.Background(), "/", )
+	out, code, err := cli.RunIn(context.Background(), "/")
 
 	require.NoError(t, err)
 	assert.Equal(t, 0, code)

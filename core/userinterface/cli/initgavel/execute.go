@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 
 	"gopkg.in/yaml.v3"
 )
@@ -16,6 +17,7 @@ type ConfigInstaller interface {
 
 type ToolCatalogProvider interface {
 	Catalog(tooling []string) (aspects []string, binaries []string)
+	ToolsForLanguage(language string) []string
 }
 
 type Project struct {
@@ -59,7 +61,7 @@ func execute(configPath, workspacePath, name string, force bool, projects []Proj
 			return initResult{}, fmt.Errorf("copy config: %w", err)
 		}
 	} else {
-		if err := writeConfig(absPath, name, projects, server); err != nil {
+		if err := writeConfig(absPath, name, projects, server, catalog); err != nil {
 			return initResult{}, fmt.Errorf("save config: %w", err)
 		}
 	}
@@ -106,12 +108,12 @@ func copyConfig(src, dst string) error {
 	return os.WriteFile(dst, data, filePermission)
 }
 
-func writeConfig(path string, name string, projects []Project, server Server) error {
+func writeConfig(path string, name string, projects []Project, server Server, catalog ToolCatalogProvider) error {
 	if err := os.MkdirAll(filepath.Dir(path), dirPermission); err != nil {
 		return fmt.Errorf("create config dir: %w", err)
 	}
 
-	dto := buildConfigDTO(name, projects, server)
+	dto := buildConfigDTO(name, projects, server, catalog)
 	data, err := yaml.Marshal(dto)
 	if err != nil {
 		return err
@@ -128,14 +130,18 @@ func defaultQualityGate() *qualityGateDTO {
 	}
 }
 
-func buildConfigDTO(name string, projects []Project, server Server) configDTO {
+func buildConfigDTO(name string, projects []Project, server Server, catalog ToolCatalogProvider) configDTO {
 	qGate := defaultQualityGate()
 	dtoProjects := make([]projectDTO, 0, len(projects))
-	for _, p := range projects {
+	for _, project := range projects {
+		selection := make(map[string][]string, len(project.Tooling))
+		for _, language := range project.Tooling {
+			selection[language] = catalog.ToolsForLanguage(language)
+		}
 		dtoProjects = append(dtoProjects, projectDTO{
-			Name:    p.Name,
-			Pattern: p.Pattern,
-			Tooling: p.Tooling,
+			Name:    project.Name,
+			Pattern: project.Pattern,
+			Tooling: selection,
 			Gate:    qGate,
 		})
 	}
@@ -164,11 +170,16 @@ func readFromConfig(path string) (string, []Project, Server, error) {
 	}
 
 	projects := make([]Project, 0, len(dto.Projects))
-	for _, p := range dto.Projects {
+	for _, project := range dto.Projects {
+		languages := make([]string, 0, len(project.Tooling))
+		for language := range project.Tooling {
+			languages = append(languages, language)
+		}
+		sort.Strings(languages)
 		projects = append(projects, Project{
-			Name:    p.Name,
-			Pattern: p.Pattern,
-			Tooling: p.Tooling,
+			Name:    project.Name,
+			Pattern: project.Pattern,
+			Tooling: languages,
 		})
 	}
 
@@ -197,10 +208,10 @@ type configDTO struct {
 }
 
 type projectDTO struct {
-	Name    string          `yaml:"name"`
-	Pattern string          `yaml:"pattern"`
-	Tooling []string        `yaml:"tooling"`
-	Gate    *qualityGateDTO `yaml:"quality_gate,omitempty"`
+	Name    string              `yaml:"name"`
+	Pattern string              `yaml:"pattern"`
+	Tooling map[string][]string `yaml:"tooling"`
+	Gate    *qualityGateDTO     `yaml:"quality_gate,omitempty"`
 }
 
 type qualityGateDTO struct {

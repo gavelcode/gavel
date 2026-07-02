@@ -7,7 +7,7 @@ import (
 )
 
 type FindingsCollector interface {
-	CollectFindings(ctx context.Context, workspace string, targets []string, languages []string) ([]evidencedto.Evidence, []RawFile, string, error)
+	CollectFindings(ctx context.Context, workspace string, targets []string, selection map[string][]string) ([]evidencedto.Evidence, []RawFile, string, error)
 }
 
 type CoverageCollector interface {
@@ -15,7 +15,7 @@ type CoverageCollector interface {
 }
 
 type ArchitectureCollector interface {
-	CollectViolations(ctx context.Context, workspace string, targets []string, languages []string) (*evidencedto.Evidence, [][]byte, error)
+	CollectViolations(ctx context.Context, workspace string, targets []string, selection map[string][]string) (*evidencedto.Evidence, [][]byte, error)
 }
 
 type ChangedLinesSource interface {

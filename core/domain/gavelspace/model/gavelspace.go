@@ -37,7 +37,7 @@ func ReconstituteGavelspace(gavelspaceID GavelspaceID, projects []ProjectRef) (G
 	return Gavelspace{id: gavelspaceID, projects: copied}, nil
 }
 
-func (g *Gavelspace) ID() GavelspaceID         { return g.id }
+func (g *Gavelspace) ID() GavelspaceID           { return g.id }
 func (g *Gavelspace) ServerConfig() ServerConfig { return g.serverConfig }
 func (g *Gavelspace) FindingsSource() string     { return g.findingsSource }
 

@@ -16,10 +16,10 @@ import (
 
 	"github.com/usegavel/gavel/core/application/gavelspace/loadgavelspace"
 	"github.com/usegavel/gavel/core/application/project/preparebaseline"
-	apiclient "github.com/usegavel/gavel/core/userinterface/api/v1/client"
-	"github.com/usegavel/gavel/core/userinterface/cli/judge/pipeline"
 	casefilememory "github.com/usegavel/gavel/core/infrastructure/casefile/memory"
 	projectmemory "github.com/usegavel/gavel/core/infrastructure/project/memory"
+	apiclient "github.com/usegavel/gavel/core/userinterface/api/v1/client"
+	"github.com/usegavel/gavel/core/userinterface/cli/judge/pipeline"
 )
 
 var errHelper = errors.New("helper error")

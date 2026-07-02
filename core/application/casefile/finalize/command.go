@@ -80,11 +80,11 @@ func WithPrecomputedVerdict(v PrecomputedVerdict) Option {
 	return func(c *Command) { c.precomputedVerdict = &v }
 }
 
-func (c Command) CaseFileID() string      { return c.caseFileID }
-func (c Command) Fingerprints() []string   { return c.fingerprints }
-func (c Command) ArchIDs() []string        { return c.archIDs }
-func (c Command) ArchDelta() ArchDeltaInput { return c.archDelta }
-func (c Command) Quick() bool                          { return c.quick }
-func (c Command) Absolute() bool                       { return c.absolute }
+func (c Command) CaseFileID() string                             { return c.caseFileID }
+func (c Command) Fingerprints() []string                         { return c.fingerprints }
+func (c Command) ArchIDs() []string                              { return c.archIDs }
+func (c Command) ArchDelta() ArchDeltaInput                      { return c.archDelta }
+func (c Command) Quick() bool                                    { return c.quick }
+func (c Command) Absolute() bool                                 { return c.absolute }
 func (c Command) FileCoverage() []projectmodel.FileCoverageEntry { return c.fileCoverage }
 func (c Command) PrecomputedVerdict() *PrecomputedVerdict        { return c.precomputedVerdict }

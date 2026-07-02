@@ -18,4 +18,3 @@ func TestValidate_PassesOnConfiguredWorkspace(t *testing.T) {
 	assert.True(t, strings.Contains(result.Stdout, "VALID") || strings.Contains(result.Stdout, "valid"),
 		"stdout should indicate valid structure, got:\n%s", result.Stdout)
 }
-

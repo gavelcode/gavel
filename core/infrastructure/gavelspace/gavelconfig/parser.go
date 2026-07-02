@@ -3,6 +3,7 @@ package gavelconfig
 import (
 	"fmt"
 	"os"
+	"sort"
 	"strings"
 	"time"
 
@@ -100,12 +101,13 @@ func buildProject(dto projectDTO, now time.Time) (projectmodel.Project, error) {
 		return projectmodel.Project{}, err
 	}
 
-	languages, err := buildLanguages(dto.Tooling)
+	languages, selection, err := buildTooling(dto.Tooling)
 	if err != nil {
 		return projectmodel.Project{}, fmt.Errorf("tooling: %w", err)
 	}
 	if len(languages) > 0 {
 		project.UpdateLanguages(languages, now)
+		project.UpdateToolSelection(selection, now)
 	}
 
 	qg, err := buildQualityGate(dto.Gate)
@@ -125,16 +127,28 @@ func buildProject(dto projectDTO, now time.Time) (projectmodel.Project, error) {
 	return project, nil
 }
 
-func buildLanguages(tooling []string) ([]coverage.Language, error) {
-	languages := make([]coverage.Language, 0, len(tooling))
-	for _, name := range tooling {
+func buildTooling(tooling map[string][]string) ([]coverage.Language, map[string][]string, error) {
+	names := make([]string, 0, len(tooling))
+	for name := range tooling {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+
+	languages := make([]coverage.Language, 0, len(names))
+	selection := make(map[string][]string, len(names))
+	for _, name := range names {
+		tools := tooling[name]
+		if len(tools) == 0 {
+			return nil, nil, fmt.Errorf("language %q must list at least one tool", name)
+		}
 		lang, err := coverage.NewLanguage(name)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		languages = append(languages, lang)
+		selection[name] = tools
 	}
-	return languages, nil
+	return languages, selection, nil
 }
 
 func buildQualityGate(dto qualityGateDTO) (qualitygate.Gate, error) {

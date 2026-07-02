@@ -52,6 +52,28 @@ func TestNewCommand_WithScopedTargets(t *testing.T) {
 	assert.Equal(t, "//core/...", cmd.TargetPattern())
 }
 
+func TestNewCommand_WithToolSelection(t *testing.T) {
+	selection := map[string][]string{"go": {"golangci-lint", "archtest"}}
+	cmd, err := collectevidence.NewCommand("/ws", "//core/...", "core", "main", []string{"go"}, false, false, nil,
+		collectevidence.WithToolSelection(selection),
+	)
+
+	require.NoError(t, err)
+	assert.Equal(t, selection, cmd.ToolSelection())
+}
+
+func TestNewCommand_ToolSelectionIsDefensivelyCopied(t *testing.T) {
+	cmd, err := collectevidence.NewCommand("/ws", "//core/...", "core", "main", []string{"go"}, false, false, nil,
+		collectevidence.WithToolSelection(map[string][]string{"go": {"golangci-lint"}}),
+	)
+	require.NoError(t, err)
+
+	mutated := cmd.ToolSelection()
+	mutated["go"][0] = "tampered"
+
+	assert.Equal(t, map[string][]string{"go": {"golangci-lint"}}, cmd.ToolSelection())
+}
+
 func TestNewCommand_WithoutScopedTargets_ReturnsNil(t *testing.T) {
 	cmd, err := collectevidence.NewCommand("/ws", "//core/...", "core", "main", []string{"go"}, false, false, nil)
 

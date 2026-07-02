@@ -22,9 +22,6 @@ import (
 	corejudge "github.com/usegavel/gavel/core/application/casefile/judge"
 	casefilelist "github.com/usegavel/gavel/core/application/casefile/list"
 	findinglist "github.com/usegavel/gavel/core/application/casefile/listfindings"
-	casefile "github.com/usegavel/gavel/core/domain/casefile/model"
-	"github.com/usegavel/gavel/core/domain/casefile/model/evidence/coverage"
-	"github.com/usegavel/gavel/core/domain/casefile/model/evidence/finding"
 	iamchangepw "github.com/usegavel/gavel/core/application/iam/changepassword"
 	iamcreateuser "github.com/usegavel/gavel/core/application/iam/createuser"
 	iamissuetoken "github.com/usegavel/gavel/core/application/iam/issuetoken"
@@ -38,6 +35,9 @@ import (
 	projectgetbykey "github.com/usegavel/gavel/core/application/project/getbykey"
 	projectlist "github.com/usegavel/gavel/core/application/project/list"
 	"github.com/usegavel/gavel/core/application/project/projectview"
+	casefile "github.com/usegavel/gavel/core/domain/casefile/model"
+	"github.com/usegavel/gavel/core/domain/casefile/model/evidence/coverage"
+	"github.com/usegavel/gavel/core/domain/casefile/model/evidence/finding"
 	"github.com/usegavel/gavel/core/domain/iam/model/tenant"
 	"github.com/usegavel/gavel/core/domain/iam/model/user"
 	memcasefile "github.com/usegavel/gavel/core/infrastructure/casefile/memory"
@@ -435,11 +435,11 @@ func TestServerMode_RoundTrip_DashboardSeesPrecomputedVerdict(t *testing.T) {
 	require.Equal(t, 200, resp.StatusCode)
 
 	var caseFileView struct {
-		VerdictOutcome   string  `json:"verdict_outcome"`
-		TotalFindings    int     `json:"total_findings"`
-		NewFindings      int     `json:"new_findings"`
-		ExistingFindings int     `json:"existing_findings"`
-		ResolvedFindings int     `json:"resolved_findings"`
+		VerdictOutcome   string   `json:"verdict_outcome"`
+		TotalFindings    int      `json:"total_findings"`
+		NewFindings      int      `json:"new_findings"`
+		ExistingFindings int      `json:"existing_findings"`
+		ResolvedFindings int      `json:"resolved_findings"`
 		CoveragePercent  *float64 `json:"coverage_percent"`
 		Rulings          []struct {
 			Subtype string `json:"subtype"`

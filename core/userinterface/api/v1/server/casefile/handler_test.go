@@ -1016,4 +1016,3 @@ func TestGetProjectBaseline_ProjectNotFoundReturns404(t *testing.T) {
 	_, ok := resp.(gen.GetProjectBaseline404JSONResponse)
 	assert.True(t, ok, "expected 404, got %T", resp)
 }
-

@@ -21,6 +21,6 @@ func NewCommand(workspace, target string, languages []string) (Command, error) {
 	return Command{workspace: workspace, target: target, languages: languages}, nil
 }
 
-func (c Command) Workspace() string  { return c.workspace }
-func (c Command) Target() string     { return c.target }
+func (c Command) Workspace() string   { return c.workspace }
+func (c Command) Target() string      { return c.target }
 func (c Command) Languages() []string { return c.languages }

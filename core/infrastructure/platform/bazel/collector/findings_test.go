@@ -19,7 +19,7 @@ func TestBazelFindingsCollector_NoReports_ReturnsEmpty(t *testing.T) {
 	parser := &fakeFindingsParser{}
 	c := collector.NewBazelFindingsCollector(runner, parser)
 
-	evidences, rawFiles, buildWarning, err := c.CollectFindings(context.Background(), t.TempDir(), []string{"//pkg:lib"}, []string{"go"})
+	evidences, rawFiles, buildWarning, err := c.CollectFindings(context.Background(), t.TempDir(), []string{"//pkg:lib"}, map[string][]string{"go": {"golangci-lint"}})
 
 	require.NoError(t, err)
 	assert.Empty(t, evidences)
@@ -33,7 +33,7 @@ func TestBazelFindingsCollector_ParsesReports(t *testing.T) {
 	parser := &fakeFindingsParser{returnEmpty: true}
 	c := collector.NewBazelFindingsCollector(runner, parser)
 
-	evidences, rawFiles, buildWarning, err := c.CollectFindings(context.Background(), t.TempDir(), []string{"//pkg:lib"}, []string{"go"})
+	evidences, rawFiles, buildWarning, err := c.CollectFindings(context.Background(), t.TempDir(), []string{"//pkg:lib"}, map[string][]string{"go": {"golangci-lint"}})
 
 	require.NoError(t, err)
 	assert.Len(t, evidences, 1)
@@ -42,12 +42,12 @@ func TestBazelFindingsCollector_ParsesReports(t *testing.T) {
 	assert.Empty(t, buildWarning)
 }
 
-func TestBazelFindingsCollector_NoAspectsForUnknownLanguage(t *testing.T) {
+func TestBazelFindingsCollector_NoAspectsForEmptySelection(t *testing.T) {
 	r := &fakeAnalysisRunner{sarifFiles: map[string][][]byte{}}
 	parser := &fakeFindingsParser{}
 	c := collector.NewBazelFindingsCollector(r, parser)
 
-	evidences, rawFiles, buildWarning, err := c.CollectFindings(context.Background(), t.TempDir(), []string{"//pkg:lib"}, []string{"unknown"})
+	evidences, rawFiles, buildWarning, err := c.CollectFindings(context.Background(), t.TempDir(), []string{"//pkg:lib"}, map[string][]string{})
 
 	require.NoError(t, err)
 	assert.Nil(t, evidences)
@@ -60,7 +60,7 @@ func TestBazelFindingsCollector_RunnerError(t *testing.T) {
 	parser := &fakeFindingsParser{}
 	c := collector.NewBazelFindingsCollector(r, parser)
 
-	_, _, _, err := c.CollectFindings(context.Background(), t.TempDir(), []string{"//pkg:lib"}, []string{"go"})
+	_, _, _, err := c.CollectFindings(context.Background(), t.TempDir(), []string{"//pkg:lib"}, map[string][]string{"go": {"golangci-lint"}})
 
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "run analysis")
@@ -72,7 +72,7 @@ func TestBazelFindingsCollector_ParserError(t *testing.T) {
 	parser := &fakeFindingsParser{err: fmt.Errorf("parse failed")}
 	c := collector.NewBazelFindingsCollector(r, parser)
 
-	_, _, _, err := c.CollectFindings(context.Background(), t.TempDir(), []string{"//pkg:lib"}, []string{"go"})
+	_, _, _, err := c.CollectFindings(context.Background(), t.TempDir(), []string{"//pkg:lib"}, map[string][]string{"go": {"golangci-lint"}})
 
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "parse failed")
@@ -83,7 +83,7 @@ func TestBazelFindingsCollector_EmptySARIFData(t *testing.T) {
 	parser := &fakeFindingsParser{}
 	c := collector.NewBazelFindingsCollector(r, parser)
 
-	_, _, _, err := c.CollectFindings(context.Background(), t.TempDir(), []string{"//pkg:lib"}, []string{"go"})
+	_, _, _, err := c.CollectFindings(context.Background(), t.TempDir(), []string{"//pkg:lib"}, map[string][]string{"go": {"golangci-lint"}})
 
 	require.Error(t, err)
 }
@@ -97,7 +97,7 @@ func TestBazelFindingsCollector_PropagatesBuildWarning(t *testing.T) {
 	parser := &fakeFindingsParser{returnEmpty: true}
 	c := collector.NewBazelFindingsCollector(runner, parser)
 
-	evidences, rawFiles, buildWarning, err := c.CollectFindings(context.Background(), t.TempDir(), []string{"//pkg:lib"}, []string{"go"})
+	evidences, rawFiles, buildWarning, err := c.CollectFindings(context.Background(), t.TempDir(), []string{"//pkg:lib"}, map[string][]string{"go": {"golangci-lint"}})
 
 	require.NoError(t, err)
 	assert.Len(t, evidences, 1)

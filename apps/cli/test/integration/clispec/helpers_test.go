@@ -22,9 +22,9 @@ type globalSpec struct {
 }
 
 type commandSpec struct {
-	Summary string                `yaml:"summary"`
-	Flags   map[string]flagSpec   `yaml:"flags"`
-	Output  *outputSpec           `yaml:"output"`
+	Summary string              `yaml:"summary"`
+	Flags   map[string]flagSpec `yaml:"flags"`
+	Output  *outputSpec         `yaml:"output"`
 }
 
 type flagSpec struct {
@@ -37,14 +37,14 @@ type flagSpec struct {
 }
 
 type outputSpec struct {
-	Default string                  `yaml:"default"`
-	Formats map[string]formatSpec   `yaml:"formats"`
+	Default string                `yaml:"default"`
+	Formats map[string]formatSpec `yaml:"formats"`
 }
 
 type formatSpec struct {
-	Flag        string          `yaml:"flag"`
-	Description string          `yaml:"description"`
-	Schema      any             `yaml:"schema"`
+	Flag        string `yaml:"flag"`
+	Description string `yaml:"description"`
+	Schema      any    `yaml:"schema"`
 }
 
 func loadSpec(t *testing.T) cliSpec {

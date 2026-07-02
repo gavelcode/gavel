@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-const argon2idPrefix             = "$argon2id$"
+const argon2idPrefix = "$argon2id$"
 const argon2idValidSegmentCount = 5
 
 type PasswordHash struct {

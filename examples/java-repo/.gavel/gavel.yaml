@@ -3,7 +3,7 @@ projects:
     - name: payment-service
       pattern: //...
       tooling:
-        - java
+        java: [pmd, cpd, spotbugs, error-prone, archtest]
       quality_gate:
         findings:
             max_error: 0

@@ -3,7 +3,7 @@ projects:
     - name: data-pipeline
       pattern: //...
       tooling:
-        - python
+        python: [ruff, bandit, pycompile, archtest]
       quality_gate:
         findings:
             max_error: 0

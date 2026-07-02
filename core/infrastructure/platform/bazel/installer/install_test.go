@@ -13,7 +13,7 @@ import (
 	"github.com/usegavel/gavel/core/infrastructure/platform/bazel/installer"
 )
 
-const gavelDepLine = `bazel_dep(name = "gavel_tools", version = "0.3.1")`
+const gavelDepLine = `bazel_dep(name = "gavel_tools", version = "0.3.2")`
 
 const (
 	gavelRegistryLine = "common --registry=https://gavelcode.github.io/registry"

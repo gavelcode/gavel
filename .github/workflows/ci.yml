@@ -56,6 +56,34 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: false
 
+  # Dogfooding gate: gavel judges itself across all five projects. This is the
+  # only job that exercises the analyzer aspects end-to-end — a stale ESLint
+  # store-repair path silently broke the TypeScript aspect because nothing in CI
+  # ran `gavel judge`.
+  dogfood:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Cache Bazel
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/bazel
+          key: bazel-${{ runner.os }}-${{ hashFiles('MODULE.bazel.lock', '.bazelversion') }}
+          restore-keys: bazel-${{ runner.os }}-
+
+      - name: Install Bazelisk
+        run: |
+          sudo curl -fsSL -o /usr/local/bin/bazel \
+            https://github.com/bazelbuild/bazelisk/releases/latest/download/bazelisk-linux-amd64
+          sudo chmod +x /usr/local/bin/bazel
+
+      - name: Build gavel CLI
+        run: bazel build //apps/cli/cmd/gavel
+
+      - name: Judge (gavel gates itself)
+        run: bazel-bin/apps/cli/cmd/gavel/gavel_/gavel judge
+
   # Guards generated artifacts against drift from their source of truth:
   # OpenAPI (Go DTOs + TS client) and the clispec (CLI flags.gen.go).
   drift:

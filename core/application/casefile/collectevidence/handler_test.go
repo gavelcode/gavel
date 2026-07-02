@@ -25,7 +25,7 @@ type fakeFindingsCollector struct {
 	err          error
 }
 
-func (f *fakeFindingsCollector) CollectFindings(_ context.Context, _ string, _ []string, _ []string) ([]evidencedto.Evidence, []collectevidence.RawFile, string, error) {
+func (f *fakeFindingsCollector) CollectFindings(_ context.Context, _ string, _ []string, _ map[string][]string) ([]evidencedto.Evidence, []collectevidence.RawFile, string, error) {
 	return f.evidences, f.rawFiles, f.buildWarning, f.err
 }
 
@@ -44,7 +44,7 @@ type fakeArchCollector struct {
 	err      error
 }
 
-func (f *fakeArchCollector) CollectViolations(_ context.Context, _ string, _ []string, _ []string) (*evidencedto.Evidence, [][]byte, error) {
+func (f *fakeArchCollector) CollectViolations(_ context.Context, _ string, _ []string, _ map[string][]string) (*evidencedto.Evidence, [][]byte, error) {
 	return f.evidence, f.docs, f.err
 }
 
@@ -63,7 +63,7 @@ type capturingFindingsCollector struct {
 	rawFiles        []collectevidence.RawFile
 }
 
-func (c *capturingFindingsCollector) CollectFindings(_ context.Context, _ string, targets []string, _ []string) ([]evidencedto.Evidence, []collectevidence.RawFile, string, error) {
+func (c *capturingFindingsCollector) CollectFindings(_ context.Context, _ string, targets []string, _ map[string][]string) ([]evidencedto.Evidence, []collectevidence.RawFile, string, error) {
 	c.capturedTargets = targets
 	return c.evidences, c.rawFiles, "", nil
 }

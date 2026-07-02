@@ -3,8 +3,8 @@ package loadgavelspace
 import (
 	"context"
 
-	"github.com/usegavel/gavel/core/domain/project/model/archpolicy"
 	projectmodel "github.com/usegavel/gavel/core/domain/project/model"
+	"github.com/usegavel/gavel/core/domain/project/model/archpolicy"
 )
 
 type ArchPolicyLoader interface {

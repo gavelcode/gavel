@@ -114,7 +114,6 @@ func mustCommand(t *testing.T, gavelspaceName, projectID string) removeproject.C
 	return cmd
 }
 
-
 func seededGavelspace(t *testing.T, name string, projectID projectmodel.ProjectID, targetPattern string) gsmodel.Gavelspace {
 	t.Helper()
 	gavelspace, err := gsmodel.NewGavelspace(name)

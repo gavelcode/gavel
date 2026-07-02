@@ -30,6 +30,10 @@ func (f *fakeInstaller) Install(workspace string, tooling []string) (map[string]
 
 type fakeCatalog struct{}
 
+func (f *fakeCatalog) ToolsForLanguage(_ string) []string {
+	return []string{"golangci-lint", "archtest"}
+}
+
 func (f *fakeCatalog) Catalog(_ []string) ([]string, []string) {
 	return []string{"go_golangci_lint_submission_aspect"}, []string{"golangci_lint_binary"}
 }
@@ -123,10 +127,10 @@ name: my-monorepo
 projects:
   - name: backend
     pattern: //server/...
-    tooling: [go, java]
+    tooling: {go: [golangci-lint], java: [pmd]}
   - name: frontend
     pattern: //web/...
-    tooling: [typescript]
+    tooling: {typescript: [eslint]}
 server:
   url: https://gavel.example.com
   token: gav_xxx
@@ -234,7 +238,7 @@ func TestCopyConfig_MkdirError(t *testing.T) {
 func TestWriteConfig_Success(t *testing.T) {
 	path := filepath.Join(t.TempDir(), ".gavel", "gavel.yaml")
 
-	err := writeConfig(path, "test", validProjects(), Server{})
+	err := writeConfig(path, "test", validProjects(), Server{}, &fakeCatalog{})
 
 	require.NoError(t, err)
 	data, err := os.ReadFile(path)
@@ -243,13 +247,13 @@ func TestWriteConfig_Success(t *testing.T) {
 }
 
 func TestWriteConfig_MkdirError(t *testing.T) {
-	err := writeConfig("/dev/null/sub/gavel.yaml", "test", validProjects(), Server{})
+	err := writeConfig("/dev/null/sub/gavel.yaml", "test", validProjects(), Server{}, &fakeCatalog{})
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "create config dir")
 }
 
 func TestBuildConfigDTO_WithServer(t *testing.T) {
-	dto := buildConfigDTO("proj", validProjects(), Server{URL: "https://x.com", Token: "tok"})
+	dto := buildConfigDTO("proj", validProjects(), Server{URL: "https://x.com", Token: "tok"}, &fakeCatalog{})
 	assert.Equal(t, "proj", dto.Name)
 	assert.Equal(t, "https://x.com", dto.Server.URL)
 	assert.Equal(t, "tok", dto.Server.Token)
@@ -348,7 +352,7 @@ name: my-project
 projects:
   - name: api
     pattern: //api/...
-    tooling: [go]
+    tooling: {go: [golangci-lint]}
 `
 	require.NoError(t, os.WriteFile(configFile, []byte(content), 0o644))
 

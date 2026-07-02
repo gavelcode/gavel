@@ -74,9 +74,9 @@ func (c *Client) CreateProject(ctx context.Context, key, name, targetPattern str
 func (c *Client) OpenCaseFile(ctx context.Context, projectID, commitSHA, branch string, freshEvaluation bool) (string, error) {
 	fresh := freshEvaluation
 	body := gen.CreateCaseFileJSONRequestBody{
-		ProjectId: mustUUID(projectID),
-		CommitSha: commitSHA,
-		Branch:    branch,
+		ProjectId:       mustUUID(projectID),
+		CommitSha:       commitSHA,
+		Branch:          branch,
 		FreshEvaluation: &fresh,
 	}
 	resp, err := c.api.CreateCaseFileWithResponse(ctx, nil, body)
@@ -277,8 +277,8 @@ func EvidenceToWire(input evidencedto.Evidence) gen.IngestEvidenceRequest {
 			byFile := make([]gen.IngestFileCoverage, 0, len(input.Coverage.ByFile))
 			for _, fc := range input.Coverage.ByFile {
 				byFile = append(byFile, gen.IngestFileCoverage{
-					FilePath:      fc.FilePath,
-					CoveredLines:  toInt32Slice(fc.Covered),
+					FilePath:       fc.FilePath,
+					CoveredLines:   toInt32Slice(fc.Covered),
 					UncoveredLines: toInt32Slice(fc.Uncovered),
 				})
 			}

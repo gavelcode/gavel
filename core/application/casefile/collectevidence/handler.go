@@ -182,7 +182,7 @@ func (h *Handler) collectFindings(ctx context.Context, cmd Command, targets []st
 	if h.findings == nil {
 		return nil, nil, "", nil
 	}
-	return h.findings.CollectFindings(ctx, cmd.Workspace(), targets, cmd.Languages())
+	return h.findings.CollectFindings(ctx, cmd.Workspace(), targets, cmd.ToolSelection())
 }
 
 func (h *Handler) collectCoverage(ctx context.Context, cmd Command, targets []string, evidences *[]evidencedto.Evidence) (float64, []byte, error) {
@@ -233,7 +233,7 @@ func (h *Handler) collectArchitecture(ctx context.Context, cmd Command, targets 
 	if h.architecture == nil {
 		return nil, 0, classifyarch.Result{}, nil
 	}
-	archEv, archDocs, err := h.architecture.CollectViolations(ctx, cmd.Workspace(), targets, cmd.Languages())
+	archEv, archDocs, err := h.architecture.CollectViolations(ctx, cmd.Workspace(), targets, cmd.ToolSelection())
 	if err != nil {
 		return nil, 0, classifyarch.Result{}, fmt.Errorf("architecture: %w", err)
 	}

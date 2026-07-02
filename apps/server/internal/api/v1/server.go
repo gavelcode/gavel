@@ -1,9 +1,9 @@
 package v1
 
 import (
+	"github.com/usegavel/gavel/core/userinterface/api/v1/gen"
 	"github.com/usegavel/gavel/core/userinterface/api/v1/server/casefile"
 	"github.com/usegavel/gavel/core/userinterface/api/v1/server/gavelspace"
-	"github.com/usegavel/gavel/core/userinterface/api/v1/gen"
 	"github.com/usegavel/gavel/core/userinterface/api/v1/server/iam"
 	"github.com/usegavel/gavel/core/userinterface/api/v1/server/ops"
 	"github.com/usegavel/gavel/core/userinterface/api/v1/server/pleading"

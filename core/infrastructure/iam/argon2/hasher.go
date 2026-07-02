@@ -26,7 +26,7 @@ type Hasher struct {
 
 var _ service.PasswordHasher = (*Hasher)(nil)
 
-func New(rng io.Reader) *Hasher                   { return &Hasher{cfg: DefaultConfig(), rng: rng} }
+func New(rng io.Reader) *Hasher                     { return &Hasher{cfg: DefaultConfig(), rng: rng} }
 func NewWithConfig(rng io.Reader, c Config) *Hasher { return &Hasher{cfg: c, rng: rng} }
 
 func (h *Hasher) Hash(plain string) (user.PasswordHash, error) {

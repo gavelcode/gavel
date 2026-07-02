@@ -14,10 +14,10 @@ import (
 )
 
 type Deps struct {
-	ListPleadings   *pleadinglist.Handler
-	GetPleading     *pleadingget.Handler
-	FilePleading    *pleadingfile.Handler
-	ResolvePleading *pleadingresolve.Handler
+	ListPleadings       *pleadinglist.Handler
+	GetPleading         *pleadingget.Handler
+	FilePleading        *pleadingfile.Handler
+	ResolvePleading     *pleadingresolve.Handler
 	ResolveProjectByKey *projectgetbykey.Handler
 }
 

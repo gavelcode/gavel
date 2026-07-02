@@ -237,7 +237,6 @@ func (s *pleadingStore) ListByProject(_ context.Context, projectID, status, _ st
 	return out[offset:end], total, nil
 }
 
-
 type searchStore struct {
 	results []searchquery.SearchResult
 }

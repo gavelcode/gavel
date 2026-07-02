@@ -14,12 +14,12 @@ import (
 var errNotFound = errors.New("not found")
 
 type fakeCaseFileRepo struct {
-	mu       sync.Mutex
-	store    map[string]casefile.CaseFile
-	fpStore  map[string][]finding.FingerprintID
-	findErr  error
-	saveErr  error
-	fpErr    error
+	mu      sync.Mutex
+	store   map[string]casefile.CaseFile
+	fpStore map[string][]finding.FingerprintID
+	findErr error
+	saveErr error
+	fpErr   error
 }
 
 func newFakeCaseFileRepo() *fakeCaseFileRepo {

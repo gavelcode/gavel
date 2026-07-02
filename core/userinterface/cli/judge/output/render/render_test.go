@@ -6,9 +6,9 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/usegavel/gavel/core/userinterface/cli/judge/pipeline"
-	"github.com/usegavel/gavel/core/userinterface/cli/judge/output/render"
 	"github.com/usegavel/gavel/core/application/casefile/evidencedto"
+	"github.com/usegavel/gavel/core/userinterface/cli/judge/output/render"
+	"github.com/usegavel/gavel/core/userinterface/cli/judge/pipeline"
 )
 
 func TestFindings_EmptyResultProducesEmptyBlock(t *testing.T) {

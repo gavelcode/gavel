@@ -15,7 +15,7 @@ type fakeEvent struct {
 	occurredAt time.Time
 }
 
-func (f fakeEvent) EventName() string    { return f.name }
+func (f fakeEvent) EventName() string     { return f.name }
 func (f fakeEvent) OccurredAt() time.Time { return f.occurredAt }
 
 func TestEventsFromDomain(t *testing.T) {

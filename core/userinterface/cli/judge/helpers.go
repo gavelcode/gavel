@@ -14,7 +14,6 @@ import (
 	"github.com/usegavel/gavel/core/userinterface/cli/ui"
 )
 
-
 func resolveGitInfo(ctx context.Context, source SourceContext, commitOverride, branchOverride string) (string, string, error) {
 	commitSHA := commitOverride
 	if commitSHA == "" {

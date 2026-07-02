@@ -67,10 +67,10 @@ name: my-monorepo
 projects:
   - name: backend
     pattern: //backend/...
-    tooling: [java, kotlin]
+    tooling: {java: [pmd], kotlin: [spotbugs]}
   - name: frontend
     pattern: //web/...
-    tooling: [typescript]
+    tooling: {typescript: [eslint]}
 `)
 
 	config, err := gavelconfig.Parse(data)
@@ -87,6 +87,7 @@ projects:
 	assert.Len(t, backend.Languages(), 2)
 	assert.Equal(t, "java", backend.Languages()[0].String())
 	assert.Equal(t, "kotlin", backend.Languages()[1].String())
+	assert.Equal(t, map[string][]string{"java": {"pmd"}, "kotlin": {"spotbugs"}}, backend.ToolSelection())
 
 	frontend := config.Projects()[1]
 	assert.Equal(t, "frontend", frontend.Name())
@@ -103,7 +104,7 @@ projects:
     pattern: //backend/...
     exclude:
       - //backend/gen/...
-    tooling: [go]
+    tooling: {go: [golangci-lint]}
 `)
 
 	config, err := gavelconfig.Parse(data)
@@ -121,7 +122,7 @@ projects:
     pattern: //backend/...
     exclude:
       - //web/...
-    tooling: [go]
+    tooling: {go: [golangci-lint]}
 `)
 
 	_, err := gavelconfig.Parse(data)
@@ -795,7 +796,18 @@ projects:
   - name: backend
     pattern: //backend/...
     tooling:
-      - "  "
+      "  ": [golangci-lint]
+`),
+		},
+		{
+			name: "tooling language with no tools",
+			data: []byte(`
+name: my-monorepo
+projects:
+  - name: backend
+    pattern: //backend/...
+    tooling:
+      go: []
 `),
 		},
 		{

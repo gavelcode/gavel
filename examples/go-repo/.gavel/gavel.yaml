@@ -3,7 +3,7 @@ projects:
     - name: api-gateway
       pattern: //...
       tooling:
-        - go
+        go: [golangci-lint, archtest]
       quality_gate:
         findings:
             max_error: 0

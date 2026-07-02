@@ -174,7 +174,6 @@ func TestExecuteReturnsErrorOnNewSessionFailure(t *testing.T) {
 	assert.Contains(t, err.Error(), "new session")
 }
 
-
 func TestExecuteReturnsErrorOnUserSaveFailure(t *testing.T) {
 	tn := seedInternalTenant(t)
 	u := seedInternalUser(t, tn.ID())

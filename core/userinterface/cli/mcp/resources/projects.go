@@ -47,11 +47,11 @@ type projectsOutput struct {
 }
 
 type projectEntry struct {
-	Name      string       `json:"name"`
-	Pattern   string       `json:"pattern"`
-	Languages []string     `json:"languages"`
-	Gate      projectGate  `json:"quality_gate"`
-	Baseline  projectBase  `json:"baseline"`
+	Name      string      `json:"name"`
+	Pattern   string      `json:"pattern"`
+	Languages []string    `json:"languages"`
+	Gate      projectGate `json:"quality_gate"`
+	Baseline  projectBase `json:"baseline"`
 }
 
 type projectGate struct {

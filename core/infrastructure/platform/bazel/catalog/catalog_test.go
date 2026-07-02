@@ -174,6 +174,14 @@ func TestSelectedAspects_EmptySelectionReturnsNothing(t *testing.T) {
 	assert.Empty(t, aspects)
 }
 
+func TestToolNamesForLanguage(t *testing.T) {
+	assert.Equal(t, []string{"golangci-lint", "archtest"}, catalog.ToolNamesForLanguage("go"))
+}
+
+func TestToolNamesForLanguage_UnknownIsEmpty(t *testing.T) {
+	assert.Empty(t, catalog.ToolNamesForLanguage("cobol"))
+}
+
 func TestAspectNames_AllLanguages(t *testing.T) {
 	names := catalog.AspectNames([]string{"go", "java", "python", "typescript", "rust"})
 

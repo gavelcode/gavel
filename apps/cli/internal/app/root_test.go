@@ -101,3 +101,4 @@ func (stubInstaller) Install(string, []string) (map[string]bool, error) { return
 type stubCatalog struct{}
 
 func (stubCatalog) Catalog([]string) ([]string, []string) { return nil, nil }
+func (stubCatalog) ToolsForLanguage(string) []string      { return nil }

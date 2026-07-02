@@ -404,9 +404,9 @@ func TestCoreProjectRepoFindReturnsErrorOnCorruptedStrategyParams(t *testing.T) 
 	ctx := context.Background()
 
 	strategies := []struct {
-		name    string
-		key     string
-		subtype evidence.Subtype
+		name     string
+		key      string
+		subtype  evidence.Subtype
 		strategy qualitygate.Strategy
 	}{
 		{"count_by_severity", "bad-cbs", evidence.SubtypeCodeQuality, mustCountBySeverity(t, 0, 5, 10)},

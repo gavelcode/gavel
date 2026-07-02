@@ -144,7 +144,9 @@ func TestGetProjectBaseline_Success(t *testing.T) {
 		"key": "core", "name": "Core", "target_pattern": "//core/...",
 	}, cookie)
 	require.Equal(t, http.StatusCreated, createRes.Code, createRes.Body.String())
-	var created struct{ ProjectID string `json:"project_id"` }
+	var created struct {
+		ProjectID string `json:"project_id"`
+	}
 	mustDecode(t, createRes.Body.Bytes(), &created)
 
 	p, err := fixture.projRepo.FindByName(context.Background(), "Core")

@@ -17,13 +17,13 @@ import (
 
 	"github.com/usegavel/gavel/core/application/casefile/classify"
 	"github.com/usegavel/gavel/core/application/casefile/collectevidence"
+	"github.com/usegavel/gavel/core/application/casefile/createcasefile"
 	"github.com/usegavel/gavel/core/application/casefile/evidencedto"
 	"github.com/usegavel/gavel/core/application/casefile/finalize"
 	ingestcov "github.com/usegavel/gavel/core/application/casefile/ingestcoverage"
+	"github.com/usegavel/gavel/core/application/casefile/ingestevidence"
 	ingestfind "github.com/usegavel/gavel/core/application/casefile/ingestfindings"
 	corejudge "github.com/usegavel/gavel/core/application/casefile/judge"
-	"github.com/usegavel/gavel/core/application/casefile/createcasefile"
-	"github.com/usegavel/gavel/core/application/casefile/ingestevidence"
 	"github.com/usegavel/gavel/core/application/casefile/submit"
 	"github.com/usegavel/gavel/core/application/gavelspace/loadgavelspace"
 	"github.com/usegavel/gavel/core/domain/casefile/model/evidence"
@@ -134,6 +134,7 @@ func (s stubStructureVerifier) VerifyStructure(_ string) ([]string, error) { ret
 var _ SourceContext = stubSourceContext{}
 var _ ingestfind.Parser = stubFindingsParser{}
 var _ ingestcov.Parser = stubCoverageParser{}
+
 func stubWorkspaceResolver() (string, error) { return "/tmp/workspace", nil }
 
 var _ StructureVerifier = stubStructureVerifier{}
@@ -272,7 +273,7 @@ func (f fakeFinder) LoadFromConfig(_ string) (gavelspacemodel.Gavelspace, []proj
 
 type stubFindingsCollector struct{}
 
-func (s stubFindingsCollector) CollectFindings(_ context.Context, _ string, _ []string, _ []string) ([]evidencedto.Evidence, []collectevidence.RawFile, string, error) {
+func (s stubFindingsCollector) CollectFindings(_ context.Context, _ string, _ []string, _ map[string][]string) ([]evidencedto.Evidence, []collectevidence.RawFile, string, error) {
 	return []evidencedto.Evidence{{
 		Subtype:     "code_quality",
 		Source:      "empty.sarif",
@@ -678,7 +679,7 @@ type findingsCollectorWithData struct {
 	parser   *ingestfind.Handler
 }
 
-func (f *findingsCollectorWithData) CollectFindings(_ context.Context, _ string, _ []string, _ []string) ([]evidencedto.Evidence, []collectevidence.RawFile, string, error) {
+func (f *findingsCollectorWithData) CollectFindings(_ context.Context, _ string, _ []string, _ map[string][]string) ([]evidencedto.Evidence, []collectevidence.RawFile, string, error) {
 	cmd, err := ingestfind.NewCommand([]byte(`{"runs":[]}`), "sarif", "test.sarif", "code_quality")
 	if err != nil {
 		return nil, nil, "", err
@@ -864,7 +865,7 @@ type failingCollector struct {
 	err error
 }
 
-func (f *failingCollector) CollectFindings(_ context.Context, _ string, _ []string, _ []string) ([]evidencedto.Evidence, []collectevidence.RawFile, string, error) {
+func (f *failingCollector) CollectFindings(_ context.Context, _ string, _ []string, _ map[string][]string) ([]evidencedto.Evidence, []collectevidence.RawFile, string, error) {
 	return nil, nil, "", f.err
 }
 
@@ -895,7 +896,7 @@ func TestRun_CollectEvidenceError(t *testing.T) {
 
 type buildWarningCollector struct{}
 
-func (b *buildWarningCollector) CollectFindings(_ context.Context, _ string, _ []string, _ []string) ([]evidencedto.Evidence, []collectevidence.RawFile, string, error) {
+func (b *buildWarningCollector) CollectFindings(_ context.Context, _ string, _ []string, _ map[string][]string) ([]evidencedto.Evidence, []collectevidence.RawFile, string, error) {
 	return []evidencedto.Evidence{{
 		Subtype:     "code_quality",
 		Source:      "empty.sarif",
@@ -979,7 +980,9 @@ func TestRun_AffectedNoChangedLines(t *testing.T) {
 type changedLinesErrorSource struct{}
 
 func (s *changedLinesErrorSource) CommitSHA(_ context.Context) (string, error) { return "abc", nil }
-func (s *changedLinesErrorSource) Branch(_ context.Context) (string, error)    { return testDefaultBranch, nil }
+func (s *changedLinesErrorSource) Branch(_ context.Context) (string, error) {
+	return testDefaultBranch, nil
+}
 func (s *changedLinesErrorSource) ChangedLines(_ context.Context, _, _ string) (map[string][]int, error) {
 	return nil, errors.New("diff failed")
 }
@@ -1215,4 +1218,3 @@ func TestRun_JudgeHeaderWriteError(t *testing.T) {
 
 	require.Error(t, err)
 }
-

@@ -76,12 +76,12 @@ func newFindings(t *testing.T) evidencedto.Evidence {
 		CollectedAt: testTime,
 		Findings: []evidencedto.Finding{
 			{
-				Tool:        "golangci-lint",
-				RuleID:      "errcheck",
-				Severity:    "error",
-				FilePath:    "main.go",
-				Line:        1,
-				Message:     "ignored error",
+				Tool:          "golangci-lint",
+				RuleID:        "errcheck",
+				Severity:      "error",
+				FilePath:      "main.go",
+				Line:          1,
+				Message:       "ignored error",
 				FingerprintID: uuid.NewString(),
 			},
 		},

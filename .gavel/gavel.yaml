@@ -3,7 +3,7 @@ projects:
   - name: core
     pattern: //core/...
     tooling:
-      - go
+      go: [golangci-lint, archtest]
     quality_gate:
       findings:
         max_error: 0
@@ -15,7 +15,7 @@ projects:
   - name: cli
     pattern: //apps/cli/...
     tooling:
-      - go
+      go: [golangci-lint, archtest]
     quality_gate:
       findings:
         max_error: 0
@@ -27,7 +27,7 @@ projects:
   - name: server
     pattern: //apps/server/...
     tooling:
-      - go
+      go: [golangci-lint, archtest]
     quality_gate:
       findings:
         max_error: 0
@@ -39,7 +39,7 @@ projects:
   - name: web
     pattern: //apps/web/...
     tooling:
-      - typescript
+      typescript: [eslint, archtest]
     quality_gate:
       findings:
         max_error: 0
@@ -51,7 +51,7 @@ projects:
   - name: tools
     pattern: //tools/...
     tooling:
-      - go
+      go: [golangci-lint, archtest]
     quality_gate:
       findings:
         max_error: 0

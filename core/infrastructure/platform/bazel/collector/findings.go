@@ -28,8 +28,17 @@ func NewBazelFindingsCollector(r AnalysisRunner, p FindingsParser) *BazelFinding
 	return &BazelFindingsCollector{runner: r, parser: p}
 }
 
-func (c *BazelFindingsCollector) CollectFindings(ctx context.Context, workspace string, targets []string, languages []string) ([]evidencedto.Evidence, []collectevidence.RawFile, string, error) {
-	lintAspects := catalog.LintAspectsForLanguages(languages)
+func (c *BazelFindingsCollector) CollectFindings(ctx context.Context, workspace string, targets []string, selection map[string][]string) ([]evidencedto.Evidence, []collectevidence.RawFile, string, error) {
+	selected, err := catalog.SelectedAspects(selection)
+	if err != nil {
+		return nil, nil, "", err
+	}
+	lintAspects := make([]catalog.Aspect, 0, len(selected))
+	for _, aspect := range selected {
+		if !catalog.IsArchtestAspect(aspect.Name) {
+			lintAspects = append(lintAspects, aspect)
+		}
+	}
 	if len(lintAspects) == 0 {
 		return nil, nil, "", nil
 	}

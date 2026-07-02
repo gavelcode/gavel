@@ -151,7 +151,6 @@ func newTestFixture(t *testing.T) *testFixture {
 	classifyH := classify.NewHandler(cfRepo)
 	cfFinalizeH := finalize.NewHandler(cfRepo, projRepo, classifyH, judgeH, nil)
 
-
 	plStore := newPleadingStore()
 	plListH := pleadinglist.NewHandler(plStore)
 	plGetH := pleadingget.NewHandler(plStore)

@@ -16,9 +16,29 @@ type Command struct {
 	baselineArchIDs []string
 	scopedTargets   []string
 	excludePatterns []string
+	toolSelection   map[string][]string
 }
 
 type CommandOption func(*Command)
+
+func WithToolSelection(selection map[string][]string) CommandOption {
+	return func(c *Command) {
+		c.toolSelection = copyToolSelection(selection)
+	}
+}
+
+func copyToolSelection(selection map[string][]string) map[string][]string {
+	if selection == nil {
+		return nil
+	}
+	copied := make(map[string][]string, len(selection))
+	for language, tools := range selection {
+		toolsCopy := make([]string, len(tools))
+		copy(toolsCopy, tools)
+		copied[language] = toolsCopy
+	}
+	return copied
+}
 
 func WithScopedTargets(targets []string) CommandOption {
 	return func(c *Command) {
@@ -65,3 +85,5 @@ func (c Command) Absolute() bool            { return c.absolute }
 func (c Command) BaselineArchIDs() []string { return c.baselineArchIDs }
 func (c Command) ScopedTargets() []string   { return c.scopedTargets }
 func (c Command) ExcludePatterns() []string { return c.excludePatterns }
+
+func (c Command) ToolSelection() map[string][]string { return copyToolSelection(c.toolSelection) }

@@ -17,5 +17,5 @@ func NewCommand(rawLCOV []byte, changedLines map[string][]int) (Command, error) 
 	return Command{rawLCOV: rawLCOV, changedLines: changedLines}, nil
 }
 
-func (c Command) RawLCOV() []byte           { return c.rawLCOV }
+func (c Command) RawLCOV() []byte                { return c.rawLCOV }
 func (c Command) ChangedLines() map[string][]int { return c.changedLines }

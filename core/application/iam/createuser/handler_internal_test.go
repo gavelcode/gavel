@@ -123,5 +123,5 @@ type stubHasher struct {
 	hashErr    error
 }
 
-func (h *stubHasher) Hash(_ string) (user.PasswordHash, error)            { return h.hashResult, h.hashErr }
+func (h *stubHasher) Hash(_ string) (user.PasswordHash, error)           { return h.hashResult, h.hashErr }
 func (h *stubHasher) Verify(_ string, _ user.PasswordHash) (bool, error) { return false, nil }

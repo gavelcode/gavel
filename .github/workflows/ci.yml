@@ -9,6 +9,7 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v6
 
@@ -62,6 +63,10 @@ jobs:
   # ran `gavel judge`.
   dogfood:
     runs-on: ubuntu-latest
+    # Building every analyzer aspect from a cold Bazel cache takes ~18 min; warm
+    # runs are far quicker. Kept above the 10-min cap of the other jobs so a cold
+    # cache does not spuriously fail the gate.
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v6
 
@@ -78,6 +83,18 @@ jobs:
             https://github.com/bazelbuild/bazelisk/releases/latest/download/bazelisk-linux-amd64
           sudo chmod +x /usr/local/bin/bazel
 
+      # gavel judge collects web coverage by running `npx vitest run` in
+      # apps/web, so it needs Node on PATH and the web devDependencies installed.
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+
+      - name: Install pnpm
+        run: npm install -g pnpm@9.15.4
+
+      - name: Install web deps
+        run: cd apps/web && pnpm install --frozen-lockfile
+
       - name: Build gavel CLI
         run: bazel build //apps/cli/cmd/gavel
 
@@ -88,6 +105,7 @@ jobs:
   # OpenAPI (Go DTOs + TS client) and the clispec (CLI flags.gen.go).
   drift:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v6
 

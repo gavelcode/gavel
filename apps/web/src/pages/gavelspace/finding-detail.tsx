@@ -42,10 +42,10 @@ export function FindingDetailPage() {
     queryFn: () =>
       hasCasefile
         ? fetchSourceWithContext(
-            finding!.projectKey,
-            finding!.commitSha,
-            finding!.filePath,
-            finding!.casefileId!,
+            finding.projectKey,
+            finding.commitSha,
+            finding.filePath,
+            finding.casefileId!,
           ).then((r) => ({ content: r.content, coverage: r.coverage }))
         : fetchSource(
             finding!.projectKey,
@@ -66,7 +66,7 @@ export function FindingDetailPage() {
     if (!sourceContent || !viewerRef.current) return;
     const row = viewerRef.current.querySelector(
       "[data-active='true']",
-    ) as HTMLElement | null;
+    );
     if (row && typeof row.scrollIntoView === "function") {
       row.scrollIntoView({ block: "center" });
     }

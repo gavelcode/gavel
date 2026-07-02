@@ -49,7 +49,10 @@ export async function fetchSourceWithContext(
   if (!res.ok) {
     throw new Error(`fetch source failed: ${res.status}`);
   }
-  const data = await res.json();
+  const data = (await res.json()) as {
+    content: string;
+    coverage?: { covered_lines?: number[]; uncovered_lines?: number[] };
+  };
   return {
     content: data.content,
     coverage: buildCoverageMap(data.coverage),

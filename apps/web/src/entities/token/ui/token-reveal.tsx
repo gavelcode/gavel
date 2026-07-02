@@ -28,7 +28,7 @@ export function TokenReveal({ result, onDismiss }: TokenRevealProps) {
           <code className="flex-1 rounded bg-background px-3 py-2 text-sm break-all border border-border">
             {result.token}
           </code>
-          <Button variant="outline" size="icon" onClick={copy}>
+          <Button variant="outline" size="icon" onClick={() => void copy()}>
             {copied ? (
               <Check className="h-4 w-4 text-success" />
             ) : (

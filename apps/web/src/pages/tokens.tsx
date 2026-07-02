@@ -47,7 +47,7 @@ export function TokensPage() {
   const deleteMutation = useMutation({
     mutationFn: (id: string) => tokenApi.deleteToken(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["tokens"] });
+      void queryClient.invalidateQueries({ queryKey: ["tokens"] });
       setDeleteConfirm(null);
     },
   });
@@ -144,7 +144,7 @@ export function TokensPage() {
           onCreated={(result) => {
             setNewToken(result);
             setShowCreate(false);
-            queryClient.invalidateQueries({ queryKey: ["tokens"] });
+            void queryClient.invalidateQueries({ queryKey: ["tokens"] });
           }}
           onCancel={() => setShowCreate(false)}
         />

@@ -53,7 +53,7 @@ export function HomePage() {
             <Card
               key={gs.name}
               className="cursor-pointer p-5 transition-colors duration-fast hover:bg-muted/50"
-              onClick={() => navigate(`/gavelspaces/${encodeURIComponent(gs.name)}`)}
+              onClick={() => void navigate(`/gavelspaces/${encodeURIComponent(gs.name)}`)}
               role="link"
             >
               <div className="mb-3 flex items-center justify-between">

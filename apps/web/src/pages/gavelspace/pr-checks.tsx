@@ -47,7 +47,7 @@ export function PRChecksTab() {
           <Card
             key={pr.id}
             className="cursor-pointer p-4 transition-colors duration-fast hover:bg-muted/50"
-            onClick={() => navigate(`/pr-checks/${pr.id}`)}
+            onClick={() => void navigate(`/pr-checks/${pr.id}`)}
             role="link"
           >
             <div className="flex items-center justify-between">

@@ -67,7 +67,7 @@ export function AdminUsersPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="max-w-sm space-y-4">
+          <form onSubmit={(e) => void handleSubmit(e)} className="max-w-sm space-y-4">
             {error && (
               <div className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
                 {error}

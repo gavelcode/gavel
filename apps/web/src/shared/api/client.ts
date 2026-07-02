@@ -13,12 +13,15 @@ export async function request<T>(
     },
   });
   if (!res.ok) {
-    const body = await res.json().catch(() => ({}));
+    const body = (await res.json().catch(() => ({}))) as {
+      detail?: string;
+      error?: string;
+    };
     const message = body.detail ?? body.error ?? res.statusText;
     throw new ApiErrorResponse(res.status, message);
   }
   if (res.status === 204) return undefined as T;
-  return res.json();
+  return res.json() as Promise<T>;
 }
 
 export class ApiErrorResponse extends Error {

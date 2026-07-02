@@ -26,7 +26,7 @@ export function ProjectStrip({ projects }: ProjectStripProps) {
               "cursor-pointer p-3 transition-colors duration-fast hover:bg-muted/50",
               isCalm ? "calm border-muted" : "border-danger/40",
             )}
-            onClick={() => navigate(`/projects/${encodeURIComponent(p.key)}`)}
+            onClick={() => void navigate(`/projects/${encodeURIComponent(p.key)}`)}
             role="link"
           >
             <div className="flex items-center justify-between gap-2">

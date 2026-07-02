@@ -58,7 +58,7 @@ export function AppLayout() {
 
   const handleLogout = async () => {
     await logout();
-    navigate("/login");
+    void navigate("/login");
   };
 
   const closeSidebar = () => setSidebarOpen(false);
@@ -211,7 +211,7 @@ export function AppLayout() {
                 variant="ghost"
                 size="icon"
                 className="h-6 w-6 shrink-0"
-                onClick={handleLogout}
+                onClick={() => void handleLogout()}
                 aria-label="Log out"
               >
                 <LogOut className="h-3 w-3" />

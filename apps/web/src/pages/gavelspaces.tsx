@@ -33,7 +33,7 @@ export function GavelspacesPage() {
             <Card
               key={gs.name}
               className="cursor-pointer p-4 transition-colors duration-fast hover:bg-muted/50"
-              onClick={() => navigate(`/gavelspaces/${gs.name}`)}
+              onClick={() => void navigate(`/gavelspaces/${gs.name}`)}
               role="link"
             >
               <div className="flex items-center justify-between">

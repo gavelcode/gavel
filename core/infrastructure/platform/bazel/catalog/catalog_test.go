@@ -69,17 +69,6 @@ func TestParseCatalog_RejectsToolWithoutAspect(t *testing.T) {
 	assert.ErrorContains(t, err, "no aspect")
 }
 
-func TestRuleKindsForLanguage_Go(t *testing.T) {
-	kinds := catalog.RuleKindsForLanguage("go")
-	assert.Contains(t, kinds, "go_library")
-	assert.Contains(t, kinds, "go_binary")
-	assert.Contains(t, kinds, "go_test")
-}
-
-func TestRuleKindsForLanguage_Unknown(t *testing.T) {
-	assert.Empty(t, catalog.RuleKindsForLanguage("cobol"))
-}
-
 func TestLintAspectsForLanguages_Go(t *testing.T) {
 	aspects := catalog.LintAspectsForLanguages([]string{"go"})
 

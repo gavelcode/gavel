@@ -115,7 +115,7 @@ export function ProfilePage() {
           <CardTitle>Change password</CardTitle>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleChangePassword} className="max-w-sm space-y-4">
+          <form onSubmit={(e) => void handleChangePassword(e)} className="max-w-sm space-y-4">
             {error && (
               <div className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
                 {error}

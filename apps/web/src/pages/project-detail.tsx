@@ -205,7 +205,7 @@ export function ProjectDetailPage() {
                     fontSize: 12,
                     color: "hsl(var(--foreground))",
                   }}
-                  formatter={(value) => [`${value}%`, "Coverage"]}
+                  formatter={(value) => [`${value as number}%`, "Coverage"]}
                 />
                 <Area
                   type="monotone"

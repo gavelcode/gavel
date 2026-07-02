@@ -64,7 +64,7 @@ function CommandPaletteInner({ onClose }: { onClose: () => void }) {
   const navigateTo = useCallback(
     (url: string) => {
       onClose();
-      navigate(url);
+      void navigate(url);
     },
     [navigate, onClose],
   );

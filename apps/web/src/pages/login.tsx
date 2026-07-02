@@ -10,8 +10,9 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/sha
 export function LoginPage() {
   const { user, loading, login } = useAuth();
   const navigate = useNavigate();
-  const [email, setEmail] = useState(import.meta.env.DEV ? "admin@local" : "");
-  const [password, setPassword] = useState(import.meta.env.DEV ? "admin123!" : "");
+  const isDev = (import.meta as unknown as { env?: { DEV?: boolean } }).env?.DEV ?? false;
+  const [email, setEmail] = useState(isDev ? "admin@local" : "");
+  const [password, setPassword] = useState(isDev ? "admin123!" : "");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
@@ -24,7 +25,7 @@ export function LoginPage() {
     setSubmitting(true);
     try {
       await login(email, password);
-      navigate("/");
+      void navigate("/");
     } catch (err) {
       if (err instanceof ApiErrorResponse) {
         setError(err.message);
@@ -44,7 +45,7 @@ export function LoginPage() {
           <CardDescription>Sign in to continue</CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4">
             {error && (
               <div className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
                 {error}

@@ -2,6 +2,7 @@
 title: Project structure
 type: spec
 description: Product boundaries, the four-layer Vernon architecture, package organization rules, and the canonical directory tree.
+tags: [architecture, structure, ddd]
 ---
 
 # Project Structure

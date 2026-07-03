@@ -2,6 +2,8 @@
 title: Application model
 type: reference
 description: The use cases — Simple CQRS commands and queries — that orchestrate the domain aggregates, per Vernon IDDD.
+resource: https://github.com/gavelcode/gavel/tree/main/core/application
+tags: [application, cqrs, use-cases, model]
 ---
 
 # Gavel Core — Application Model

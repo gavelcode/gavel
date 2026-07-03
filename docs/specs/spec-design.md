@@ -2,6 +2,7 @@
 title: Spec design
 type: explanation
 description: How to write specification documents that LLMs can follow reliably.
+tags: [specs, writing, meta]
 ---
 
 # Spec Design

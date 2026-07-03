@@ -2,6 +2,7 @@
 title: CI integration
 type: how-to
 description: Running gavel judge in CI pipelines using the single static binary.
+tags: [ci, automation]
 ---
 
 # CI Integration

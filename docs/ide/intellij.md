@@ -2,6 +2,7 @@
 title: IntelliJ IDEA integration
 type: how-to
 description: Viewing Gavel SARIF findings inline in IntelliJ via the Qodana SARIF plugin.
+tags: [ide, intellij, sarif]
 ---
 
 # IntelliJ IDEA Integration

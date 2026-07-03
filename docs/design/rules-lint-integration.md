@@ -2,6 +2,7 @@
 title: Gavel and rules_lint integration
 type: explanation
 description: Where aspect_rules_lint fits relative to Gavel's native SARIF aspects — a breadth add-on, not a substitute.
+tags: [rules_lint, findings, integration, design-record]
 ---
 
 # Integration Strategy: Gavel + rules_lint
@@ -106,10 +107,10 @@ gavel judge --findings-source=gavel        # force standalone mode
 | Tool | Language | Gavel aspects | rules_lint |
 |------|----------|---------------|------------|
 | golangci-lint | Go | Yes | Yes |
-| PMD | Java/Kotlin | Yes | Yes |
-| SpotBugs | Java/Kotlin | Yes | Yes |
-| Error Prone | Java/Kotlin | Yes | No |
-| CPD | Java/Kotlin | Yes | No |
+| PMD | Java | Yes | Yes |
+| SpotBugs | Java | Yes | Yes |
+| Error Prone | Java | Yes | No |
+| CPD | Java | Yes | No |
 | Ruff | Python | Yes | Yes |
 | Bandit | Python | Yes | Yes |
 | pycompile | Python | Yes | No |

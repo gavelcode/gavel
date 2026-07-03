@@ -2,6 +2,7 @@
 title: Baseline
 type: explanation
 description: How Gavel separates new findings from existing debt — what the baseline is, when it is created, and the pass and ratchet update rules.
+tags: [baseline, findings, ratchet]
 ---
 
 # Baseline

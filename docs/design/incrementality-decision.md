@@ -2,6 +2,7 @@
 title: Incrementality decision record
 type: explanation
 description: Why Gavel relies on Bazel's action cache for incrementality instead of rdeps or diff-based scoping.
+tags: [incrementality, bazel-cache, design-record]
 ---
 
 # Incrementality Decision Record

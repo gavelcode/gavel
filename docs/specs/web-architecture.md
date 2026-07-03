@@ -2,6 +2,8 @@
 title: Web architecture
 type: reference
 description: Current structure of the web frontend — Feature-Sliced Design layers.
+resource: https://github.com/gavelcode/gavel/tree/main/apps/web
+tags: [architecture, web, frontend]
 ---
 
 # Web Architecture

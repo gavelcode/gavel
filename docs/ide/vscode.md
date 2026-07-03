@@ -2,6 +2,7 @@
 title: VS Code integration
 type: how-to
 description: Viewing Gavel SARIF findings inline in VS Code via the SARIF Viewer extension.
+tags: [ide, vscode, sarif]
 ---
 
 # VS Code Integration

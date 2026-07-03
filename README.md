@@ -71,7 +71,8 @@ on legacy debt:
 projects:
   - name: payments
     pattern: "//payments/..."
-    tooling: [go]
+    tooling:
+      go: [golangci-lint, archtest]
     quality_gate:
       findings:
         max_error: 0

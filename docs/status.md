@@ -2,6 +2,7 @@
 title: Implementation status
 type: reference
 description: What is built today across core/, server, and cli — bounded contexts, use cases, adapters, and the IAM context shape. A snapshot of the build, not the design contract.
+tags: [status, snapshot]
 ---
 
 # Implementation status

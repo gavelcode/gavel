@@ -1,0 +1,20 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_test(
+    name = "checks_test",
+    srcs = ["build_test.go"],
+    deps = [
+        ":checks",
+        "//core/userinterface/cli/judge/output/json",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)
+
+go_library(
+    name = "checks",
+    srcs = ["build.go"],
+    importpath = "github.com/usegavel/gavel/core/userinterface/cli/report/checks",
+    visibility = ["//visibility:public"],
+    deps = ["//core/userinterface/cli/judge/output/json"],
+)

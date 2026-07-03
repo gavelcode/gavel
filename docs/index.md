@@ -27,7 +27,7 @@ this index maps them. Start here and follow the links.
 
 ## Guides — get a task done
 
-* [CI integration](ci.md) — Running `gavel judge` in CI pipelines.
+* [CI integration](ci.md) — Running `gavel judge` and `gavel report` in CI pipelines.
 * [Server deployment](deployment.md) — Building, configuring, and running `gavel-server`.
 * [IDE integration](ide/vscode.md) — View findings inline: [VS Code](ide/vscode.md) · [IntelliJ IDEA](ide/intellij.md) · [MCP for agents](ide/mcp.md).
 
@@ -42,6 +42,7 @@ this index maps them. Start here and follow the links.
 * [Gavel and rules_lint integration](design/rules-lint-integration.md) — Where `aspect_rules_lint` fits relative to the native SARIF aspects.
 * [PostgreSQL connection pool tuning](design/postgres-pool-tuning.md) — Sizing the server's pgx pool.
 * [Coverage exclusion policy](design/coverage-exclusion-policy.md) — Why Gavel mirrors what the tools measure (no per-line pragma) and where legitimate exclusions belong.
+* [GitHub Checks reporting](design/github-checks-reporting.md) — Why `gavel report` is a separate command from `judge`, and why its GitHub client lives in userinterface.
 
 ## Related
 

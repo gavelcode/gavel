@@ -192,7 +192,8 @@ Bootstrap is seeded by `seed.sql` (applied by `database.Migrate()`): the
   infrastructure adapters, application handlers, and CLI commands. Zero
   business logic.
 - Commands live in `core/userinterface/cli/` (not `apps/cli/`):
-  `init`, `judge`, `validate`, `watch`, `config`, `projects`, `mcp`.
+  `init`, `judge`, `validate`, `watch`, `config`, `projects`, `trends`,
+  `report`, `mcp`.
 - **All CLI commands are Vernon-strict clean**: zero imports from
   `core/domain/` or `core/infrastructure/` across the entire
   `userinterface/cli/` tree. Every command receives dependencies
@@ -206,6 +207,9 @@ Bootstrap is seeded by `seed.sql` (applied by `database.Migrate()`): the
   - `config/`, `projects/`: receive `loadgavelspace.Handler` injected.
   - `initgavel/`, `validate/`: receive `WorkspaceResolver` +
     `StructureVerifier` via local interfaces.
+  - `report/`: reads the verdict cached by `judge` (`.gavel/results/`) and
+    delivers it to a sink via an injected `ChecksPublisher`; `checks/` builds
+    the GitHub check-run payload, `github/` is the Checks API HTTP client.
 - Bazel integration lives in `core/infrastructure/platform/bazel/`:
   aspect catalog, runner (aspect + coverage + JS coverage + target
   analysis), installer (bazelrc/MODULE generation), collector adapters

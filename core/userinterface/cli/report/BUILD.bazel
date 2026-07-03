@@ -8,7 +8,12 @@ go_library(
     ],
     importpath = "github.com/usegavel/gavel/core/userinterface/cli/report",
     visibility = ["//visibility:public"],
-    deps = ["@com_github_spf13_cobra//:cobra"],
+    deps = [
+        "//core/userinterface/cli/judge/output/json",
+        "//core/userinterface/cli/report/checks",
+        "//core/userinterface/cli/report/github",
+        "@com_github_spf13_cobra//:cobra",
+    ],
 )
 
 go_test(
@@ -16,6 +21,8 @@ go_test(
     srcs = ["report_test.go"],
     deps = [
         ":report",
+        "//core/userinterface/cli/report/checks",
+        "//core/userinterface/cli/report/github",
         "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//require",
     ],

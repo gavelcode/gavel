@@ -16,7 +16,7 @@ func TestNewRootCommandHasExpectedSubcommands(t *testing.T) {
 	deps := minimalDeps()
 	root := app.NewRootCommand(deps)
 
-	expected := []string{"judge", "init", "validate", "watch", "config", "projects", "trends", "mcp"}
+	expected := []string{"judge", "init", "validate", "watch", "config", "projects", "report", "trends", "mcp"}
 	var names []string
 	for _, cmd := range root.Commands() {
 		names = append(names, cmd.Name())

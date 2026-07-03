@@ -282,6 +282,76 @@ commands:
             SARIF 2.1.0 merged report written to a file.
             Schema defined by the OASIS SARIF 2.1.0 standard.
 
+  report:
+    package: core/userinterface/cli/report
+    summary: Deliver a judged verdict to an external sink (GitHub PR checks)
+    description: >
+      Read the cached verdict written by 'gavel judge'
+      (.gavel/results/<project>/verdict.json) and deliver it to an external
+      sink. The only sink today is GitHub Checks: a merge-blocking check run
+      with new findings annotated inline on the pull-request diff. Never
+      re-runs analysis — run 'gavel judge' first. In GitHub Actions the
+      built-in GITHUB_TOKEN carries checks:write, so same-repo pull requests
+      need no extra setup.
+    examples:
+      - command: gavel report
+        description: Deliver the cached verdict to GitHub Checks
+      - command: gavel report --project mylib
+        description: Report only one project's verdict
+    flags:
+      to:
+        type: string
+        default: github-checks
+        description: Delivery sink for the verdict.
+        enum: [github-checks]
+      github-token:
+        type: string
+        env: GITHUB_TOKEN
+        sensitive: true
+        description: >
+          GitHub token with the checks:write permission. Defaults to the
+          Actions GITHUB_TOKEN.
+      repo:
+        type: string
+        env: GITHUB_REPOSITORY
+        description: >
+          Target repository in owner/repo form. Defaults to GITHUB_REPOSITORY.
+      commit:
+        type: string
+        env: GITHUB_SHA
+        description: >
+          Head commit SHA the check run attaches to. Defaults to GITHUB_SHA,
+          then to the commit recorded in the cached verdict.
+      check-name:
+        type: string
+        default: gavel
+        description: Name of the GitHub check run.
+      new-only:
+        type: bool
+        default: true
+        description: >
+          Annotate only findings new versus the baseline. Disable to annotate
+          all findings.
+      project:
+        type: string
+        description: >
+          Report only the named project. Reports every cached project if unset.
+
+    exit_codes:
+      0: Verdict delivered to the sink
+      1: >
+        Delivery failure (missing cache, auth error, sink API error, or unknown
+        sink). The verdict's pass/fail is carried by the check run's conclusion,
+        not by this exit code.
+
+    output:
+      default: text
+      formats:
+        text:
+          description: >
+            Human-readable delivery summary: sink, check run conclusion, and
+            annotation count.
+
   init:
     package: core/userinterface/cli/initgavel
     summary: Initialize Gavel configuration for this Bazel workspace

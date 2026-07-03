@@ -18,6 +18,7 @@ go_library(
         "//core/userinterface/cli/judge",
         "//core/userinterface/cli/mcp",
         "//core/userinterface/cli/projects",
+        "//core/userinterface/cli/report",
         "//core/userinterface/cli/trends",
         "//core/userinterface/cli/validate",
         "//core/userinterface/cli/watch",

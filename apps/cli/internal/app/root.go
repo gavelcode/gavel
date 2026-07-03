@@ -17,6 +17,7 @@ import (
 	"github.com/usegavel/gavel/core/userinterface/cli/judge"
 	gavelmcp "github.com/usegavel/gavel/core/userinterface/cli/mcp"
 	"github.com/usegavel/gavel/core/userinterface/cli/projects"
+	"github.com/usegavel/gavel/core/userinterface/cli/report"
 	"github.com/usegavel/gavel/core/userinterface/cli/trends"
 	"github.com/usegavel/gavel/core/userinterface/cli/validate"
 	"github.com/usegavel/gavel/core/userinterface/cli/watch"
@@ -85,6 +86,7 @@ Start with 'gavel init' to set up a workspace, then 'gavel judge' to analyze.`,
 	root.AddCommand(watch.NewCommand(deps.AnalyzeHandler, deps.WatchTargetResolver))
 	root.AddCommand(config.NewCommand(deps.WorkspaceResolver, deps.LoadWsHandler))
 	root.AddCommand(projects.NewCommand(deps.WorkspaceResolver, deps.LoadWsHandler))
+	root.AddCommand(report.NewCommand())
 	root.AddCommand(trends.NewCommand())
 	root.AddCommand(gavelmcp.NewCommand(deps.Version))
 

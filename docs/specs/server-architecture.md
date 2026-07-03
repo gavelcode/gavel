@@ -2,6 +2,8 @@
 title: Server architecture
 type: reference
 description: Current structure of the server composition root — the v1 HTTP layer, mux, and platform glue.
+resource: https://github.com/gavelcode/gavel/tree/main/apps/server
+tags: [architecture, server, http]
 ---
 
 # Server Architecture

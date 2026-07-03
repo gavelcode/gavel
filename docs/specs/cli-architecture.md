@@ -2,6 +2,8 @@
 title: CLI architecture
 type: reference
 description: Current structure of the CLI — command wiring, pipelines, and Bazel and git integration.
+resource: https://github.com/gavelcode/gavel/tree/main/apps/cli
+tags: [architecture, cli]
 ---
 
 # CLI Architecture

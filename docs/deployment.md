@@ -2,6 +2,7 @@
 title: Server deployment
 type: how-to
 description: Building, configuring, and running gavel-server — database bootstrap and environment variables.
+tags: [deployment, server, operations]
 ---
 
 # Server Deployment

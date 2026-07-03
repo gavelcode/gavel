@@ -2,6 +2,7 @@
 title: MCP server integration
 type: how-to
 description: Exposing Gavel config, projects, and findings to LLM agents over the Model Context Protocol.
+tags: [ide, mcp, agents]
 ---
 
 # MCP Server Integration

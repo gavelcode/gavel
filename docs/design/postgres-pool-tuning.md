@@ -2,6 +2,7 @@
 title: PostgreSQL connection pool tuning
 type: explanation
 description: Decision record for sizing the server's pgx connection pool.
+tags: [postgres, pgx, connection-pool, design-record]
 ---
 
 # PostgreSQL Connection Pool Tuning

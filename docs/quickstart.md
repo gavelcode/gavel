@@ -2,6 +2,7 @@
 title: Quickstart
 type: tutorial
 description: From zero to a first quality report in five minutes — install, init, judge.
+tags: [quickstart, getting-started]
 ---
 
 # Quickstart

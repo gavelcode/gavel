@@ -2,6 +2,8 @@
 title: Domain model
 type: reference
 description: The canonical domain model — aggregates, value objects, invariants, identity types, and events, per Vernon IDDD strict.
+resource: https://github.com/gavelcode/gavel/tree/main/core/domain
+tags: [domain, ddd, model, aggregates]
 ---
 
 # Gavel Core — Domain Model

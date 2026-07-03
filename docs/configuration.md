@@ -2,6 +2,7 @@
 title: Configuration reference
 type: reference
 description: The gavel.yaml and architecture.yml schema — projects, quality-gate rules, and DDD layer definitions.
+tags: [configuration, gavel.yaml, architecture, quality-gate]
 ---
 
 # Configuration Reference
@@ -33,8 +34,8 @@ projects:                                    # list of projects (required, at le
     pattern: <string>                        # Bazel target pattern (required, e.g. "//..." or "//payments/...")
     exclude:                                 # paths to drop from the whole gate (optional)
       - <pattern>                            # Bazel pattern within `pattern`, e.g. "//payments/gen/..."
-    tooling:                                 # languages to analyze (required, at least one)
-      - <string>                             # go | java | kotlin | python | typescript | rust
+    tooling:                                 # language → tools to run (required, at least one language)
+      <language>: [<tool>, ...]              # e.g. go: [golangci-lint, archtest]
 
     quality_gate:                            # quality gate rules (optional)
       findings:                              # code quality findings rule (optional)
@@ -79,9 +80,14 @@ or vendored code (e.g. `//payments/gen/...`). This is a coarse, file/dir-level
 scope decision, never a per-line coverage exclusion; see
 [coverage exclusion policy](design/coverage-exclusion-policy.md).
 
-**`projects[].tooling`** (list of strings, required)
-Languages to analyze. Determines which lint aspects and architecture checks run.
-Supported values: `go`, `java`, `kotlin`, `python`, `typescript`, `rust`.
+**`projects[].tooling`** (map, required)
+Maps each language to the list of tools to run for it — e.g.
+`go: [golangci-lint, archtest]`. The available languages and their tools are the
+gavel-tools catalog (see [Language support](languages/index.md), the single
+source of truth); a project runs exactly what it lists. Selection is
+**explicit**: a language with no tools is a config error, not a silent "run
+everything" default, and listing a tool the catalog does not publish for that
+language is likewise an error.
 
 **`projects[].quality_gate`** (object, optional)
 Quality gate rules. When omitted, no quality gate is applied and the verdict is
@@ -129,7 +135,8 @@ name: my-project
 projects:
   - name: my-project
     pattern: "//..."
-    tooling: [go]
+    tooling:
+      go: [golangci-lint, archtest]
 ```
 
 Multi-project monorepo with quality gate:
@@ -139,7 +146,9 @@ name: my-monorepo
 projects:
   - name: backend
     pattern: "//backend/..."
-    tooling: [java, go]
+    tooling:
+      java: [error-prone, spotbugs, archtest]
+      go: [golangci-lint, archtest]
     quality_gate:
       findings:
         max_error: 0
@@ -151,7 +160,8 @@ projects:
 
   - name: frontend
     pattern: "//frontend/..."
-    tooling: [typescript]
+    tooling:
+      typescript: [eslint, archtest]
     quality_gate:
       findings:
         max_error: 0
@@ -166,7 +176,8 @@ name: legacy-monorepo
 projects:
   - name: backend
     pattern: "//backend/..."
-    tooling: [java]
+    tooling:
+      java: [error-prone, spotbugs, archtest]
     quality_gate:
       findings:
         max_error: 0
@@ -248,7 +259,7 @@ language:
 | Language | Layer pattern style |
 |----------|-------------------|
 | Go | `internal/domain/...`, `internal/application/...` |
-| Java/Kotlin | `src/main/java/**/domain/...` |
+| Java | `src/main/java/**/domain/...` |
 | Python, TypeScript, Rust | `src/domain/...` |
 
 ### Writing custom rules

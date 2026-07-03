@@ -2,6 +2,7 @@
 title: Coverage exclusion policy
 type: explanation
 description: Why Gavel measures coverage as a faithful mirror of the tools — no per-line pragma, no editing of the denominator — and where legitimate exclusions belong instead.
+tags: [coverage, policy, design-record]
 ---
 
 # Coverage Exclusion Policy

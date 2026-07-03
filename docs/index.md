@@ -1,3 +1,10 @@
+---
+title: Gavel documentation
+type: index
+description: Index of the Gavel knowledge base, grouped by kind.
+tags: [index]
+---
+
 # Gavel documentation
 
 The knowledge base for what Gavel *is* and how it works. Each concept is a
@@ -15,7 +22,7 @@ this index maps them. Start here and follow the links.
 * [Application model](model/application-model.md) — The Simple CQRS commands and queries that orchestrate the aggregates.
 * [Project structure](specs/project-structure.md) — Product boundaries, the four-layer architecture, package rules, and the canonical directory tree.
 * [Server architecture](specs/server-architecture.md) · [CLI architecture](specs/cli-architecture.md) · [Web architecture](specs/web-architecture.md) — Current structure of each composition root.
-* [Language support](languages/index.md) — Languages, tools per language, how lint aspects flow to SARIF, coverage. Per-language: [Go](languages/go.md) · [Java & Kotlin](languages/java.md) · [Python](languages/python.md) · [TypeScript](languages/typescript.md) · [Rust](languages/rust.md).
+* [Language support](languages/index.md) — Languages, tools per language, how lint aspects flow to SARIF, coverage. Per-language: [Go](languages/go.md) · [Java](languages/java.md) · [Python](languages/python.md) · [TypeScript](languages/typescript.md) · [Rust](languages/rust.md).
 * [Implementation status](status.md) — A snapshot of what is built today across `core/`, server, and CLI.
 
 ## Guides — get a task done
@@ -33,7 +40,6 @@ this index maps them. Start here and follow the links.
 
 * [Incrementality decision record](design/incrementality-decision.md) — Why Gavel relies on Bazel's action cache instead of rdeps/diff scoping.
 * [Gavel and rules_lint integration](design/rules-lint-integration.md) — Where `aspect_rules_lint` fits relative to the native SARIF aspects.
-* [Web and server alignment](design/web-server-alignment.md) — Aligning the frontend against core server DTOs and query ports.
 * [PostgreSQL connection pool tuning](design/postgres-pool-tuning.md) — Sizing the server's pgx pool.
 * [Coverage exclusion policy](design/coverage-exclusion-policy.md) — Why Gavel mirrors what the tools measure (no per-line pragma) and where legitimate exclusions belong.
 

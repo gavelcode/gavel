@@ -24,7 +24,7 @@ func WriteCache(workspace string, results []pipeline.Result) error {
 }
 
 func writeProjectCache(workspace string, result pipeline.Result) error {
-	dir := filepath.Join(workspace, ".gavel", "results", result.Name)
+	dir := filepath.Join(workspace, gavelDir, resultsDir, result.Name)
 	if err := os.MkdirAll(dir, dirPermission); err != nil {
 		return fmt.Errorf("create results dir: %w", err)
 	}
@@ -35,5 +35,5 @@ func writeProjectCache(workspace string, result pipeline.Result) error {
 		return fmt.Errorf("marshal verdict: %w", err)
 	}
 
-	return os.WriteFile(filepath.Join(dir, "verdict.json"), data, filePermission)
+	return os.WriteFile(filepath.Join(dir, verdictFile), data, filePermission)
 }

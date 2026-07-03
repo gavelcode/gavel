@@ -7,6 +7,7 @@ go_library(
     srcs = [
         "cache.go",
         "json.go",
+        "load.go",
     ],
     importpath = "github.com/usegavel/gavel/core/userinterface/cli/judge/output/json",
     deps = [
@@ -22,6 +23,7 @@ go_test(
     srcs = [
         "cache_test.go",
         "json_test.go",
+        "load_test.go",
     ],
     deps = [
         ":json",

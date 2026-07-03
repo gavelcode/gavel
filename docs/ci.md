@@ -87,6 +87,53 @@ gavel judge --json \
 When using server mode, this creates or updates the pleading (PR record)
 on the server, enabling the web dashboard to show PR-level quality data.
 
+## GitHub PR checks
+
+`gavel report` delivers a judged verdict to GitHub as a check run: a
+merge-blocking pass/fail with new findings annotated inline on the
+pull-request diff. It reads the verdict `gavel judge` caches under
+`.gavel/results/` and never re-runs analysis, so it runs as a **separate
+step after `judge`**. Its flags and defaults are defined in
+[`clispec/v1/clispec.yaml`](../clispec/v1/clispec.yaml).
+
+In GitHub Actions the built-in `GITHUB_TOKEN` already carries the
+`checks:write` permission, so no GitHub App or extra secret is needed:
+
+```yaml
+jobs:
+  gavel:
+    runs-on: ubuntu-latest
+    permissions:
+      checks: write            # gavel report creates the check run
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Gavel
+        run: curl -fsSL https://raw.githubusercontent.com/gavelcode/gavel/main/install.sh | sh
+      - name: Judge
+        run: gavel judge
+      - name: Report to the PR
+        if: always()           # decorate the PR even when the gate fails
+        run: gavel report
+```
+
+`gavel report` reads `GITHUB_TOKEN`, `GITHUB_REPOSITORY`, and `GITHUB_SHA`
+from the Actions environment by default. `if: always()` runs it even when
+`judge` failed the gate — which is exactly when you want the red check.
+`judge` writes the verdict cache before it exits, so the failing verdict
+is available to report. Report's own exit code reflects **delivery**, not
+the verdict: the pass/fail rides in the check run's conclusion, so
+`gavel judge` stays the gate.
+
+Two caveats:
+
+- **Fork pull requests.** GitHub grants the default `GITHUB_TOKEN` only
+  read access on PRs from forks, so the check run cannot be created there.
+  Same-repo branch PRs work without extra setup; forks need a GitHub App
+  or `pull_request_target` (which carries its own security trade-offs).
+- **Head commit.** On `pull_request` events `GITHUB_SHA` is the merge
+  commit, not the PR head. Pass `--commit ${{ github.event.pull_request.head.sha }}`
+  when you need annotations anchored to the head commit.
+
 ## Release gates
 
 Use `--absolute` to evaluate against ALL findings, not just new ones.

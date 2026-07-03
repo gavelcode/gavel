@@ -7,8 +7,12 @@
 #      - GAVEL_TOKEN:      API token with "ingest" scope (gav_...)
 #
 # This workflow runs on every push and pull request to the main branch.
-# It uses Bazel to build and test, then submits analysis results to
-# the Gavel server. The pipeline fails if the quality gate verdict is "fail".
+# It builds with Bazel, judges the quality gate, submits results to the Gavel
+# server, and posts the verdict back to the pull request as a GitHub check.
+# The pipeline fails if the quality gate verdict is "fail".
+#
+# The "Report to the PR" step is independent of server mode: it needs only the
+# built-in GITHUB_TOKEN and the checks:write permission declared below.
 
 name: Gavel Quality Gate
 
@@ -21,6 +25,8 @@ on:
 jobs:
   gavel:
     runs-on: ubuntu-latest
+    permissions:
+      checks: write  # required for the "Report to the PR" step
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -39,7 +45,7 @@ jobs:
         run: |
           # Replace with your preferred installation method:
           #   - Download binary from GitHub releases
-          #   - Build from source: bazel build //cli/cmd/gavel
+          #   - Build from source: bazel build //apps/cli/cmd/gavel
           #   - Use a pre-built container image
           echo "Install gavel CLI here"
 
@@ -56,3 +62,11 @@ jobs:
             --branch="${GITHUB_HEAD_REF:-${GITHUB_REF_NAME}}"
         # Exit code 1 = quality gate failed → pipeline fails
         # --require-submit ensures submission failure also fails the pipeline
+
+      - name: Report the verdict to the PR
+        if: always()  # post the check even when the gate failed
+        run: gavel report
+        # Uses the built-in GITHUB_TOKEN + checks:write (declared above) and
+        # reads the verdict judge cached locally. Works with or without server
+        # mode. On fork PRs the token is read-only, so this step is skipped
+        # there — see docs/ci.md.

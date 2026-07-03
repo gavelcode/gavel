@@ -1,0 +1,20 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "github",
+    srcs = ["publisher.go"],
+    importpath = "github.com/usegavel/gavel/core/userinterface/cli/report/github",
+    visibility = ["//visibility:public"],
+    deps = ["//core/userinterface/cli/report/checks"],
+)
+
+go_test(
+    name = "github_test",
+    srcs = ["publisher_test.go"],
+    deps = [
+        ":github",
+        "//core/userinterface/cli/report/checks",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

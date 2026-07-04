@@ -318,10 +318,11 @@ commands:
           Target repository in owner/repo form. Defaults to GITHUB_REPOSITORY.
       commit:
         type: string
-        env: GITHUB_SHA
         description: >
-          Head commit SHA the check run attaches to. Defaults to GITHUB_SHA,
-          then to the commit recorded in the cached verdict.
+          Head commit SHA the check run attaches to. Defaults to the commit
+          recorded in the cached verdict; pass explicitly to override — e.g. the
+          pull-request head SHA, since GITHUB_SHA on a pull_request event is the
+          merge commit and GitHub renders annotations only on the head.
       check-name:
         type: string
         default: gavel

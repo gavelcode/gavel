@@ -74,6 +74,26 @@ func TestReportDeliversCachedVerdict(t *testing.T) {
 	assert.Contains(t, output, "https://github.com/o/r/runs/1")
 }
 
+func TestReportUsesCachedCommitWhenFlagUnset(t *testing.T) {
+	workspace := t.TempDir()
+	writeVerdict(t, workspace, "core", `{"name":"core","verdict":"pass","commit_sha":"cafebabe"}`)
+	publisher := &fakePublisher{result: github.Result{URL: "u"}}
+
+	_, err := runReport(workspace, publisher, "--repo=o/r", "--github-token=tok")
+	require.NoError(t, err)
+	assert.Equal(t, "cafebabe", publisher.received.HeadSHA,
+		"must attach to the commit judge recorded, not an env default")
+}
+
+func TestReportErrorsWhenCommitSHAMissing(t *testing.T) {
+	workspace := t.TempDir()
+	writeVerdict(t, workspace, "core", `{"name":"core","verdict":"pass"}`)
+
+	_, err := runReport(workspace, &fakePublisher{}, "--repo=o/r", "--github-token=tok")
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "commit")
+}
+
 func TestReportErrorsWithoutCache(t *testing.T) {
 	_, err := runReport(t.TempDir(), &fakePublisher{}, "--repo=o/r", "--github-token=tok")
 	require.Error(t, err)
@@ -100,8 +120,8 @@ func TestNewGitHubPublisherRejectsBadConfig(t *testing.T) {
 
 func TestReportFiltersByProject(t *testing.T) {
 	workspace := t.TempDir()
-	writeVerdict(t, workspace, "core", `{"name":"core","verdict":"pass"}`)
-	writeVerdict(t, workspace, "web", `{"name":"web","verdict":"fail"}`)
+	writeVerdict(t, workspace, "core", `{"name":"core","verdict":"pass","commit_sha":"c1"}`)
+	writeVerdict(t, workspace, "web", `{"name":"web","verdict":"fail","commit_sha":"c1"}`)
 	publisher := &fakePublisher{result: github.Result{URL: "https://example.test/1"}}
 
 	_, err := runReport(workspace, publisher, "--project=core", "--repo=o/r", "--github-token=tok")

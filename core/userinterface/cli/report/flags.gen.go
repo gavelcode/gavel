@@ -21,7 +21,7 @@ type Options struct {
 // RegisterFlags binds all report flags to the given Options struct.
 func RegisterFlags(cmd *cobra.Command, opts *Options) {
 	cmd.Flags().StringVar(&opts.CheckName, "check-name", "gavel", "Name of the GitHub check run.")
-	cmd.Flags().StringVar(&opts.Commit, "commit", envOrDefault("GITHUB_SHA", ""), "Head commit SHA the check run attaches to. Defaults to GITHUB_SHA, then to the commit recorded in the cached verdict.")
+	cmd.Flags().StringVar(&opts.Commit, "commit", "", "Head commit SHA the check run attaches to. Defaults to the commit recorded in the cached verdict; pass explicitly to override — e.g. the pull-request head SHA, since GITHUB_SHA on a pull_request event is the merge commit and GitHub renders annotations only on the head.")
 	cmd.Flags().StringVar(&opts.GithubToken, "github-token", envOrDefault("GITHUB_TOKEN", ""), "GitHub token with the checks:write permission. Defaults to the Actions GITHUB_TOKEN.")
 	cmd.Flags().BoolVar(&opts.NewOnly, "new-only", true, "Annotate only findings new versus the baseline. Disable to annotate all findings.")
 	cmd.Flags().StringVar(&opts.Project, "project", "", "Report only the named project. Reports every cached project if unset.")

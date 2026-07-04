@@ -337,6 +337,11 @@ commands:
         type: string
         description: >
           Report only the named project. Reports every cached project if unset.
+      pr:
+        type: int
+        description: >
+          Pull request number. When set, report also posts or updates a sticky
+          summary comment on the PR, alongside the check run.
 
     exit_codes:
       0: Verdict delivered to the sink

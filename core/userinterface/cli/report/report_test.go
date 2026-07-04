@@ -17,14 +17,23 @@ import (
 )
 
 type fakePublisher struct {
-	received checks.CheckRun
-	result   github.Result
-	err      error
+	received    checks.CheckRun
+	result      github.Result
+	err         error
+	commentedPR int
+	commentBody string
+	commentErr  error
 }
 
 func (fake *fakePublisher) Publish(_ context.Context, checkRun checks.CheckRun) (github.Result, error) {
 	fake.received = checkRun
 	return fake.result, fake.err
+}
+
+func (fake *fakePublisher) UpsertComment(_ context.Context, prNumber int, body string) error {
+	fake.commentedPR = prNumber
+	fake.commentBody = body
+	return fake.commentErr
 }
 
 type failingWriter struct{}
@@ -219,6 +228,37 @@ func TestReportPropagatesLoadError(t *testing.T) {
 
 	_, err := runReport(workspace, &fakePublisher{}, "--repo=o/r", "--github-token=tok")
 	require.Error(t, err)
+}
+
+func TestReportPostsStickyCommentWhenPRSet(t *testing.T) {
+	workspace := t.TempDir()
+	writeVerdict(t, workspace, "core", `{"name":"core","verdict":"pass","commit_sha":"c1"}`)
+	publisher := &fakePublisher{result: github.Result{URL: "u"}}
+
+	_, err := runReport(workspace, publisher, "--repo=o/r", "--github-token=tok", "--pr=7")
+	require.NoError(t, err)
+	assert.Equal(t, 7, publisher.commentedPR)
+	assert.Contains(t, publisher.commentBody, "Gavel verdict")
+}
+
+func TestReportSkipsCommentWithoutPR(t *testing.T) {
+	workspace := t.TempDir()
+	writeVerdict(t, workspace, "core", `{"name":"core","verdict":"pass","commit_sha":"c1"}`)
+	publisher := &fakePublisher{result: github.Result{URL: "u"}}
+
+	_, err := runReport(workspace, publisher, "--repo=o/r", "--github-token=tok")
+	require.NoError(t, err)
+	assert.Equal(t, 0, publisher.commentedPR)
+}
+
+func TestReportPropagatesCommentError(t *testing.T) {
+	workspace := t.TempDir()
+	writeVerdict(t, workspace, "core", `{"name":"core","verdict":"pass","commit_sha":"c1"}`)
+	publisher := &fakePublisher{result: github.Result{URL: "u"}, commentErr: errors.New("comment failed")}
+
+	_, err := runReport(workspace, publisher, "--repo=o/r", "--github-token=tok", "--pr=7")
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "comment failed")
 }
 
 func TestReportErrorsWithoutCache(t *testing.T) {

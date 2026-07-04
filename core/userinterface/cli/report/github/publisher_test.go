@@ -129,6 +129,86 @@ func TestPublishReturnsErrorWhenServerUnreachable(t *testing.T) {
 	require.Error(t, err)
 }
 
+func TestUpsertCommentCreatesWhenNoneExists(t *testing.T) {
+	var method, calledPath, requestBody string
+	server := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		if request.Method == http.MethodGet {
+			writer.WriteHeader(http.StatusOK)
+			_, _ = writer.Write([]byte(`[]`))
+			return
+		}
+		rawBody, _ := io.ReadAll(request.Body)
+		method, calledPath, requestBody = request.Method, request.URL.Path, string(rawBody)
+		writer.WriteHeader(http.StatusCreated)
+		_, _ = writer.Write([]byte(`{"id": 1}`))
+	}))
+	defer server.Close()
+
+	publisher, err := github.NewPublisher(github.Config{Token: "secret", Repo: "octo/repo", BaseURL: server.URL})
+	require.NoError(t, err)
+	require.NoError(t, publisher.UpsertComment(context.Background(), 7, "the summary"))
+
+	assert.Equal(t, http.MethodPost, method)
+	assert.Equal(t, "/repos/octo/repo/issues/7/comments", calledPath)
+	assert.Contains(t, requestBody, "the summary")
+	assert.Contains(t, requestBody, "gavel-report")
+}
+
+func TestUpsertCommentUpdatesExisting(t *testing.T) {
+	var method, calledPath string
+	server := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		if request.Method == http.MethodGet {
+			writer.WriteHeader(http.StatusOK)
+			_, _ = writer.Write([]byte(`[{"id": 42, "body": "<!-- gavel-report -->\nold"}]`))
+			return
+		}
+		method, calledPath = request.Method, request.URL.Path
+		writer.WriteHeader(http.StatusOK)
+		_, _ = writer.Write([]byte(`{"id": 42}`))
+	}))
+	defer server.Close()
+
+	publisher, err := github.NewPublisher(github.Config{Token: "secret", Repo: "octo/repo", BaseURL: server.URL})
+	require.NoError(t, err)
+	require.NoError(t, publisher.UpsertComment(context.Background(), 7, "new summary"))
+
+	assert.Equal(t, http.MethodPatch, method)
+	assert.Equal(t, "/repos/octo/repo/issues/comments/42", calledPath)
+}
+
+func TestUpsertCommentErrorsWhenListingFails(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, _ *http.Request) {
+		writer.WriteHeader(http.StatusForbidden)
+		_, _ = writer.Write([]byte(`{"message":"forbidden"}`))
+	}))
+	defer server.Close()
+
+	publisher, err := github.NewPublisher(github.Config{Token: "secret", Repo: "octo/repo", BaseURL: server.URL})
+	require.NoError(t, err)
+	err = publisher.UpsertComment(context.Background(), 7, "x")
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "403")
+}
+
+func TestUpsertCommentErrorsOnMalformedList(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, _ *http.Request) {
+		writer.WriteHeader(http.StatusOK)
+		_, _ = writer.Write([]byte(`not json`))
+	}))
+	defer server.Close()
+
+	publisher, err := github.NewPublisher(github.Config{Token: "secret", Repo: "octo/repo", BaseURL: server.URL})
+	require.NoError(t, err)
+	require.Error(t, publisher.UpsertComment(context.Background(), 7, "x"))
+}
+
+func TestPublishErrorsOnUnbuildableRequest(t *testing.T) {
+	publisher, err := github.NewPublisher(github.Config{Token: "secret", Repo: "octo/repo", BaseURL: "://bad"})
+	require.NoError(t, err)
+	_, err = publisher.Publish(context.Background(), checks.CheckRun{Name: "gavel", HeadSHA: "abc"})
+	require.Error(t, err)
+}
+
 func TestNewPublisherRejectsInvalidConfig(t *testing.T) {
 	_, err := github.NewPublisher(github.Config{Token: "secret", Repo: "noslash"})
 	assert.Error(t, err, "repo without owner/name must be rejected")

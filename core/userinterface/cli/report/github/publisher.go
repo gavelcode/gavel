@@ -13,6 +13,7 @@ import (
 	"io"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/usegavel/gavel/core/userinterface/cli/report/checks"
 )
@@ -24,6 +25,7 @@ const (
 	ownerRepoParts    = 2
 	acceptContentType = "application/vnd.github+json"
 	jsonContentType   = "application/json"
+	requestTimeout    = 30 * time.Second
 )
 
 var (
@@ -67,7 +69,7 @@ func NewPublisher(config Config) (*Publisher, error) {
 		baseURL = defaultBaseURL
 	}
 	return &Publisher{
-		client:  http.DefaultClient,
+		client:  &http.Client{Timeout: requestTimeout},
 		token:   config.Token,
 		owner:   segments[0],
 		repo:    segments[1],

@@ -118,6 +118,17 @@ func TestPublishReturnsErrorOnMalformedResponse(t *testing.T) {
 	require.Error(t, err)
 }
 
+func TestPublishReturnsErrorWhenServerUnreachable(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(http.ResponseWriter, *http.Request) {}))
+	unreachable := server.URL
+	server.Close() // close now so the address refuses the connection
+
+	publisher, err := github.NewPublisher(github.Config{Token: "secret", Repo: "octo/repo", BaseURL: unreachable})
+	require.NoError(t, err)
+	_, err = publisher.Publish(context.Background(), checks.CheckRun{Name: "gavel", HeadSHA: "abc"})
+	require.Error(t, err)
+}
+
 func TestNewPublisherRejectsInvalidConfig(t *testing.T) {
 	_, err := github.NewPublisher(github.Config{Token: "secret", Repo: "noslash"})
 	assert.Error(t, err, "repo without owner/name must be rejected")

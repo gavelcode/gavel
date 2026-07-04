@@ -27,6 +27,12 @@ func (fake *fakePublisher) Publish(_ context.Context, checkRun checks.CheckRun) 
 	return fake.result, fake.err
 }
 
+type failingWriter struct{}
+
+func (failingWriter) Write([]byte) (int, error) {
+	return 0, errors.New("write failed")
+}
+
 func runReport(workspace string, publisher report.ChecksPublisher, arguments ...string) (string, error) {
 	command := report.NewCommand(
 		func() (string, error) { return workspace, nil },
@@ -120,6 +126,41 @@ func TestReportWarnsAboutSkippedFiles(t *testing.T) {
 	assert.Contains(t, output, "web")
 }
 
+func TestReportPropagatesWarningWriteError(t *testing.T) {
+	workspace := t.TempDir()
+	writeVerdict(t, workspace, "core", `{"name":"core","verdict":"pass","commit_sha":"c1"}`)
+	writeVerdict(t, workspace, "web", `{ not json`)
+
+	command := report.NewCommand(
+		func() (string, error) { return workspace, nil },
+		func(github.Config) (report.ChecksPublisher, error) {
+			return &fakePublisher{result: github.Result{URL: "u"}}, nil
+		},
+	)
+	command.SetOut(failingWriter{})
+	command.SetErr(failingWriter{})
+	command.SetArgs([]string{"--repo=o/r", "--github-token=tok"})
+
+	require.Error(t, command.Execute())
+}
+
+func TestReportPropagatesFinalWriteError(t *testing.T) {
+	workspace := t.TempDir()
+	writeVerdict(t, workspace, "core", `{"name":"core","verdict":"pass","commit_sha":"c1"}`)
+
+	command := report.NewCommand(
+		func() (string, error) { return workspace, nil },
+		func(github.Config) (report.ChecksPublisher, error) {
+			return &fakePublisher{result: github.Result{URL: "u"}}, nil
+		},
+	)
+	command.SetOut(failingWriter{})
+	command.SetErr(failingWriter{})
+	command.SetArgs([]string{"--repo=o/r", "--github-token=tok"})
+
+	require.Error(t, command.Execute())
+}
+
 func TestReportValidatesPublisherBeforeTouchingWorkspace(t *testing.T) {
 	command := report.NewCommand(
 		func() (string, error) {
@@ -137,6 +178,47 @@ func TestReportValidatesPublisherBeforeTouchingWorkspace(t *testing.T) {
 	err := command.Execute()
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "bad config")
+}
+
+func TestReportErrorsWhenProjectHasNoVerdict(t *testing.T) {
+	workspace := t.TempDir()
+	writeVerdict(t, workspace, "core", `{"name":"core","verdict":"pass","commit_sha":"c1"}`)
+
+	_, err := runReport(workspace, &fakePublisher{}, "--project=ghost", "--repo=o/r", "--github-token=tok")
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "ghost")
+}
+
+func TestReportPropagatesWorkspaceError(t *testing.T) {
+	command := report.NewCommand(
+		func() (string, error) { return "", errors.New("no workspace") },
+		func(github.Config) (report.ChecksPublisher, error) { return &fakePublisher{}, nil },
+	)
+	command.SetOut(&bytes.Buffer{})
+	command.SetArgs([]string{"--repo=o/r", "--github-token=tok"})
+
+	err := command.Execute()
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "no workspace")
+}
+
+func TestReportPropagatesPublishError(t *testing.T) {
+	workspace := t.TempDir()
+	writeVerdict(t, workspace, "core", `{"name":"core","verdict":"pass","commit_sha":"c1"}`)
+	publisher := &fakePublisher{err: errors.New("api down")}
+
+	_, err := runReport(workspace, publisher, "--repo=o/r", "--github-token=tok")
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "api down")
+}
+
+func TestReportPropagatesLoadError(t *testing.T) {
+	workspace := t.TempDir()
+	require.NoError(t, os.MkdirAll(filepath.Join(workspace, ".gavel"), 0o755))
+	require.NoError(t, os.WriteFile(filepath.Join(workspace, ".gavel", "results"), []byte("x"), 0o644))
+
+	_, err := runReport(workspace, &fakePublisher{}, "--repo=o/r", "--github-token=tok")
+	require.Error(t, err)
 }
 
 func TestReportErrorsWithoutCache(t *testing.T) {

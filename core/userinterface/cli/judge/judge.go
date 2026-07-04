@@ -168,7 +168,7 @@ func run(cmd *cobra.Command, opts Options, deps deps) error {
 		return err
 	}
 	if err := outputjson.WriteCache(workspace, results); err != nil {
-		deps.log.Warn("failed to write results cache", "error", err)
+		return fmt.Errorf("write results cache: %w", err)
 	}
 	if err := emitSARIF(writer, results, opts); err != nil {
 		return err

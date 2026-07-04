@@ -3,6 +3,7 @@ package report_test
 import (
 	"bytes"
 	"context"
+	"errors"
 	"os"
 	"path/filepath"
 	"testing"
@@ -92,6 +93,50 @@ func TestReportErrorsWhenCommitSHAMissing(t *testing.T) {
 	_, err := runReport(workspace, &fakePublisher{}, "--repo=o/r", "--github-token=tok")
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "commit")
+}
+
+func TestReportReportsOnlyTheLatestRun(t *testing.T) {
+	workspace := t.TempDir()
+	writeVerdict(t, workspace, "core", `{"name":"core","verdict":"fail","commit_sha":"c1","started_at":"2026-07-04T10:00:00Z"}`)
+	writeVerdict(t, workspace, "cli", `{"name":"cli","verdict":"pass","commit_sha":"c2","started_at":"2026-07-04T11:00:00Z"}`)
+	publisher := &fakePublisher{result: github.Result{URL: "u"}}
+
+	_, err := runReport(workspace, publisher, "--repo=o/r", "--github-token=tok")
+	require.NoError(t, err)
+	assert.Equal(t, checks.ConclusionSuccess, publisher.received.Conclusion,
+		"the stale failing core verdict from an earlier run must be dropped")
+	assert.Equal(t, "c2", publisher.received.HeadSHA)
+}
+
+func TestReportWarnsAboutSkippedFiles(t *testing.T) {
+	workspace := t.TempDir()
+	writeVerdict(t, workspace, "core", `{"name":"core","verdict":"pass","commit_sha":"c1"}`)
+	writeVerdict(t, workspace, "web", `{ not json`)
+	publisher := &fakePublisher{result: github.Result{URL: "u"}}
+
+	output, err := runReport(workspace, publisher, "--repo=o/r", "--github-token=tok")
+	require.NoError(t, err)
+	assert.Contains(t, output, "warning")
+	assert.Contains(t, output, "web")
+}
+
+func TestReportValidatesPublisherBeforeTouchingWorkspace(t *testing.T) {
+	command := report.NewCommand(
+		func() (string, error) {
+			t.Fatal("workspace resolved before the publisher was validated")
+			return "", nil
+		},
+		func(github.Config) (report.ChecksPublisher, error) {
+			return nil, errors.New("bad config")
+		},
+	)
+	command.SetOut(&bytes.Buffer{})
+	command.SetErr(&bytes.Buffer{})
+	command.SetArgs([]string{"--repo=o/r", "--github-token=t"})
+
+	err := command.Execute()
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "bad config")
 }
 
 func TestReportErrorsWithoutCache(t *testing.T) {

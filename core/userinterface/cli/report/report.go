@@ -19,6 +19,7 @@ type WorkspaceResolver func() (string, error)
 
 type ChecksPublisher interface {
 	Publish(ctx context.Context, checkRun checks.CheckRun) (github.Result, error)
+	UpsertComment(ctx context.Context, prNumber int, body string) error
 }
 
 type PublisherFactory func(config github.Config) (ChecksPublisher, error)
@@ -95,6 +96,12 @@ func run(ctx context.Context, writer io.Writer, opts Options, resolveWorkspace W
 	result, err := publisher.Publish(ctx, checkRun)
 	if err != nil {
 		return err
+	}
+
+	if opts.PR > 0 {
+		if err := publisher.UpsertComment(ctx, opts.PR, checkRun.Summary); err != nil {
+			return err
+		}
 	}
 
 	if _, err := fmt.Fprintf(writer, "Reported %d project(s) to %s: %s\n",

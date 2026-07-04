@@ -63,6 +63,9 @@ jobs:
   # ran `gavel judge`.
   dogfood:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      checks: write
     # Building every analyzer aspect from a cold Bazel cache takes ~18 min; warm
     # runs are far quicker. Kept above the 10-min cap of the other jobs so a cold
     # cache does not spuriously fail the gate.
@@ -100,6 +103,13 @@ jobs:
 
       - name: Judge (gavel gates itself)
         run: bazel-bin/apps/cli/cmd/gavel/gavel_/gavel judge
+
+      - name: Report the verdict to the PR
+        if: always() && github.event.pull_request.head.repo.full_name == github.repository
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: bazel-bin/apps/cli/cmd/gavel/gavel_/gavel report --commit "$HEAD_SHA"
 
   # Guards generated artifacts against drift from their source of truth:
   # OpenAPI (Go DTOs + TS client) and the clispec (CLI flags.gen.go).

@@ -32,7 +32,7 @@ const (
 
 const (
 	defaultCheckName = "gavel"
-	verdictFail      = "fail"
+	verdictPass      = "pass"
 	severityError    = "error"
 	severityWarning  = "warning"
 	statusExisting   = "existing"
@@ -114,8 +114,11 @@ func headSHA(override string, verdicts []outputjson.Verdict) string {
 }
 
 func conclusion(verdicts []outputjson.Verdict) string {
+	// Fail-safe: a check is success only if every project explicitly passed.
+	// Any other value — "fail", an empty string, or a future/unknown verdict —
+	// blocks the merge rather than silently going green.
 	for _, verdict := range verdicts {
-		if verdict.Verdict == verdictFail {
+		if verdict.Verdict != verdictPass {
 			return ConclusionFailure
 		}
 	}
@@ -194,10 +197,10 @@ func summary(verdicts []outputjson.Verdict) string {
 }
 
 func verdictMark(verdict string) string {
-	if verdict == verdictFail {
-		return "❌ fail"
+	if verdict == verdictPass {
+		return "✅ pass"
 	}
-	return "✅ pass"
+	return "❌ fail"
 }
 
 func coverageCell(percent *float64) string {

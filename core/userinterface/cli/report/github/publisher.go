@@ -49,7 +49,13 @@ type Result struct {
 	URL        string
 }
 
-func NewPublisher(config Config) (*Publisher, error) {
+type Option func(*Publisher)
+
+func WithClient(client *http.Client) Option {
+	return func(publisher *Publisher) { publisher.client = client }
+}
+
+func NewPublisher(config Config, options ...Option) (*Publisher, error) {
 	if config.Token == "" {
 		return nil, errEmptyToken
 	}
@@ -61,13 +67,17 @@ func NewPublisher(config Config) (*Publisher, error) {
 	if baseURL == "" {
 		baseURL = defaultBaseURL
 	}
-	return &Publisher{
+	publisher := &Publisher{
 		client:  &http.Client{Timeout: requestTimeout},
 		token:   config.Token,
 		owner:   segments[0],
 		repo:    segments[1],
 		baseURL: strings.TrimRight(baseURL, "/"),
-	}, nil
+	}
+	for _, option := range options {
+		option(publisher)
+	}
+	return publisher, nil
 }
 
 func (p *Publisher) Publish(ctx context.Context, checkRun checks.CheckRun) (Result, error) {

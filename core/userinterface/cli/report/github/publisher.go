@@ -22,6 +22,7 @@ const (
 	acceptContentType = "application/vnd.github+json"
 	jsonContentType   = "application/json"
 	requestTimeout    = 30 * time.Second
+	commentMarker     = "<!-- gavel-report -->"
 )
 
 var (
@@ -121,39 +122,86 @@ func (p *Publisher) update(ctx context.Context, checkRunID int64, checkRun check
 }
 
 func (p *Publisher) send(ctx context.Context, method, endpoint string, payload any) (checkRunResponse, error) {
-	encoded, err := json.Marshal(payload)
+	bodyBytes, err := p.request(ctx, method, endpoint, payload)
 	if err != nil {
-		return checkRunResponse{}, fmt.Errorf("marshal payload: %w", err)
+		return checkRunResponse{}, err
 	}
-	request, err := http.NewRequestWithContext(ctx, method, endpoint, bytes.NewReader(encoded))
-	if err != nil {
-		return checkRunResponse{}, fmt.Errorf("build request: %w", err)
-	}
-	request.Header.Set("Authorization", "Bearer "+p.token)
-	request.Header.Set("Accept", acceptContentType)
-	request.Header.Set("X-GitHub-Api-Version", apiVersion)
-	request.Header.Set("Content-Type", jsonContentType)
-
-	response, err := p.client.Do(request)
-	if err != nil {
-		return checkRunResponse{}, fmt.Errorf("call github: %w", err)
-	}
-	defer func() { _ = response.Body.Close() }()
-
-	bodyBytes, err := io.ReadAll(response.Body)
-	if err != nil {
-		return checkRunResponse{}, fmt.Errorf("read response: %w", err)
-	}
-	if !isSuccessStatus(response.StatusCode) {
-		return checkRunResponse{}, fmt.Errorf("github %s %s: status %d: %s",
-			method, endpoint, response.StatusCode, strings.TrimSpace(string(bodyBytes)))
-	}
-
 	var decoded checkRunResponse
 	if err := json.Unmarshal(bodyBytes, &decoded); err != nil {
 		return checkRunResponse{}, fmt.Errorf("decode response: %w", err)
 	}
 	return decoded, nil
+}
+
+func (p *Publisher) request(ctx context.Context, method, endpoint string, payload any) ([]byte, error) {
+	var reader io.Reader
+	if payload != nil {
+		encoded, err := json.Marshal(payload)
+		if err != nil {
+			return nil, fmt.Errorf("marshal payload: %w", err)
+		}
+		reader = bytes.NewReader(encoded)
+	}
+	request, err := http.NewRequestWithContext(ctx, method, endpoint, reader)
+	if err != nil {
+		return nil, fmt.Errorf("build request: %w", err)
+	}
+	request.Header.Set("Authorization", "Bearer "+p.token)
+	request.Header.Set("Accept", acceptContentType)
+	request.Header.Set("X-GitHub-Api-Version", apiVersion)
+	if payload != nil {
+		request.Header.Set("Content-Type", jsonContentType)
+	}
+
+	response, err := p.client.Do(request)
+	if err != nil {
+		return nil, fmt.Errorf("call github: %w", err)
+	}
+	defer func() { _ = response.Body.Close() }()
+
+	bodyBytes, err := io.ReadAll(response.Body)
+	if err != nil {
+		return nil, fmt.Errorf("read response: %w", err)
+	}
+	if !isSuccessStatus(response.StatusCode) {
+		return nil, fmt.Errorf("github %s %s: status %d: %s",
+			method, endpoint, response.StatusCode, strings.TrimSpace(string(bodyBytes)))
+	}
+	return bodyBytes, nil
+}
+
+func (p *Publisher) UpsertComment(ctx context.Context, prNumber int, body string) error {
+	fullBody := commentMarker + "\n" + body
+	existing, err := p.findComment(ctx, prNumber)
+	if err != nil {
+		return err
+	}
+	if existing > 0 {
+		endpoint := fmt.Sprintf("%s/repos/%s/%s/issues/comments/%d", p.baseURL, p.owner, p.repo, existing)
+		_, err := p.request(ctx, http.MethodPatch, endpoint, commentPayload{Body: fullBody})
+		return err
+	}
+	endpoint := fmt.Sprintf("%s/repos/%s/%s/issues/%d/comments", p.baseURL, p.owner, p.repo, prNumber)
+	_, err = p.request(ctx, http.MethodPost, endpoint, commentPayload{Body: fullBody})
+	return err
+}
+
+func (p *Publisher) findComment(ctx context.Context, prNumber int) (int64, error) {
+	endpoint := fmt.Sprintf("%s/repos/%s/%s/issues/%d/comments", p.baseURL, p.owner, p.repo, prNumber)
+	bodyBytes, err := p.request(ctx, http.MethodGet, endpoint, nil)
+	if err != nil {
+		return 0, err
+	}
+	var comments []commentResponse
+	if err := json.Unmarshal(bodyBytes, &comments); err != nil {
+		return 0, fmt.Errorf("decode comments: %w", err)
+	}
+	for _, comment := range comments {
+		if strings.Contains(comment.Body, commentMarker) {
+			return comment.ID, nil
+		}
+	}
+	return 0, nil
 }
 
 func isSuccessStatus(status int) bool {
@@ -205,4 +253,13 @@ type annotationData struct {
 type checkRunResponse struct {
 	ID      int64  `json:"id"`
 	HTMLURL string `json:"html_url"`
+}
+
+type commentPayload struct {
+	Body string `json:"body"`
+}
+
+type commentResponse struct {
+	ID   int64  `json:"id"`
+	Body string `json:"body"`
 }

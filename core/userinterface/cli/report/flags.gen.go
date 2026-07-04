@@ -13,6 +13,7 @@ type Options struct {
 	Commit string
 	GithubToken string
 	NewOnly bool
+	PR int
 	Project string
 	Repo string
 	To string
@@ -24,6 +25,7 @@ func RegisterFlags(cmd *cobra.Command, opts *Options) {
 	cmd.Flags().StringVar(&opts.Commit, "commit", "", "Head commit SHA the check run attaches to. Defaults to the commit recorded in the cached verdict; pass explicitly to override — e.g. the pull-request head SHA, since GITHUB_SHA on a pull_request event is the merge commit and GitHub renders annotations only on the head.")
 	cmd.Flags().StringVar(&opts.GithubToken, "github-token", envOrDefault("GITHUB_TOKEN", ""), "GitHub token with the checks:write permission. Defaults to the Actions GITHUB_TOKEN.")
 	cmd.Flags().BoolVar(&opts.NewOnly, "new-only", true, "Annotate only findings new versus the baseline. Disable to annotate all findings.")
+	cmd.Flags().IntVar(&opts.PR, "pr", 0, "Pull request number. When set, report also posts or updates a sticky summary comment on the PR, alongside the check run.")
 	cmd.Flags().StringVar(&opts.Project, "project", "", "Report only the named project. Reports every cached project if unset.")
 	cmd.Flags().StringVar(&opts.Repo, "repo", envOrDefault("GITHUB_REPOSITORY", ""), "Target repository in owner/repo form. Defaults to GITHUB_REPOSITORY.")
 	cmd.Flags().StringVar(&opts.To, "to", "github-checks", "Delivery sink for the verdict.")

@@ -10,10 +10,6 @@ import (
 
 const unknownTool = "unknown"
 
-// ParseToolExecutions extracts the analyzer runs that did not complete from a
-// SARIF document: each invocation with executionSuccessful=false becomes a tool
-// failure carrying its tool name and the concrete reason from the
-// toolExecutionNotifications. A clean document yields no failures.
 func (*Parser) ParseToolExecutions(data []byte) ([]evidencedto.ToolFailure, error) {
 	if len(data) == 0 {
 		return nil, nil
@@ -31,7 +27,7 @@ func (*Parser) ParseToolExecutions(data []byte) ([]evidencedto.ToolFailure, erro
 			toolName = unknownTool
 		}
 		for _, inv := range currentRun.Invocations {
-			if inv.ExecutionSuccessful {
+			if inv.ExecutionSuccessful || isConfigurationOnly(inv) {
 				continue
 			}
 			failures = append(failures, evidencedto.ToolFailure{
@@ -41,6 +37,10 @@ func (*Parser) ParseToolExecutions(data []byte) ([]evidencedto.ToolFailure, erro
 		}
 	}
 	return failures, nil
+}
+
+func isConfigurationOnly(inv invocation) bool {
+	return len(inv.ToolExecutionNotifications) == 0 && len(inv.ToolConfigurationNotifications) > 0
 }
 
 func invocationReason(inv invocation) string {

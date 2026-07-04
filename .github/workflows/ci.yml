@@ -66,6 +66,7 @@ jobs:
     permissions:
       contents: read
       checks: write
+      pull-requests: write
     # Building every analyzer aspect from a cold Bazel cache takes ~18 min; warm
     # runs are far quicker. Kept above the 10-min cap of the other jobs so a cold
     # cache does not spuriously fail the gate.
@@ -109,7 +110,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-        run: bazel-bin/apps/cli/cmd/gavel/gavel_/gavel report --commit "$HEAD_SHA"
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: bazel-bin/apps/cli/cmd/gavel/gavel_/gavel report --commit "$HEAD_SHA" --pr "$PR_NUMBER"
 
   # Guards generated artifacts against drift from their source of truth:
   # OpenAPI (Go DTOs + TS client) and the clispec (CLI flags.gen.go).

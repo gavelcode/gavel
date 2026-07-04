@@ -122,6 +122,53 @@ func TestLoadReturnsErrNoResultsWhenEveryFileCorrupt(t *testing.T) {
 	assert.Len(t, skipped, 1)
 }
 
+func TestLoadSkipsNonDirectoryEntriesAndEmptyProjects(t *testing.T) {
+	workspace := t.TempDir()
+	results := filepath.Join(workspace, ".gavel", "results")
+	require.NoError(t, os.MkdirAll(filepath.Join(results, "empty"), 0o755))
+	require.NoError(t, os.WriteFile(filepath.Join(results, "stray.txt"), []byte("x"), 0o644))
+	writeVerdictFixture(t, workspace, "core", `{"name":"core","verdict":"pass"}`)
+
+	verdicts, skipped, err := outputjson.Load(workspace)
+	require.NoError(t, err)
+	require.Len(t, verdicts, 1)
+	assert.Equal(t, "core", verdicts[0].Name)
+	assert.Empty(t, skipped)
+}
+
+func TestLoadMapsViolations(t *testing.T) {
+	workspace := t.TempDir()
+	writeVerdictFixture(t, workspace, "core", `{"name":"core","verdict":"fail","commit_sha":"c1",
+		"violations":[{"rule":"deny","source_pkg":"a","target_pkg":"b","message":"forbidden","status":"new"}]}`)
+
+	verdicts, _, err := outputjson.Load(workspace)
+	require.NoError(t, err)
+	require.Len(t, verdicts, 1)
+	require.Len(t, verdicts[0].Violations, 1)
+	assert.Equal(t, "deny", verdicts[0].Violations[0].Rule)
+	assert.Equal(t, "forbidden", verdicts[0].Violations[0].Message)
+}
+
+func TestLoadErrorsWhenResultsPathIsNotADirectory(t *testing.T) {
+	workspace := t.TempDir()
+	require.NoError(t, os.MkdirAll(filepath.Join(workspace, ".gavel"), 0o755))
+	require.NoError(t, os.WriteFile(filepath.Join(workspace, ".gavel", "results"), []byte("x"), 0o644))
+
+	_, _, err := outputjson.Load(workspace)
+	require.Error(t, err)
+	assert.NotErrorIs(t, err, outputjson.ErrNoResults)
+}
+
+func TestLoadErrorsWhenVerdictFileCannotBeRead(t *testing.T) {
+	workspace := t.TempDir()
+	dir := filepath.Join(workspace, ".gavel", "results", "core")
+	require.NoError(t, os.MkdirAll(filepath.Join(dir, "verdict.json"), 0o755))
+
+	_, _, err := outputjson.Load(workspace)
+	require.Error(t, err)
+	assert.NotErrorIs(t, err, outputjson.ErrNoResults)
+}
+
 func writeVerdictFixture(t *testing.T, workspace, project, body string) {
 	t.Helper()
 	dir := filepath.Join(workspace, ".gavel", "results", project)

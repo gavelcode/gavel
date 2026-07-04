@@ -121,7 +121,7 @@ func TestPublishReturnsErrorOnMalformedResponse(t *testing.T) {
 func TestPublishReturnsErrorWhenServerUnreachable(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(http.ResponseWriter, *http.Request) {}))
 	unreachable := server.URL
-	server.Close() // close now so the address refuses the connection
+	server.Close()
 
 	publisher, err := github.NewPublisher(github.Config{Token: "secret", Repo: "octo/repo", BaseURL: unreachable})
 	require.NoError(t, err)

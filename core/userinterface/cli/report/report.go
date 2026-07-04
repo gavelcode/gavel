@@ -80,6 +80,10 @@ func run(ctx context.Context, writer io.Writer, opts Options, resolveWorkspace W
 		HeadSHA:   opts.Commit,
 		NewOnly:   opts.NewOnly,
 	})
+	if checkRun.HeadSHA == "" {
+		return errors.New("no commit SHA to attach the check run to: pass --commit, " +
+			"or run `gavel judge` where it can detect the commit")
+	}
 
 	publisher, err := newPublisher(github.Config{Token: opts.GithubToken, Repo: opts.Repo})
 	if err != nil {

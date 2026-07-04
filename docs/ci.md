@@ -116,8 +116,9 @@ jobs:
         run: gavel report
 ```
 
-`gavel report` reads `GITHUB_TOKEN`, `GITHUB_REPOSITORY`, and `GITHUB_SHA`
-from the Actions environment by default. `if: always()` runs it even when
+`gavel report` reads `GITHUB_TOKEN` and `GITHUB_REPOSITORY` from the Actions
+environment by default, and attaches the check to the commit `gavel judge`
+recorded (pass `--commit` to override). `if: always()` runs it even when
 `judge` failed the gate — which is exactly when you want the red check.
 `judge` writes the verdict cache before it exits, so the failing verdict
 is available to report. Report's own exit code reflects **delivery**, not
@@ -130,9 +131,10 @@ Two caveats:
   read access on PRs from forks, so the check run cannot be created there.
   Same-repo branch PRs work without extra setup; forks need a GitHub App
   or `pull_request_target` (which carries its own security trade-offs).
-- **Head commit.** On `pull_request` events `GITHUB_SHA` is the merge
-  commit, not the PR head. Pass `--commit ${{ github.event.pull_request.head.sha }}`
-  when you need annotations anchored to the head commit.
+- **Head commit.** The check attaches to the commit `gavel judge` recorded.
+  If that is the merge commit (GitHub's default checkout on `pull_request`
+  events), GitHub won't render annotations on the PR head — check out or pass
+  `--commit ${{ github.event.pull_request.head.sha }}` to anchor them.
 
 ## Release gates
 

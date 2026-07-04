@@ -15,19 +15,14 @@ import (
 
 const sinkGitHubChecks = "github-checks"
 
-// WorkspaceResolver locates the workspace root that holds .gavel/results.
 type WorkspaceResolver func() (string, error)
 
-// ChecksPublisher delivers a built check run to an external sink.
 type ChecksPublisher interface {
 	Publish(ctx context.Context, checkRun checks.CheckRun) (github.Result, error)
 }
 
-// PublisherFactory builds a ChecksPublisher from resolved credentials and target.
 type PublisherFactory func(config github.Config) (ChecksPublisher, error)
 
-// NewCommand builds the `gavel report` command. It reads the verdict cached by
-// `gavel judge` and delivers it to an external sink (GitHub Checks).
 func NewCommand(resolveWorkspace WorkspaceResolver, newPublisher PublisherFactory) *cobra.Command {
 	opts := Options{}
 	cmd := &cobra.Command{
@@ -55,17 +50,27 @@ func run(ctx context.Context, writer io.Writer, opts Options, resolveWorkspace W
 		return fmt.Errorf("unsupported sink %q (only %q is supported)", opts.To, sinkGitHubChecks)
 	}
 
+	publisher, err := newPublisher(github.Config{Token: opts.GithubToken, Repo: opts.Repo})
+	if err != nil {
+		return err
+	}
+
 	workspace, err := resolveWorkspace()
 	if err != nil {
 		return err
 	}
 
-	verdicts, err := outputjson.Load(workspace)
+	verdicts, skipped, err := outputjson.Load(workspace)
 	if errors.Is(err, outputjson.ErrNoResults) {
 		return errors.New("nothing to report: run `gavel judge` first")
 	}
 	if err != nil {
 		return err
+	}
+	for _, path := range skipped {
+		if _, err := fmt.Fprintf(writer, "warning: skipped unparseable %s\n", path); err != nil {
+			return err
+		}
 	}
 
 	if opts.Project != "" {
@@ -73,6 +78,8 @@ func run(ctx context.Context, writer io.Writer, opts Options, resolveWorkspace W
 		if len(verdicts) == 0 {
 			return fmt.Errorf("no cached verdict for project %q", opts.Project)
 		}
+	} else {
+		verdicts = latestRun(verdicts)
 	}
 
 	checkRun := checks.Build(verdicts, checks.Options{
@@ -83,11 +90,6 @@ func run(ctx context.Context, writer io.Writer, opts Options, resolveWorkspace W
 	if checkRun.HeadSHA == "" {
 		return errors.New("no commit SHA to attach the check run to: pass --commit, " +
 			"or run `gavel judge` where it can detect the commit")
-	}
-
-	publisher, err := newPublisher(github.Config{Token: opts.GithubToken, Repo: opts.Repo})
-	if err != nil {
-		return err
 	}
 
 	result, err := publisher.Publish(ctx, checkRun)
@@ -102,15 +104,28 @@ func run(ctx context.Context, writer io.Writer, opts Options, resolveWorkspace W
 	return nil
 }
 
-// NewGitHubPublisher is the default PublisherFactory: it builds a GitHub Checks
-// publisher from the resolved config. The explicit nil return on error avoids
-// handing back a non-nil interface wrapping a nil *github.Publisher.
 func NewGitHubPublisher(config github.Config) (ChecksPublisher, error) {
 	publisher, err := github.NewPublisher(config)
 	if err != nil {
 		return nil, err
 	}
 	return publisher, nil
+}
+
+func latestRun(verdicts []outputjson.Verdict) []outputjson.Verdict {
+	latest := ""
+	for _, verdict := range verdicts {
+		if verdict.StartedAt > latest {
+			latest = verdict.StartedAt
+		}
+	}
+	filtered := make([]outputjson.Verdict, 0, len(verdicts))
+	for _, verdict := range verdicts {
+		if verdict.StartedAt == latest {
+			filtered = append(filtered, verdict)
+		}
+	}
+	return filtered
 }
 
 func filterByProject(verdicts []outputjson.Verdict, project string) []outputjson.Verdict {

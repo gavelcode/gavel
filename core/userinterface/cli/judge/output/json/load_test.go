@@ -39,7 +39,7 @@ func TestLoadReadsVerdictsWrittenByWriteCache(t *testing.T) {
 	}
 	require.NoError(t, outputjson.WriteCache(workspace, []pipeline.Result{result}))
 
-	verdicts, err := outputjson.Load(workspace)
+	verdicts, _, err := outputjson.Load(workspace)
 	require.NoError(t, err)
 	require.Len(t, verdicts, 1)
 
@@ -81,7 +81,7 @@ func TestLoadParsesExistingStatusAndAbsentCoverage(t *testing.T) {
       "delta": {"has_previous": true, "new_count": 0, "fixed_count": 2, "existing_count": 1}
     }`)
 
-	verdicts, err := outputjson.Load(workspace)
+	verdicts, _, err := outputjson.Load(workspace)
 	require.NoError(t, err)
 	require.Len(t, verdicts, 1)
 
@@ -96,8 +96,30 @@ func TestLoadParsesExistingStatusAndAbsentCoverage(t *testing.T) {
 }
 
 func TestLoadReturnsErrNoResultsWhenDirAbsent(t *testing.T) {
-	_, err := outputjson.Load(t.TempDir())
+	_, _, err := outputjson.Load(t.TempDir())
 	assert.ErrorIs(t, err, outputjson.ErrNoResults)
+}
+
+func TestLoadSkipsUnparseableFilesAndReportsThem(t *testing.T) {
+	workspace := t.TempDir()
+	writeVerdictFixture(t, workspace, "core", `{"name":"core","verdict":"pass"}`)
+	writeVerdictFixture(t, workspace, "web", `{ not json`)
+
+	verdicts, skipped, err := outputjson.Load(workspace)
+	require.NoError(t, err)
+	require.Len(t, verdicts, 1)
+	assert.Equal(t, "core", verdicts[0].Name)
+	require.Len(t, skipped, 1)
+	assert.Contains(t, skipped[0], "web")
+}
+
+func TestLoadReturnsErrNoResultsWhenEveryFileCorrupt(t *testing.T) {
+	workspace := t.TempDir()
+	writeVerdictFixture(t, workspace, "web", `{ not json`)
+
+	_, skipped, err := outputjson.Load(workspace)
+	assert.ErrorIs(t, err, outputjson.ErrNoResults)
+	assert.Len(t, skipped, 1)
 }
 
 func writeVerdictFixture(t *testing.T, workspace, project, body string) {

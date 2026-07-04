@@ -1,7 +1,3 @@
-// Package checks turns judged verdicts into a GitHub Checks payload: a check
-// run conclusion, a markdown summary, and inline diff annotations. It is pure —
-// no network, no GitHub client — so the mapping can be tested in isolation and
-// the HTTP adapter only has to deliver what this package produces.
 package checks
 
 import (
@@ -11,17 +7,13 @@ import (
 	outputjson "github.com/usegavel/gavel/core/userinterface/cli/judge/output/json"
 )
 
-// MaxAnnotationsPerRequest is GitHub's cap on annotations accepted in a single
-// check-run create or update call.
 const MaxAnnotationsPerRequest = 50
 
-// GitHub check-run conclusions this package emits.
 const (
 	ConclusionSuccess = "success"
 	ConclusionFailure = "failure"
 )
 
-// Level is a GitHub annotation level.
 type Level string
 
 const (
@@ -39,7 +31,6 @@ const (
 	minGitHubLine    = 1
 )
 
-// Annotation is one inline finding placed on the pull-request diff.
 type Annotation struct {
 	Path      string
 	StartLine int
@@ -49,8 +40,6 @@ type Annotation struct {
 	Message   string
 }
 
-// CheckRun is the sink-agnostic representation of a GitHub check run. The HTTP
-// adapter maps it to the Checks API wire format.
 type CheckRun struct {
 	Name        string
 	HeadSHA     string
@@ -60,14 +49,12 @@ type CheckRun struct {
 	Annotations []Annotation
 }
 
-// Options tunes how a CheckRun is built from verdicts.
 type Options struct {
 	CheckName string
 	HeadSHA   string
 	NewOnly   bool
 }
 
-// Build assembles a CheckRun from the judged verdicts.
 func Build(verdicts []outputjson.Verdict, opts Options) CheckRun {
 	return CheckRun{
 		Name:        checkName(opts.CheckName),
@@ -79,8 +66,6 @@ func Build(verdicts []outputjson.Verdict, opts Options) CheckRun {
 	}
 }
 
-// BatchAnnotations splits annotations into chunks no larger than maxPerBatch,
-// matching GitHub's per-request annotation cap. Empty input yields no batches.
 func BatchAnnotations(annotations []Annotation, maxPerBatch int) [][]Annotation {
 	if len(annotations) == 0 || maxPerBatch <= 0 {
 		return nil
@@ -114,9 +99,6 @@ func headSHA(override string, verdicts []outputjson.Verdict) string {
 }
 
 func conclusion(verdicts []outputjson.Verdict) string {
-	// Fail-safe: a check is success only if every project explicitly passed.
-	// Any other value — "fail", an empty string, or a future/unknown verdict —
-	// blocks the merge rather than silently going green.
 	for _, verdict := range verdicts {
 		if verdict.Verdict != verdictPass {
 			return ConclusionFailure

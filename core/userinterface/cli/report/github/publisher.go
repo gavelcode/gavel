@@ -1,7 +1,3 @@
-// Package github publishes a Gavel check run to the GitHub Checks API. It is a
-// CLI outbound HTTP client, so it lives in the userinterface layer alongside the
-// report command — mirroring the server-mode api client — not in infrastructure,
-// which may not import userinterface types such as checks.CheckRun.
 package github
 
 import (
@@ -33,14 +29,12 @@ var (
 	errInvalidRepo = errors.New("github: repo must be in owner/name form")
 )
 
-// Config holds the credentials and target for publishing a check run.
 type Config struct {
 	Token   string
 	Repo    string
 	BaseURL string
 }
 
-// Publisher delivers a CheckRun to the GitHub Checks API.
 type Publisher struct {
 	client  *http.Client
 	token   string
@@ -49,13 +43,11 @@ type Publisher struct {
 	baseURL string
 }
 
-// Result identifies the created check run.
 type Result struct {
 	CheckRunID int64
 	URL        string
 }
 
-// NewPublisher validates the config and builds a Publisher.
 func NewPublisher(config Config) (*Publisher, error) {
 	if config.Token == "" {
 		return nil, errEmptyToken
@@ -77,8 +69,6 @@ func NewPublisher(config Config) (*Publisher, error) {
 	}, nil
 }
 
-// Publish creates the check run with the first batch of annotations, then adds
-// any remaining batches via update calls (GitHub caps annotations per request).
 func (p *Publisher) Publish(ctx context.Context, checkRun checks.CheckRun) (Result, error) {
 	batches := checks.BatchAnnotations(checkRun.Annotations, checks.MaxAnnotationsPerRequest)
 

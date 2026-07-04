@@ -18,45 +18,45 @@ const (
 // `gavel judge` has not run, so there is nothing for a consumer to deliver.
 var ErrNoResults = errors.New("no judge results found under .gavel/results; run `gavel judge` first")
 
-// Verdict is one project's judged result, read back from
-// .gavel/results/<project>/verdict.json. It is the read view of the same
-// on-disk contract WriteCache produces, exposing what a downstream consumer
-// (the report command) delivers to an external sink.
+// Verdict is the read view of a cached judge result. Its fields are mapped from
+// the write-side projectDTO, which owns the on-disk JSON contract (the json
+// tags) — so a single tagged struct set defines the format and the read and
+// write sides cannot drift.
 type Verdict struct {
-	Name            string             `json:"name"`
-	Verdict         string             `json:"verdict"`
-	CommitSHA       string             `json:"commit_sha"`
-	Branch          string             `json:"branch"`
-	CoveragePercent *float64           `json:"coverage_percent"`
-	Findings        []VerdictFinding   `json:"findings"`
-	Violations      []VerdictViolation `json:"violations"`
-	Delta           *VerdictDelta      `json:"delta"`
+	Name            string
+	Verdict         string
+	CommitSHA       string
+	Branch          string
+	CoveragePercent *float64
+	Findings        []VerdictFinding
+	Violations      []VerdictViolation
+	Delta           *VerdictDelta
 }
 
 type VerdictFinding struct {
-	Tool          string `json:"tool"`
-	RuleID        string `json:"rule_id"`
-	Severity      string `json:"severity"`
-	FilePath      string `json:"file_path"`
-	Line          int    `json:"line"`
-	Message       string `json:"message"`
-	FingerprintID string `json:"fingerprint"`
-	Status        string `json:"status"`
+	Tool          string
+	RuleID        string
+	Severity      string
+	FilePath      string
+	Line          int
+	Message       string
+	FingerprintID string
+	Status        string
 }
 
 type VerdictViolation struct {
-	Rule      string `json:"rule"`
-	SourcePkg string `json:"source_pkg"`
-	TargetPkg string `json:"target_pkg"`
-	Message   string `json:"message"`
-	Status    string `json:"status"`
+	Rule      string
+	SourcePkg string
+	TargetPkg string
+	Message   string
+	Status    string
 }
 
 type VerdictDelta struct {
-	HasPrevious   bool `json:"has_previous"`
-	NewCount      int  `json:"new_count"`
-	FixedCount    int  `json:"fixed_count"`
-	ExistingCount int  `json:"existing_count"`
+	HasPrevious   bool
+	NewCount      int
+	FixedCount    int
+	ExistingCount int
 }
 
 // Load reads every .gavel/results/<project>/verdict.json cached by WriteCache
@@ -85,15 +85,43 @@ func Load(workspace string) ([]Verdict, error) {
 			}
 			return nil, fmt.Errorf("read %s: %w", path, err)
 		}
-		var verdict Verdict
-		if err := encjson.Unmarshal(data, &verdict); err != nil {
+		var dto projectDTO
+		if err := encjson.Unmarshal(data, &dto); err != nil {
 			return nil, fmt.Errorf("parse %s: %w", path, err)
 		}
-		verdicts = append(verdicts, verdict)
+		verdicts = append(verdicts, toVerdict(dto))
 	}
 
 	if len(verdicts) == 0 {
 		return nil, ErrNoResults
 	}
 	return verdicts, nil
+}
+
+func toVerdict(dto projectDTO) Verdict {
+	verdict := Verdict{
+		Name:            dto.Name,
+		Verdict:         dto.Verdict,
+		CommitSHA:       dto.CommitSHA,
+		Branch:          dto.Branch,
+		CoveragePercent: dto.CoveragePercent,
+	}
+	// Direct struct conversions (fields are identical): this also guards the
+	// contract — if a write-side DTO field changes, the conversion stops
+	// compiling, forcing the read view to be updated rather than drifting.
+	for _, finding := range dto.Findings {
+		verdict.Findings = append(verdict.Findings, VerdictFinding(finding))
+	}
+	for _, violation := range dto.Violations {
+		verdict.Violations = append(verdict.Violations, VerdictViolation(violation))
+	}
+	if dto.Delta != nil {
+		verdict.Delta = &VerdictDelta{
+			HasPrevious:   dto.Delta.HasPrevious,
+			NewCount:      dto.Delta.NewCount,
+			FixedCount:    dto.Delta.FixedCount,
+			ExistingCount: dto.Delta.ExistingCount,
+		}
+	}
+	return verdict
 }

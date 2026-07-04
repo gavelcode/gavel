@@ -28,6 +28,15 @@ func TestConclusionIsSuccessWhenEveryProjectPasses(t *testing.T) {
 	assert.Equal(t, checks.ConclusionSuccess, run.Conclusion)
 }
 
+func TestConclusionIsFailureForUnknownVerdict(t *testing.T) {
+	run := checks.Build([]outputjson.Verdict{
+		{Name: "core", Verdict: "pass"},
+		{Name: "weird", Verdict: "error"},
+	}, checks.Options{})
+	assert.Equal(t, checks.ConclusionFailure, run.Conclusion,
+		"a non-pass verdict must fail the check, not silently go green")
+}
+
 func TestSeverityMapsToAnnotationLevel(t *testing.T) {
 	v := outputjson.Verdict{Name: "core", Verdict: "fail", Findings: []outputjson.VerdictFinding{
 		{Severity: "error", FilePath: "a.go", Line: 1, Status: "new"},

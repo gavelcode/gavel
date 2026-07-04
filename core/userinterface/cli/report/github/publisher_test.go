@@ -3,6 +3,7 @@ package github_test
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -204,6 +205,25 @@ func TestUpsertCommentErrorsOnMalformedList(t *testing.T) {
 
 func TestPublishErrorsOnUnbuildableRequest(t *testing.T) {
 	publisher, err := github.NewPublisher(github.Config{Token: "secret", Repo: "octo/repo", BaseURL: "://bad"})
+	require.NoError(t, err)
+	_, err = publisher.Publish(context.Background(), checks.CheckRun{Name: "gavel", HeadSHA: "abc"})
+	require.Error(t, err)
+}
+
+type errReadCloser struct{}
+
+func (errReadCloser) Read([]byte) (int, error) { return 0, errors.New("read failed") }
+func (errReadCloser) Close() error             { return nil }
+
+type errBodyTransport struct{}
+
+func (errBodyTransport) RoundTrip(*http.Request) (*http.Response, error) {
+	return &http.Response{StatusCode: http.StatusOK, Body: errReadCloser{}, Header: make(http.Header)}, nil
+}
+
+func TestPublishErrorsWhenResponseBodyUnreadable(t *testing.T) {
+	client := &http.Client{Transport: errBodyTransport{}}
+	publisher, err := github.NewPublisher(github.Config{Token: "secret", Repo: "octo/repo"}, github.WithClient(client))
 	require.NoError(t, err)
 	_, err = publisher.Publish(context.Background(), checks.CheckRun{Name: "gavel", HeadSHA: "abc"})
 	require.Error(t, err)

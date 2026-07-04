@@ -46,6 +46,15 @@ func TestParseToolExecutionsFailureWithoutNotifications(t *testing.T) {
 	assert.NotEmpty(t, failures[0].Reason)
 }
 
+func TestParseToolExecutionsIgnoresConfigurationOnlyNotifications(t *testing.T) {
+	data := []byte(`{"runs":[{"tool":{"driver":{"name":"PMD"}},"results":[],"invocations":[{"executionSuccessful":false,"toolConfigurationNotifications":[{"message":{"text":"No packages or classes specified"}}],"toolExecutionNotifications":[]}]}]}`)
+
+	failures, err := NewParser().ParseToolExecutions(data)
+
+	require.NoError(t, err)
+	assert.Empty(t, failures)
+}
+
 func TestParseToolExecutionsEmptyData(t *testing.T) {
 	failures, err := NewParser().ParseToolExecutions(nil)
 

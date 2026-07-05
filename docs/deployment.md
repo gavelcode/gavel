@@ -19,8 +19,8 @@ bazel build //apps/server/cmd/gavel-server
 
 ## Database
 
-PostgreSQL is the only supported database. The schema is bootstrapped
-automatically on first startup — no manual migration step required.
+PostgreSQL is the only supported database. Versioned goose migrations apply
+automatically on startup — no manual migration step required.
 
 ```bash
 createdb gavel
@@ -50,8 +50,9 @@ gavel-server migrate
 
 ## First boot
 
-On a fresh database, `database.Migrate()` applies the schema (`bootstrap.sql`)
-and a seed (`seed.sql`) that creates:
+On a fresh database, `database.Migrate()` applies the versioned migrations
+under `migrations/` (starting with `00001_bootstrap.sql`) and then a seed
+(`seed.sql`) that creates:
 
 1. The `default` tenant
 2. An admin user `admin@gavel.local` with the password `changeme` and

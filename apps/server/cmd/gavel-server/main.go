@@ -142,7 +142,7 @@ func openAndMigrateDB(ctx context.Context, cfg *config.Config) (*database.DB, er
 	if err != nil {
 		return nil, err
 	}
-	if err := database.Migrate(dbConn); err != nil {
+	if err := database.Migrate(ctx, dbConn); err != nil {
 		_ = dbConn.Close()
 		return nil, err
 	}

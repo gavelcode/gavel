@@ -8,7 +8,8 @@ tags: [quickstart, getting-started]
 # Quickstart
 
 From zero to first quality report in 5 minutes. Requires a Bazel workspace
-with `MODULE.bazel` (bzlmod).
+with `MODULE.bazel` (bzlmod). Runs on Linux and macOS (amd64/arm64);
+Windows is not supported.
 
 ## 1. Install
 

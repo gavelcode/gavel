@@ -1,0 +1,77 @@
+# The gavel-tools catalog: the menu of what this module can lint, per language.
+#
+# This is the single source of truth a consumer (e.g. gavel) reads to know which
+# tools exist, which aspect runs each one, what SARIF file it emits, which build
+# flags it needs, and which tool-binary repo it depends on. The consumer's
+# gavel.yaml then *selects* tools from this menu per project — it never redefines
+# what a tool is.
+#
+# Each aspect listed here must exist in //lint/aspects:defs.bzl; that consistency
+# is enforced by catalog_test. `binary` and `build_flags` are optional (only the
+# tools that need them carry them). `aspects_bzl` is the module-relative label
+# where the aspects live; a consumer prefixes it with the module name it binds
+# gavel_tools under.
+version: 1
+aspects_bzl: //lint/aspects:defs.bzl
+languages:
+  go:
+    - name: golangci-lint
+      aspect: go_golangci_lint_submission_aspect
+      sarif_suffix: .golangci.sarif
+      build_flags: ["--@rules_go//go/config:export_stdlib=True"]
+      binary: golangci_lint_binary
+    - name: archtest
+      aspect: go_archtest_submission_aspect
+      sarif_suffix: .archtest.sarif
+  java:
+    - name: pmd
+      aspect: java_pmd_submission_aspect
+      sarif_suffix: .pmd.sarif
+      binary: pmd_binary
+    - name: cpd
+      aspect: java_cpd_submission_aspect
+      sarif_suffix: .cpd.sarif
+      binary: pmd_binary
+    - name: spotbugs
+      aspect: java_spotbugs_submission_aspect
+      sarif_suffix: .spotbugs.sarif
+      binary: spotbugs_binary
+    - name: error-prone
+      aspect: java_error_prone_submission_aspect
+      sarif_suffix: .errorprone.sarif
+      binary: error_prone_binary
+    - name: archtest
+      aspect: java_archtest_submission_aspect
+      sarif_suffix: .archtest.sarif
+  python:
+    - name: ruff
+      aspect: python_ruff_submission_aspect
+      sarif_suffix: .ruff.sarif
+      binary: ruff_binary
+    - name: bandit
+      aspect: python_bandit_submission_aspect
+      sarif_suffix: .bandit.sarif
+      binary: bandit_binary
+    - name: pycompile
+      aspect: python_pycompile_submission_aspect
+      sarif_suffix: .pycompile.sarif
+    - name: archtest
+      aspect: python_archtest_submission_aspect
+      sarif_suffix: .archtest.sarif
+  typescript:
+    - name: eslint
+      aspect: typescript_eslint_submission_aspect
+      sarif_suffix: .eslint.sarif
+    - name: archtest
+      aspect: typescript_archtest_submission_aspect
+      sarif_suffix: .archtest.sarif
+  rust:
+    - name: clippy
+      aspect: rust_clippy_submission_aspect
+      sarif_suffix: .clippy.sarif
+      build_flags:
+        - "--@rules_rust//rust/settings:capture_clippy_output=True"
+        - "--@rules_rust//rust/settings:clippy_output_diagnostics=True"
+    - name: archtest
+      aspect: rust_archtest_submission_aspect
+      sarif_suffix: .archtest.sarif

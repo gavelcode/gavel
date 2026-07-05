@@ -1,17 +1,22 @@
 package catalog
 
 import (
+	_ "embed"
 	"fmt"
-	"os"
-
-	"github.com/bazelbuild/rules_go/go/runfiles"
 )
 
-const catalogRunfile = "gavel_tools/lint/catalog.yaml"
+// catalog.yaml is synced from @gavel_tools//lint/catalog.yaml by `make
+// catalog-sync` and kept in lockstep by `make catalog-check`. Embedding it —
+// rather than reading it from Bazel runfiles — is what lets the distributed
+// standalone binary run `init` and `judge` off a Bazel workspace it did not
+// build itself.
+//
+//go:embed catalog.yaml
+var embeddedCatalog []byte
 
 var loaded *Catalog
 
-var loader = loadFromRunfiles
+var loader = loadEmbedded
 
 func active() *Catalog {
 	if loaded == nil {
@@ -24,20 +29,8 @@ func active() *Catalog {
 	return loaded
 }
 
-func loadFromRunfiles() (*Catalog, error) {
-	return loadCatalog(runfiles.Rlocation, os.ReadFile)
-}
-
-func loadCatalog(resolvePath func(string) (string, error), readFile func(string) ([]byte, error)) (*Catalog, error) {
-	path, err := resolvePath(catalogRunfile)
-	if err != nil {
-		return nil, fmt.Errorf("locate %s: %w", catalogRunfile, err)
-	}
-	data, err := readFile(path)
-	if err != nil {
-		return nil, fmt.Errorf("read %s: %w", path, err)
-	}
-	return ParseCatalog(data)
+func loadEmbedded() (*Catalog, error) {
+	return ParseCatalog(embeddedCatalog)
 }
 
 func SetCatalog(catalog *Catalog) {

@@ -55,6 +55,37 @@ func TestParseToolExecutionsIgnoresConfigurationOnlyNotifications(t *testing.T) 
 	assert.Empty(t, failures)
 }
 
+func TestParseToolExecutionsFailsOnErrorLevelConfigurationNotification(t *testing.T) {
+	data := []byte(`{"runs":[{"tool":{"driver":{"name":"pmd"}},"results":[],"invocations":[{"executionSuccessful":false,"toolConfigurationNotifications":[{"level":"error","message":{"text":"ruleset failed to load"}}]}]}]}`)
+
+	failures, err := NewParser().ParseToolExecutions(data)
+
+	require.NoError(t, err)
+	require.Len(t, failures, 1)
+	assert.Equal(t, "pmd", failures[0].Tool)
+	assert.Contains(t, failures[0].Reason, "ruleset failed to load")
+}
+
+func TestParseToolExecutionsIgnoresWarningLevelConfigurationNotification(t *testing.T) {
+	data := []byte(`{"runs":[{"tool":{"driver":{"name":"PMD"}},"results":[],"invocations":[{"executionSuccessful":false,"toolConfigurationNotifications":[{"level":"warning","message":{"text":"rule needs configuration"}}]}]}]}`)
+
+	failures, err := NewParser().ParseToolExecutions(data)
+
+	require.NoError(t, err)
+	assert.Empty(t, failures)
+}
+
+func TestParseToolExecutionsSurfacesConfigurationReasonAlongsideExecution(t *testing.T) {
+	data := []byte(`{"runs":[{"tool":{"driver":{"name":"pmd"}},"results":[],"invocations":[{"executionSuccessful":false,"toolExecutionNotifications":[{"message":{"text":"analysis aborted"}}],"toolConfigurationNotifications":[{"level":"error","message":{"text":"invalid ruleset path"}}]}]}]}`)
+
+	failures, err := NewParser().ParseToolExecutions(data)
+
+	require.NoError(t, err)
+	require.Len(t, failures, 1)
+	assert.Contains(t, failures[0].Reason, "analysis aborted")
+	assert.Contains(t, failures[0].Reason, "invalid ruleset path")
+}
+
 func TestParseToolExecutionsEmptyData(t *testing.T) {
 	failures, err := NewParser().ParseToolExecutions(nil)
 

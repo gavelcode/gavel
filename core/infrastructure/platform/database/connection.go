@@ -5,13 +5,18 @@ import (
 	"database/sql"
 	"embed"
 	"fmt"
+	"io/fs"
+	"log/slog"
+	"strings"
 	"time"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
+	"github.com/pressly/goose/v3"
+	"github.com/pressly/goose/v3/lock"
 )
 
-//go:embed bootstrap.sql
-var bootstrapFS embed.FS
+//go:embed migrations/*.sql
+var migrationsFS embed.FS
 
 //go:embed seed.sql
 var seedFS embed.FS
@@ -22,6 +27,8 @@ const (
 	connMaxLifetime = 30 * time.Minute
 	connMaxIdleTime = 5 * time.Minute
 	pingTimeout     = 5 * time.Second
+
+	migrationsDir = "migrations"
 )
 
 func Open(ctx context.Context, dsn string) (*DB, error) {
@@ -43,31 +50,60 @@ func Open(ctx context.Context, dsn string) (*DB, error) {
 	return NewDB(sqlDB, "postgres"), nil
 }
 
-func Migrate(database *DB) error {
+func Migrate(ctx context.Context, database *DB) error {
 	fresh, err := isFreshDB(database.DB)
 	if err != nil {
 		return fmt.Errorf("check fresh db: %w", err)
 	}
 
-	if !fresh {
-		return nil
-	}
-
-	if err := applySchema(database.DB); err != nil {
+	provider, err := migrationProvider(database.DB)
+	if err != nil {
 		return err
 	}
-	return Seed(database)
-}
-
-func Seed(db *DB) error {
-	ddl, err := seedFS.ReadFile("seed.sql")
-	if err != nil {
-		return fmt.Errorf("read seed.sql: %w", err)
+	if _, err := provider.Up(ctx); err != nil {
+		return fmt.Errorf("apply migrations: %w", err)
 	}
-	if _, err := db.Exec(string(ddl)); err != nil {
-		return fmt.Errorf("apply seed: %w", err)
+
+	if fresh {
+		return Seed(database)
 	}
 	return nil
+}
+
+// migrationProvider builds a goose provider that holds a Postgres session-level
+// advisory lock for the duration of the migration, so concurrent server
+// replicas booting against a fresh database serialize instead of racing on
+// CREATE TABLE. It logs through slog rather than goose's default stdout writer.
+func migrationProvider(sqlDB *sql.DB) (*goose.Provider, error) {
+	migrations, err := fs.Sub(migrationsFS, migrationsDir)
+	if err != nil {
+		return nil, fmt.Errorf("locate migrations: %w", err)
+	}
+	locker, err := lock.NewPostgresSessionLocker()
+	if err != nil {
+		return nil, fmt.Errorf("create migration lock: %w", err)
+	}
+	provider, err := goose.NewProvider(
+		goose.DialectPostgres,
+		sqlDB,
+		migrations,
+		goose.WithSessionLocker(locker),
+		goose.WithLogger(gooseLogger{}),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("create migration provider: %w", err)
+	}
+	return provider, nil
+}
+
+type gooseLogger struct{}
+
+func (gooseLogger) Printf(format string, v ...any) {
+	slog.Info(strings.TrimSpace(fmt.Sprintf(format, v...)))
+}
+
+func (gooseLogger) Fatalf(format string, v ...any) {
+	slog.Error(strings.TrimSpace(fmt.Sprintf(format, v...)))
 }
 
 func isFreshDB(db *sql.DB) (bool, error) {
@@ -84,21 +120,13 @@ func isFreshDB(db *sql.DB) (bool, error) {
 	return !exists, nil
 }
 
-func applySchema(database *sql.DB) error {
-	ddl, err := bootstrapFS.ReadFile("bootstrap.sql")
+func Seed(db *DB) error {
+	ddl, err := seedFS.ReadFile("seed.sql")
 	if err != nil {
-		return fmt.Errorf("read bootstrap.sql: %w", err)
+		return fmt.Errorf("read seed.sql: %w", err)
 	}
-
-	transaction, err := database.Begin()
-	if err != nil {
-		return fmt.Errorf("begin tx: %w", err)
+	if _, err := db.Exec(string(ddl)); err != nil {
+		return fmt.Errorf("apply seed: %w", err)
 	}
-	defer func() { _ = transaction.Rollback() }()
-
-	if _, err := transaction.Exec(string(ddl)); err != nil {
-		return fmt.Errorf("exec bootstrap: %w", err)
-	}
-
-	return transaction.Commit()
+	return nil
 }

@@ -5,6 +5,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/pressly/goose/v3"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -20,12 +21,33 @@ func TestOpenAndMigrateIdempotent(t *testing.T) {
 	require.NoError(t, err)
 	t.Cleanup(func() { _ = db.Close() })
 
-	require.NoError(t, database.Migrate(db))
+	require.NoError(t, database.Migrate(ctx, db))
 }
 
 func TestSeedIdempotent(t *testing.T) {
 	db := testkit.TestDB(t)
 	require.NoError(t, database.Seed(db))
+}
+
+func TestMigrateRecordsSchemaVersion(t *testing.T) {
+	db := testkit.TestDB(t)
+
+	version, err := goose.GetDBVersion(db.DB)
+	require.NoError(t, err, "Migrate must track applied migrations")
+	assert.GreaterOrEqual(t, version, int64(1), "the bootstrap migration must be recorded")
+}
+
+func TestMigrateDoesNotReseedExistingDB(t *testing.T) {
+	testDB := testkit.TestDB(t)
+
+	_, err := testDB.Exec("DELETE FROM iam_users")
+	require.NoError(t, err)
+
+	require.NoError(t, database.Migrate(context.Background(), testDB))
+
+	var count int
+	require.NoError(t, testDB.QueryRow("SELECT count(*) FROM iam_users").Scan(&count))
+	assert.Zero(t, count, "Migrate must not re-seed a database that already exists")
 }
 
 func TestBeginTxAndCommit(t *testing.T) {
@@ -53,7 +75,7 @@ func TestBeginTxAndRollback(t *testing.T) {
 
 func TestMigrateSkipsAlreadyMigratedDB(t *testing.T) {
 	db := testkit.TestDB(t)
-	require.NoError(t, database.Migrate(db))
+	require.NoError(t, database.Migrate(context.Background(), db))
 }
 
 func TestMigrateAppliesSchemaToFreshDB(t *testing.T) {
@@ -75,7 +97,7 @@ func TestMigrateAppliesSchemaToFreshDB(t *testing.T) {
 	require.NoError(t, err)
 	t.Cleanup(func() { _ = freshDB.Close() })
 
-	require.NoError(t, database.Migrate(freshDB))
+	require.NoError(t, database.Migrate(ctx, freshDB))
 
 	var exists bool
 	err = freshDB.QueryRowContext(ctx,
@@ -99,7 +121,7 @@ func TestMigrateReturnsErrorOnClosedDB(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, db.Close())
 
-	err = database.Migrate(db)
+	err = database.Migrate(ctx, db)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "check fresh db")
 }
@@ -141,7 +163,7 @@ func TestMigrateReturnsErrorOnSchemaConflict(t *testing.T) {
 	_, err = freshDB.DB.ExecContext(ctx, "CREATE TABLE projects (id int)")
 	require.NoError(t, err)
 
-	err = database.Migrate(freshDB)
+	err = database.Migrate(ctx, freshDB)
 	require.Error(t, err)
 }
 

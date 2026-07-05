@@ -1,6 +1,8 @@
--- Bootstrap schema for PostgreSQL fresh installs.
--- This file is the single source of truth for the database schema. It is
--- applied once on a brand-new database; subsequent runs are a no-op.
+-- +goose Up
+
+-- Bootstrap schema: the initial gavel database. goose applies this as
+-- migration 0001 and records it in goose_db_version; later schema changes
+-- are new numbered migrations, never edits to this file.
 
 -- All aggregate identifiers are RFC 4122 v4 UUIDs minted by the domain
 -- (uuid.New() inside each aggregate factory). Columns that hold them use

@@ -146,3 +146,62 @@ jobs:
 
       - name: CLI spec drift (flags.gen.go)
         run: make clispec-check
+
+  # Onboarding proof: gavel must run cleanly on a fresh project. Each example is
+  # its own Bazel workspace pinning the published gavel_tools; we build gavel
+  # from source and assert every analyzer actually ran. The examples
+  # intentionally fail coverage/architecture, so the gate keys off
+  # tool_execution alone, not the overall verdict — this is what would have
+  # caught the ESLint-exit-2 and PMD config-notification regressions.
+  onboarding:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        example: [go-repo, java-repo, python-repo, rust-fullstack-repo]
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Cache Bazel
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/bazel
+          key: bazel-onboarding-${{ matrix.example }}-${{ hashFiles('MODULE.bazel.lock', '.bazelversion') }}
+          restore-keys: bazel-onboarding-${{ matrix.example }}-
+
+      - name: Install Bazelisk
+        run: |
+          sudo curl -fsSL -o /usr/local/bin/bazel \
+            https://github.com/bazelbuild/bazelisk/releases/latest/download/bazelisk-linux-amd64
+          sudo chmod +x /usr/local/bin/bazel
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+
+      - name: Install pnpm
+        run: npm install -g pnpm@9.15.4
+
+      # gavel collects TypeScript coverage by running `npx vitest run` in the
+      # project directory, so a frontend example needs its host node_modules.
+      - name: Install example frontend deps
+        run: |
+          if [ -f "examples/${{ matrix.example }}/frontend/package.json" ]; then
+            cd "examples/${{ matrix.example }}/frontend"
+            pnpm install --frozen-lockfile
+          fi
+
+      - name: Build gavel CLI
+        run: bazel build //apps/cli/cmd/gavel
+
+      - name: Judge the example and assert every analyzer ran
+        run: |
+          gavel="$PWD/bazel-bin/apps/cli/cmd/gavel/gavel_/gavel"
+          cd "examples/${{ matrix.example }}"
+          "$gavel" judge --json > result.json || true
+          echo "tool_execution per project:"
+          jq -r '.projects[] | "  \(.name): \([.rulings[] | select(.subtype == "tool_execution").passed][0])"' result.json
+          jq -e '([.projects[].rulings[] | select(.subtype == "tool_execution")]) as $te
+                 | ($te | length > 0) and ($te | all(.passed == true))' result.json > /dev/null \
+            || { echo "::error::an analyzer failed to run (tool_execution) in ${{ matrix.example }}"; exit 1; }

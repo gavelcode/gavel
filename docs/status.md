@@ -136,7 +136,7 @@ Bootstrap is seeded by `seed.sql` (applied by `database.Migrate()`): the
 ## `apps/server/` (composition root)
 
 - Backend starts with `bazel run //apps/server/cmd/gavel-server -- serve`.
-- Auto-migrations on startup (`bootstrap.sql` schema + `seed.sql`, applied once).
+- Auto-migrations on startup (versioned goose migrations + `seed.sql` on a fresh DB).
 - Seeds the `default` tenant and admin `admin@gavel.local` (password
   `changeme`, `must_change_password=true`) on a fresh database.
 - The server is a composition root in three layers:

@@ -18,7 +18,7 @@ Scope: `apps/server/` — HTTP API composition root.
 All domain logic, application use cases, persistence adapters, and the HTTP
 layer live in `core/`. The server binary is pure wiring: it builds the DI
 graph and starts the chi router. PostgreSQL is the only persistence
-technology, with a single bootstrap SQL applied on first run.
+technology, its schema evolved by versioned goose migrations.
 
 ---
 
@@ -64,10 +64,13 @@ SPA fallback, and middleware live under
   (cross-cutting) and the per-BC feature folders for resource DTOs.
 - **PostgreSQL only.** `pgx/v5` via `database/sql`. Connection pool tuning
   documented in [postgres-pool-tuning.md](../design/postgres-pool-tuning.md).
-- **Bootstrap migration.** No incremental goose. `bootstrap.sql` in
-  `core/infrastructure/platform/database/` creates the full schema on a
-  fresh database, idempotent on a non-fresh one.
+- **Versioned migrations.** goose (as a library) applies numbered,
+  embedded, forward-only migrations from
+  `core/infrastructure/platform/database/migrations/`, recording applied
+  versions in `goose_db_version` so re-runs are a no-op. `00001_bootstrap.sql`
+  is the baseline schema; later changes are new numbered migrations, never
+  edits to an applied one.
 - **First-run tenant + admin seeding.** `seed.sql` (applied by
-  `database.Migrate()` alongside `bootstrap.sql`) creates the `default`
+  `database.Migrate()` only on a fresh database) creates the `default`
   tenant and admin `admin@gavel.local` (password `changeme`,
   `must_change_password=true`). There is no Go bootstrap function.

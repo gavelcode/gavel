@@ -16,7 +16,7 @@ bazel_dep(name = "rules_rust", version = "0.70.0")
 bazel_dep(name = "gavel_tools", version = "0.3.5")
 
 go_sdk = use_extension("@rules_go//go:extensions.bzl", "go_sdk")
-go_sdk.download(version = "1.25.0")
+go_sdk.download(version = "1.25.7")
 
 go_deps = use_extension("@gazelle//:extensions.bzl", "go_deps")
 go_deps.from_file(go_work = "//:go.work")
@@ -31,6 +31,7 @@ use_repo(
     "com_github_mattn_go_isatty",
     "com_github_modelcontextprotocol_go_sdk",
     "com_github_oapi_codegen_runtime",
+    "com_github_pressly_goose_v3",
     "com_github_spf13_cobra",
     "com_github_stretchr_testify",
     "com_github_testcontainers_testcontainers_go",

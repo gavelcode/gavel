@@ -10,12 +10,16 @@ go_library(
         "tx.go",
     ],
     embedsrcs = [
-        "bootstrap.sql",
         "seed.sql",
+        "migrations/00001_bootstrap.sql",
     ],
     importpath = "github.com/usegavel/gavel/core/infrastructure/platform/database",
     visibility = ["//visibility:public"],
-    deps = ["@com_github_jackc_pgx_v5//stdlib"],
+    deps = [
+        "@com_github_jackc_pgx_v5//stdlib",
+        "@com_github_pressly_goose_v3//:goose",
+        "@com_github_pressly_goose_v3//lock",
+    ],
 )
 
 go_test(
@@ -31,6 +35,7 @@ go_test(
         "//core/domain/iam/model/user",
         "//core/infrastructure/iam/argon2",
         "//core/infrastructure/platform/database/testkit",
+        "@com_github_pressly_goose_v3//:goose",
         "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//require",
     ],

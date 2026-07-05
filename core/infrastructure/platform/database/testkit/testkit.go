@@ -84,7 +84,7 @@ func startPostgresContainer(ctx context.Context) (*database.DB, string, error) {
 		tcpg.WithDatabase("gaveltest"),
 		tcpg.WithUsername("gavel"),
 		tcpg.WithPassword("gavel"),
-		testcontainers.WithReuseByName("gavel-database-test-v4"),
+		testcontainers.WithReuseByName("gavel-database-test-v5"),
 		testcontainers.WithWaitStrategy(
 			wait.ForLog("database system is ready to accept connections").
 				WithOccurrence(pgReadyLogOccurrences).
@@ -102,7 +102,7 @@ func startPostgresContainer(ctx context.Context) (*database.DB, string, error) {
 	if err != nil {
 		return nil, "", fmt.Errorf("open database: %w", err)
 	}
-	if err := database.Migrate(pgDB); err != nil {
+	if err := database.Migrate(ctx, pgDB); err != nil {
 		return nil, "", fmt.Errorf("migrate: %w", err)
 	}
 	return pgDB, dsn, nil

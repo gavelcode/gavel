@@ -150,41 +150,47 @@ jobs:
       - name: Catalog drift (embedded gavel_tools catalog)
         run: make catalog-check
 
-  # Onboarding proof: gavel must run cleanly on a fresh project. Each example is
-  # its own Bazel workspace pinning the published gavel_tools; we build gavel
-  # from source and assert every analyzer actually ran. The examples
+  # Onboarding proof: the *distributed* binary — a standalone CGO-free `go
+  # build`, the same shape goreleaser ships, with no Bazel runfiles — must drive
+  # `gavel init` then `gavel judge` on a workspace it did not build itself. This
+  # is what caught the catalog-runfiles panic that made every shipped binary
+  # unusable. Linux covers all four examples; one macOS leg proves the darwin
+  # binary we ship actually runs. Windows is not supported. The examples
   # intentionally fail coverage/architecture, so the gate keys off
-  # tool_execution alone, not the overall verdict — this is what would have
-  # caught the ESLint-exit-2 and PMD config-notification regressions.
+  # tool_execution alone, not the overall verdict.
   onboarding:
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
+        os: [ubuntu-latest]
         example: [go-repo, java-repo, python-repo, rust-fullstack-repo]
+        include:
+          - os: macos-latest
+            example: go-repo
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v6
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version: "1.25"
 
       - name: Cache Bazel
         uses: actions/cache@v4
         with:
           path: ~/.cache/bazel
-          key: bazel-onboarding-${{ matrix.example }}-${{ hashFiles('MODULE.bazel.lock', '.bazelversion') }}
-          restore-keys: bazel-onboarding-${{ matrix.example }}-
-
-      - name: Install Bazelisk
-        run: |
-          sudo curl -fsSL -o /usr/local/bin/bazel \
-            https://github.com/bazelbuild/bazelisk/releases/latest/download/bazelisk-linux-amd64
-          sudo chmod +x /usr/local/bin/bazel
+          key: bazel-onboarding-${{ matrix.os }}-${{ matrix.example }}-${{ hashFiles('MODULE.bazel.lock', '.bazelversion') }}
+          restore-keys: bazel-onboarding-${{ matrix.os }}-${{ matrix.example }}-
 
       - uses: actions/setup-node@v6
         with:
           node-version: "22"
 
-      - name: Install pnpm
-        run: npm install -g pnpm@9.15.4
+      # @bazel/bazelisk gives a cross-OS `bazel`; gavel judge shells out to it to
+      # run the analyzer aspects. pnpm is for the frontend example's coverage.
+      - name: Install Bazelisk and pnpm
+        run: npm install -g @bazel/bazelisk pnpm@9.15.4
 
       # gavel collects TypeScript coverage by running `npx vitest run` in the
       # project directory, so a frontend example needs its host node_modules.
@@ -195,16 +201,19 @@ jobs:
             pnpm install --frozen-lockfile
           fi
 
-      - name: Build gavel CLI
-        run: bazel build //apps/cli/cmd/gavel
+      # Build the binary the way it ships — standalone, CGO-free, no runfiles — so
+      # this exercises the artifact a user downloads. goreleaser stays the tool of
+      # record for real releases (hack/release.sh).
+      - name: Build the distributed gavel binary
+        run: CGO_ENABLED=0 go build -o "$RUNNER_TEMP/gavel" ./apps/cli/cmd/gavel
 
-      - name: Judge the example and assert every analyzer ran
+      - name: Onboard and judge with the distributed binary
         run: |
-          gavel="$PWD/bazel-bin/apps/cli/cmd/gavel/gavel_/gavel"
           cd "examples/${{ matrix.example }}"
-          "$gavel" judge --json > result.json || true
+          "$RUNNER_TEMP/gavel" init --from=.gavel/gavel.yaml --force
+          "$RUNNER_TEMP/gavel" judge --json > result.json || true
           echo "tool_execution per project:"
           jq -r '.projects[] | "  \(.name): \([.rulings[] | select(.subtype == "tool_execution").passed][0])"' result.json
           jq -e '([.projects[].rulings[] | select(.subtype == "tool_execution")]) as $te
                  | ($te | length > 0) and ($te | all(.passed == true))' result.json > /dev/null \
-            || { echo "::error::an analyzer failed to run (tool_execution) in ${{ matrix.example }}"; exit 1; }
+            || { echo "::error::an analyzer failed to run (tool_execution) in ${{ matrix.example }} on ${{ matrix.os }}"; exit 1; }

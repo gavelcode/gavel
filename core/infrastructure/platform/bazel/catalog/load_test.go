@@ -8,40 +8,27 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestLoadFromRunfiles_ReadsPublishedCatalog(t *testing.T) {
-	parsed, err := loadFromRunfiles()
+func TestEmbeddedCatalog_IsBundledIntoTheBinary(t *testing.T) {
+	assert.NotEmpty(t, embeddedCatalog, "catalog.yaml must be embedded so the standalone binary carries it")
+}
+
+func TestLoadEmbedded_ParsesTheBundledCatalog(t *testing.T) {
+	parsed, err := loadEmbedded()
 
 	require.NoError(t, err)
 	assert.NotEmpty(t, parsed.languages)
 	assert.NotEmpty(t, parsed.aspectsBzl)
-	assert.NotEmpty(t, parsed.languages["go"], "the published catalog must list go tools")
+	assert.NotEmpty(t, parsed.languages["go"], "the bundled catalog must list go tools")
+	assert.NotEmpty(t, parsed.languages["rust"], "the bundled catalog must list rust tools")
 }
 
-func TestActive_LoadsLazilyFromRunfiles(t *testing.T) {
+func TestActive_LoadsLazily(t *testing.T) {
 	loaded = nil
 	t.Cleanup(func() { loaded = nil })
 
 	got := active()
 
 	assert.NotEmpty(t, got.languages)
-}
-
-func TestLoadCatalog_ResolveError(t *testing.T) {
-	_, err := loadCatalog(
-		func(string) (string, error) { return "", errors.New("missing runfile") },
-		func(string) ([]byte, error) { return nil, nil },
-	)
-
-	assert.ErrorContains(t, err, "locate")
-}
-
-func TestLoadCatalog_ReadError(t *testing.T) {
-	_, err := loadCatalog(
-		func(string) (string, error) { return "/some/path", nil },
-		func(string) ([]byte, error) { return nil, errors.New("read failed") },
-	)
-
-	assert.ErrorContains(t, err, "read")
 }
 
 func TestActive_PanicsWhenTheCatalogCannotLoad(t *testing.T) {

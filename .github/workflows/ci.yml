@@ -147,6 +147,9 @@ jobs:
       - name: CLI spec drift (flags.gen.go)
         run: make clispec-check
 
+      - name: Catalog drift (embedded gavel_tools catalog)
+        run: make catalog-check
+
   # Onboarding proof: gavel must run cleanly on a fresh project. Each example is
   # its own Bazel workspace pinning the published gavel_tools; we build gavel
   # from source and assert every analyzer actually ran. The examples

@@ -6,7 +6,9 @@ V1_GEN_DIR := $(V1_DIR)/gen
 V1_SPEC := openapi/v1/openapi.yaml
 V1_BUNDLE := /tmp/gavel-openapi-bundled.yaml
 
-.PHONY: openapi-bundle openapi-gen openapi-gen-ts openapi-check clispec-gen clispec-check e2e release
+CATALOG_DST := core/infrastructure/platform/bazel/catalog/catalog.yaml
+
+.PHONY: openapi-bundle openapi-gen openapi-gen-ts openapi-check clispec-gen clispec-check catalog-sync catalog-check e2e release
 
 # openapi-bundle uses @redocly/cli to inline the split spec under openapi/v1/
 # into a single self-contained YAML. Both code generators (Go via oapi-codegen,
@@ -31,6 +33,17 @@ clispec-check: clispec-gen
 	@git diff --exit-code -- core/userinterface/cli/*/flags.gen.go \
 		|| (echo "clispec drift detected: run 'make clispec-gen' and commit"; exit 1)
 	bazel test //apps/cli/test/integration/clispec/...
+
+# catalog-sync vendors gavel_tools' tool catalog into the CLI so the distributed
+# standalone binary carries it (go:embed) instead of reading it from Bazel
+# runfiles it does not ship. The pinned gavel_tools version is the source of truth.
+catalog-sync:
+	@bazel build @gavel_tools//lint:catalog.yaml >/dev/null 2>&1
+	@cp "$$(bazel info execution_root)/$$(bazel cquery --output=files @gavel_tools//lint:catalog.yaml 2>/dev/null)" $(CATALOG_DST)
+
+catalog-check: catalog-sync
+	@git diff --exit-code -- $(CATALOG_DST) \
+		|| (echo "catalog drift detected: run 'make catalog-sync' and commit"; exit 1)
 
 e2e:
 	bazel build //apps/server/cmd/gavel-server

@@ -12,21 +12,32 @@ func ClassifyIdentifiers(current, previous []string) IdentifierResult {
 		prevSet[id] = true
 	}
 
+	currentSet := make(map[string]bool, len(current))
+	for _, id := range current {
+		currentSet[id] = true
+	}
+
 	newIDs := make(map[string]bool)
 	existingCount := 0
-	for _, id := range current {
+	for id := range currentSet {
 		if prevSet[id] {
 			existingCount++
-			delete(prevSet, id)
 		} else {
 			newIDs[id] = true
+		}
+	}
+
+	resolvedCount := 0
+	for id := range prevSet {
+		if !currentSet[id] {
+			resolvedCount++
 		}
 	}
 
 	return IdentifierResult{
 		newIdentifiers: newIDs,
 		existingCount:  existingCount,
-		resolvedCount:  len(prevSet),
+		resolvedCount:  resolvedCount,
 	}
 }
 

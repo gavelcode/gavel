@@ -173,13 +173,22 @@ func TestClassifyIdentifiers(t *testing.T) {
 			wantNewIDs:        map[string]bool{},
 		},
 		{
-			name:              "duplicates input current inflate counts when not deduplicated",
+			name:              "duplicate current ids are deduplicated as a set",
 			current:           []string{"a", "b", "a"},
 			previous:          []string{"a"},
-			wantNewCount:      2,
+			wantNewCount:      1,
 			wantExistingCount: 1,
 			wantResolvedCount: 0,
-			wantNewIDs:        map[string]bool{"a": true, "b": true},
+			wantNewIDs:        map[string]bool{"b": true},
+		},
+		{
+			name:              "repeated existing id counts once and is never new",
+			current:           []string{"a", "a", "a"},
+			previous:          []string{"a"},
+			wantNewCount:      0,
+			wantExistingCount: 1,
+			wantResolvedCount: 0,
+			wantNewIDs:        map[string]bool{},
 		},
 	}
 

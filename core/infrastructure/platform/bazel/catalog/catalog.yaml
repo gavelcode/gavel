@@ -18,7 +18,10 @@ languages:
     - name: golangci-lint
       aspect: go_golangci_lint_submission_aspect
       sarif_suffix: .golangci.sarif
-      build_flags: ["--@rules_go//go/config:export_stdlib=True"]
+      # Canonical repo name (@@rules_go+) so this flag resolves even when the
+      # consumer aliases rules_go under a different apparent name — e.g. gazelle's
+      # io_bazel_rules_go, where a plain --@rules_go flag fails to resolve.
+      build_flags: ["--@@rules_go+//go/config:export_stdlib=True"]
       binary: golangci_lint_binary
     - name: archtest
       aspect: go_archtest_submission_aspect

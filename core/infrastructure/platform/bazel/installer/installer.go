@@ -24,7 +24,7 @@ const moduleInclude = `include("//:.gavel/gavel.MODULE.bazel")`
 
 const GavelBazelrc = ".gavel/gavel.bazelrc"
 const GavelModule = ".gavel/gavel.MODULE.bazel"
-const gavelToolsVersion = "0.3.4"
+const gavelToolsVersion = "0.3.5"
 const gavelDepLine = `bazel_dep(name = "gavel_tools", version = "` + gavelToolsVersion + `")`
 
 type Installer struct{}

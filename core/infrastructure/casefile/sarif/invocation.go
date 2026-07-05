@@ -7,5 +7,6 @@ type invocation struct {
 }
 
 type notification struct {
+	Level   string  `json:"level"`
 	Message message `json:"message"`
 }

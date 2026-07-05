@@ -8,7 +8,10 @@ import (
 	"github.com/usegavel/gavel/core/application/casefile/evidencedto"
 )
 
-const unknownTool = "unknown"
+const (
+	unknownTool = "unknown"
+	errorLevel  = "error"
+)
 
 func (*Parser) ParseToolExecutions(data []byte) ([]evidencedto.ToolFailure, error) {
 	if len(data) == 0 {
@@ -40,18 +43,36 @@ func (*Parser) ParseToolExecutions(data []byte) ([]evidencedto.ToolFailure, erro
 }
 
 func isConfigurationOnly(inv invocation) bool {
-	return len(inv.ToolExecutionNotifications) == 0 && len(inv.ToolConfigurationNotifications) > 0
+	if len(inv.ToolExecutionNotifications) > 0 || len(inv.ToolConfigurationNotifications) == 0 {
+		return false
+	}
+	return !hasErrorNotification(inv.ToolConfigurationNotifications)
+}
+
+func hasErrorNotification(notes []notification) bool {
+	for _, note := range notes {
+		if strings.EqualFold(strings.TrimSpace(note.Level), errorLevel) {
+			return true
+		}
+	}
+	return false
 }
 
 func invocationReason(inv invocation) string {
-	reasons := make([]string, 0, len(inv.ToolExecutionNotifications))
-	for _, note := range inv.ToolExecutionNotifications {
-		if text := strings.TrimSpace(note.Message.Text); text != "" {
-			reasons = append(reasons, text)
-		}
-	}
+	reasons := make([]string, 0, len(inv.ToolExecutionNotifications)+len(inv.ToolConfigurationNotifications))
+	reasons = appendNotificationTexts(reasons, inv.ToolExecutionNotifications)
+	reasons = appendNotificationTexts(reasons, inv.ToolConfigurationNotifications)
 	if len(reasons) == 0 {
 		return "analyzer reported an unsuccessful run"
 	}
 	return strings.Join(reasons, "; ")
+}
+
+func appendNotificationTexts(reasons []string, notes []notification) []string {
+	for _, note := range notes {
+		if text := strings.TrimSpace(note.Message.Text); text != "" {
+			reasons = append(reasons, text)
+		}
+	}
+	return reasons
 }

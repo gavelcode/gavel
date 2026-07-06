@@ -7,12 +7,10 @@ go_library(
     srcs = [
         "connection.go",
         "db.go",
+        "seed.go",
         "tx.go",
     ],
-    embedsrcs = [
-        "seed.sql",
-        "migrations/00001_bootstrap.sql",
-    ],
+    embedsrcs = ["migrations/00001_bootstrap.sql"],
     importpath = "github.com/usegavel/gavel/core/infrastructure/platform/database",
     visibility = ["//visibility:public"],
     deps = [

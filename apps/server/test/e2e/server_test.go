@@ -24,7 +24,7 @@ import (
 
 const (
 	adminEmail    = "admin@gavel.local"
-	adminPassword = "changeme"
+	adminPassword = testkit.SeedAdminPassword
 	newPassword   = "e2e-test-password-123!"
 )
 

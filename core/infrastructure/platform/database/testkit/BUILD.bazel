@@ -6,6 +6,7 @@ go_library(
     importpath = "github.com/usegavel/gavel/core/infrastructure/platform/database/testkit",
     visibility = ["//visibility:public"],
     deps = [
+        "//core/infrastructure/iam/argon2",
         "//core/infrastructure/platform/database",
         "@com_github_stretchr_testify//require",
         "@com_github_testcontainers_testcontainers_go//:testcontainers-go",

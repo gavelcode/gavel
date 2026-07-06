@@ -70,7 +70,10 @@ SPA fallback, and middleware live under
   versions in `goose_db_version` so re-runs are a no-op. `00001_bootstrap.sql`
   is the baseline schema; later changes are new numbered migrations, never
   edits to an applied one.
-- **First-run tenant + admin seeding.** `seed.sql` (applied by
-  `database.Migrate()` only on a fresh database) creates the `default`
-  tenant and admin `admin@gavel.local` (password `changeme`,
-  `must_change_password=true`). There is no Go bootstrap function.
+- **First-run tenant + admin seeding.** On first boot (no users yet),
+  `gavel-server serve` seeds the `default` tenant and admin `admin@gavel.local`
+  (`must_change_password=true`); `migrate` stays schema-only and never seeds.
+  The password comes from `GAVEL_ADMIN_PASSWORD` or is generated and logged once
+  after the seed commits; the composition root hashes it (random Argon2id salt)
+  and passes the hash to `database.Seed`, which stays free of IAM and crypto
+  concerns and reports whether it seeded. No fixed hash is shipped.

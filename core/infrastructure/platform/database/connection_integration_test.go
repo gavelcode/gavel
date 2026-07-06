@@ -2,6 +2,7 @@ package database_test
 
 import (
 	"context"
+	"errors"
 	"strings"
 	"testing"
 
@@ -24,9 +25,53 @@ func TestOpenAndMigrateIdempotent(t *testing.T) {
 	require.NoError(t, database.Migrate(ctx, db))
 }
 
-func TestSeedIdempotent(t *testing.T) {
-	db := testkit.TestDB(t)
-	require.NoError(t, database.Seed(db))
+func TestSeedInsertsAdminWithGivenHash(t *testing.T) {
+	testDB := testkit.TestDB(t)
+	_, err := testDB.Exec("DELETE FROM iam_users")
+	require.NoError(t, err)
+
+	const hash = "$argon2id$v=19$m=65536,t=3,p=4$YWJjZGVmZ2hpamts$c29tZWtleXZhbHVlaGVy"
+	seeded, err := database.Seed(context.Background(), testDB, func() (string, error) { return hash, nil })
+	require.NoError(t, err)
+	assert.True(t, seeded, "Seed must report it seeded a fresh database")
+
+	var (
+		stored     string
+		mustChange bool
+		active     bool
+		role       string
+	)
+	require.NoError(t, testDB.QueryRow(
+		"SELECT password_hash, must_change_password, is_active, role FROM iam_users WHERE email = 'admin@gavel.local'").
+		Scan(&stored, &mustChange, &active, &role))
+	assert.Equal(t, hash, stored, "the seeded admin must use the hash the caller supplied")
+	assert.True(t, mustChange, "the seeded admin must be forced to change the password on first login")
+	assert.True(t, active, "the seeded admin must be active")
+	assert.Equal(t, "admin", role, "the seeded admin must have the admin role")
+
+	var tenantStatus string
+	require.NoError(t, testDB.QueryRow(
+		"SELECT status FROM iam_tenants WHERE slug = 'default'").Scan(&tenantStatus))
+	assert.Equal(t, "active", tenantStatus, "the seeded default tenant must be active")
+}
+
+func TestSeedSkipsWhenUsersExist(t *testing.T) {
+	testDB := testkit.TestDB(t)
+
+	var before string
+	require.NoError(t, testDB.QueryRow(
+		"SELECT password_hash FROM iam_users WHERE email = 'admin@gavel.local'").Scan(&before))
+
+	seeded, err := database.Seed(context.Background(), testDB, func() (string, error) {
+		return "", errors.New("adminHash must not be called when a user already exists")
+	})
+	require.NoError(t, err)
+	assert.False(t, seeded, "Seed must report it did not seed when a user already exists")
+
+	var after string
+	require.NoError(t, testDB.QueryRow(
+		"SELECT password_hash FROM iam_users WHERE email = 'admin@gavel.local'").Scan(&after))
+	assert.Equal(t, before, after, "Seed must not overwrite the admin when users already exist")
 }
 
 func TestMigrateRecordsSchemaVersion(t *testing.T) {
@@ -35,19 +80,6 @@ func TestMigrateRecordsSchemaVersion(t *testing.T) {
 	version, err := goose.GetDBVersion(db.DB)
 	require.NoError(t, err, "Migrate must track applied migrations")
 	assert.GreaterOrEqual(t, version, int64(1), "the bootstrap migration must be recorded")
-}
-
-func TestMigrateDoesNotReseedExistingDB(t *testing.T) {
-	testDB := testkit.TestDB(t)
-
-	_, err := testDB.Exec("DELETE FROM iam_users")
-	require.NoError(t, err)
-
-	require.NoError(t, database.Migrate(context.Background(), testDB))
-
-	var count int
-	require.NoError(t, testDB.QueryRow("SELECT count(*) FROM iam_users").Scan(&count))
-	assert.Zero(t, count, "Migrate must not re-seed a database that already exists")
 }
 
 func TestBeginTxAndCommit(t *testing.T) {
@@ -123,7 +155,7 @@ func TestMigrateReturnsErrorOnClosedDB(t *testing.T) {
 
 	err = database.Migrate(ctx, db)
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "check fresh db")
+	assert.Contains(t, err.Error(), "apply migrations")
 }
 
 func TestOpenReturnsErrorOnUnreachableHost(t *testing.T) {
@@ -186,9 +218,9 @@ func TestSeedReturnsErrorOnMissingTable(t *testing.T) {
 	require.NoError(t, err)
 	t.Cleanup(func() { _ = freshDB.Close() })
 
-	err = database.Seed(freshDB)
+	_, err = database.Seed(ctx, freshDB, func() (string, error) { return "any-hash", nil })
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "apply seed")
+	assert.Contains(t, err.Error(), "count users")
 }
 
 func TestTxRebindNonPostgres(t *testing.T) {

@@ -14,12 +14,12 @@ import (
 )
 
 type TenantRepo struct {
-	db *database.DB
+	db database.Querier
 }
 
 var _ service.TenantRepository = (*TenantRepo)(nil)
 
-func NewTenantRepo(db *database.DB) *TenantRepo {
+func NewTenantRepo(db database.Querier) *TenantRepo {
 	return &TenantRepo{db: db}
 }
 

@@ -19,7 +19,8 @@ var testTime = time.Date(2026, time.June, 4, 12, 0, 0, 0, time.UTC)
 func newHandler() (*provision.Handler, *memiam.TenantRepository, *memiam.UserRepository) {
 	tenants := memiam.NewTenantRepository()
 	users := memiam.NewUserRepository()
-	return provision.NewHandler(tenants, users, memiam.NewFakeHasher()), tenants, users
+	provisioner := memiam.NewProvisioner(tenants, users)
+	return provision.NewHandler(provisioner, memiam.NewFakeHasher()), tenants, users
 }
 
 func TestExecuteProvisionsTenantWithAdmin(t *testing.T) {

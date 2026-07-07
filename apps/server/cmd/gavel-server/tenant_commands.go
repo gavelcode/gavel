@@ -58,7 +58,7 @@ func provisionTenantCmd() *cobra.Command {
 			}
 
 			handler := tenantprovision.NewHandler(
-				pgiam.NewTenantRepo(dbConn), pgiam.NewUserRepo(dbConn), argon2.New(rand.Reader))
+				pgiam.NewTenantProvisioner(dbConn), argon2.New(rand.Reader))
 			provisionCmd, err := tenantprovision.NewCommand(
 				tenantSlug, displayName, adminEmail, adminName, password, time.Now().UTC())
 			if err != nil {

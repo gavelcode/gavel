@@ -15,12 +15,12 @@ import (
 )
 
 type UserRepo struct {
-	db *database.DB
+	db database.Querier
 }
 
 var _ service.UserRepository = (*UserRepo)(nil)
 
-func NewUserRepo(db *database.DB) *UserRepo {
+func NewUserRepo(db database.Querier) *UserRepo {
 	return &UserRepo{db: db}
 }
 

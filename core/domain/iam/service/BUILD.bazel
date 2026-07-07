@@ -5,6 +5,7 @@ go_library(
     srcs = [
         "apitoken_repository.go",
         "hasher.go",
+        "provisioner.go",
         "secret_generator.go",
         "session_repository.go",
         "tenant_repository.go",

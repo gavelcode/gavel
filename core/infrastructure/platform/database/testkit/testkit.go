@@ -14,20 +14,30 @@ import (
 	tcpg "github.com/testcontainers/testcontainers-go/modules/postgres"
 	"github.com/testcontainers/testcontainers-go/wait"
 
+	tenantprovision "github.com/usegavel/gavel/core/application/iam/tenant/provision"
+	usermodel "github.com/usegavel/gavel/core/domain/iam/model/user"
 	"github.com/usegavel/gavel/core/infrastructure/iam/argon2"
+	pgiam "github.com/usegavel/gavel/core/infrastructure/iam/postgres"
 	"github.com/usegavel/gavel/core/infrastructure/platform/database"
 )
 
 // SeedAdminPassword is the plaintext the seeded admin is given in tests, so
 // suites that exercise login can authenticate with a known credential.
-const SeedAdminPassword = "changeme"
+const (
+	SeedAdminPassword        = "changeme"
+	defaultTenantSlug        = "default"
+	defaultTenantDisplayName = "Default"
+	defaultAdminEmail        = "admin@gavel.local"
+	defaultAdminDisplayName  = "Administrator"
+)
 
 var (
 	once          sync.Once
 	sharedDB      *database.DB
 	sharedDSN     string
-	seedAdminHash string
+	seedAdminHash usermodel.PasswordHash
 	initErr       error
+	seedTime      = time.Date(2026, time.January, 1, 0, 0, 0, 0, time.UTC)
 )
 
 const (
@@ -35,10 +45,20 @@ const (
 	containerStartTimeout = 30 * time.Second
 
 	// testIsolationAdvisoryLock serializes per-test truncate+seed on the reused
-	// container. It must stay distinct from database.seedAdvisoryLock (8723452),
-	// which Seed takes underneath, or the two would contend and hang.
+	// container so parallel test packages don't race the shared schema.
 	testIsolationAdvisoryLock = 8723451
 )
+
+// cachedHasher hands provision the Argon2 hash of SeedAdminPassword computed once
+// at startup, so seeding a fresh database per test doesn't pay the deliberately
+// slow Argon2 cost on every TestDB call. Verify still uses real Argon2, so a
+// login test authenticates against a genuine hash.
+type cachedHasher struct{ hash usermodel.PasswordHash }
+
+func (h cachedHasher) Hash(string) (usermodel.PasswordHash, error) { return h.hash, nil }
+func (h cachedHasher) Verify(plain string, hash usermodel.PasswordHash) (bool, error) {
+	return argon2.New(rand.Reader).Verify(plain, hash)
+}
 
 const truncateSQL = `
 	TRUNCATE gavelspace_projects, gavelspaces,
@@ -70,7 +90,12 @@ func TestDB(t *testing.T) *database.DB {
 	})
 	_, err = sharedDB.ExecContext(ctx, truncateSQL)
 	require.NoError(t, err)
-	_, err = database.Seed(ctx, sharedDB, func() (string, error) { return seedAdminHash, nil })
+
+	handler := tenantprovision.NewHandler(pgiam.NewTenantProvisioner(sharedDB), cachedHasher{hash: seedAdminHash})
+	cmd, err := tenantprovision.NewCommand(
+		defaultTenantSlug, defaultTenantDisplayName, defaultAdminEmail, defaultAdminDisplayName, SeedAdminPassword, seedTime)
+	require.NoError(t, err)
+	_, err = handler.Execute(ctx, cmd)
 	require.NoError(t, err)
 	return sharedDB
 }
@@ -90,12 +115,7 @@ func initialize() {
 		fmt.Fprintf(os.Stderr, "WARN: %v\n", initErr)
 		return
 	}
-	hash, err := argon2.New(rand.Reader).Hash(SeedAdminPassword)
-	if err != nil {
-		initErr = err
-		return
-	}
-	seedAdminHash = hash.String()
+	seedAdminHash, initErr = argon2.New(rand.Reader).Hash(SeedAdminPassword)
 }
 
 func startPostgresContainer(ctx context.Context) (*database.DB, string, error) {

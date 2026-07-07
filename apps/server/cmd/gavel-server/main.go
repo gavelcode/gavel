@@ -42,6 +42,7 @@ import (
 	iamlogout "github.com/usegavel/gavel/core/application/iam/logout"
 	iamresolveprincipal "github.com/usegavel/gavel/core/application/iam/resolveprincipal"
 	iamrevoketoken "github.com/usegavel/gavel/core/application/iam/revoketoken"
+	tenantprovision "github.com/usegavel/gavel/core/application/iam/tenant/provision"
 	pleadingfile "github.com/usegavel/gavel/core/application/pleading/file"
 	pleadingget "github.com/usegavel/gavel/core/application/pleading/get"
 	pleadinglist "github.com/usegavel/gavel/core/application/pleading/list"
@@ -53,6 +54,7 @@ import (
 	"github.com/usegavel/gavel/core/application/project/updatelanguages"
 	"github.com/usegavel/gavel/core/application/project/updatequalitygate"
 	searchquery "github.com/usegavel/gavel/core/application/supporting/search"
+	"github.com/usegavel/gavel/core/domain/iam/model/tenant"
 	casefilepostgres "github.com/usegavel/gavel/core/infrastructure/casefile/postgres"
 	gavelspacepostgres "github.com/usegavel/gavel/core/infrastructure/gavelspace/postgres"
 	"github.com/usegavel/gavel/core/infrastructure/iam/argon2"
@@ -75,7 +77,9 @@ import (
 )
 
 const (
-	defaultTenantSlug = "default"
+	defaultTenantSlug        = "default"
+	defaultTenantDisplayName = "Default"
+	defaultAdminEmail        = "admin@gavel.local"
 
 	readHeaderTimeout = 10 * time.Second
 	writeTimeout      = 60 * time.Second
@@ -156,35 +160,46 @@ func openAndMigrateDB(ctx context.Context, cfg *config.Config) (*database.DB, er
 	return dbConn, nil
 }
 
-// seedFirstAdmin creates the first admin on a fresh database. Only serve does
-// this — migrate stays schema-only, so a migration job never logs a credential
-// to a stream nobody reads. The password comes from GAVEL_ADMIN_PASSWORD, or a
-// strong one is generated; it is resolved and hashed inside the seed's
-// first-boot gate, so it happens exactly once — on the replica that actually
-// seeds — and never on a re-run. A generated password is logged only after the
-// seed commits, so the operator never copies a credential that was rolled back.
+// seedFirstAdmin provisions the default tenant and its admin on a fresh
+// database. Only serve does this — migrate stays schema-only, so a migration
+// job never logs a credential. It short-circuits when the default tenant is
+// already there, so a re-boot neither generates a password nor pays the Argon2
+// cost. The password comes from GAVEL_ADMIN_PASSWORD or is generated; provision
+// commits the tenant and admin atomically, and the generated password is logged
+// only after that commit. Concurrent replicas racing a fresh database serialize
+// on the tenant's unique slug: the loser gets ErrSlugTaken and no-ops.
 func seedFirstAdmin(ctx context.Context, dbConn *database.DB, cfg *config.Config, logger *slog.Logger) error {
-	var generatedPassword string
-	seeded, err := database.Seed(ctx, dbConn, func() (string, error) {
-		password, generated, err := firstadmin.ResolvePassword(cfg.AdminPassword, rand.Reader)
-		if err != nil {
-			return "", err
-		}
-		if generated {
-			generatedPassword = password
-		}
-		hash, err := argon2.New(rand.Reader).Hash(password)
-		if err != nil {
-			return "", fmt.Errorf("hash admin password: %w", err)
-		}
-		return hash.String(), nil
-	})
+	slug, err := tenant.NewSlug(defaultTenantSlug)
 	if err != nil {
 		return err
 	}
-	if seeded && generatedPassword != "" {
+	if _, err := pgiam.NewTenantRepo(dbConn).BySlug(ctx, slug); err == nil {
+		return nil
+	} else if !errors.Is(err, tenant.ErrTenantNotFound) {
+		return fmt.Errorf("check default tenant: %w", err)
+	}
+
+	password, generated, err := firstadmin.ResolvePassword(cfg.AdminPassword, rand.Reader)
+	if err != nil {
+		return err
+	}
+
+	handler := tenantprovision.NewHandler(pgiam.NewTenantProvisioner(dbConn), argon2.New(rand.Reader))
+	cmd, err := tenantprovision.NewCommand(
+		defaultTenantSlug, defaultTenantDisplayName, defaultAdminEmail, defaultAdminDisplayName, password, time.Now().UTC())
+	if err != nil {
+		return err
+	}
+	if _, err := handler.Execute(ctx, cmd); err != nil {
+		if errors.Is(err, tenant.ErrSlugTaken) {
+			return nil
+		}
+		return err
+	}
+
+	if generated {
 		logger.Warn("GAVEL_ADMIN_PASSWORD not set; generated a one-time initial admin password, change it after first login",
-			"admin_password", generatedPassword)
+			"admin_password", password)
 	}
 	return nil
 }

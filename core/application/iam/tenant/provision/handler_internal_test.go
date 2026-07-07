@@ -34,17 +34,15 @@ func mustHash(t *testing.T) user.PasswordHash {
 }
 
 func TestNewHandlerPanicsOnNilDependencies(t *testing.T) {
-	tenants := &stubTenantRepo{}
-	users := &stubUserRepo{}
+	provisioner := &stubProvisioner{}
 	hasher := &stubHasher{}
 
-	assert.Panics(t, func() { NewHandler(nil, users, hasher) })
-	assert.Panics(t, func() { NewHandler(tenants, nil, hasher) })
-	assert.Panics(t, func() { NewHandler(tenants, users, nil) })
+	assert.Panics(t, func() { NewHandler(nil, hasher) })
+	assert.Panics(t, func() { NewHandler(provisioner, nil) })
 }
 
 func TestExecuteReturnsErrorOnNewTenantDomainFailure(t *testing.T) {
-	handler := NewHandler(&stubTenantRepo{}, &stubUserRepo{}, &stubHasher{hash: mustHash(t)})
+	handler := NewHandler(&stubProvisioner{}, &stubHasher{hash: mustHash(t)})
 	cmd := validCommand()
 	cmd.displayName = ""
 
@@ -54,7 +52,7 @@ func TestExecuteReturnsErrorOnNewTenantDomainFailure(t *testing.T) {
 }
 
 func TestExecuteReturnsErrorOnHashFailure(t *testing.T) {
-	handler := NewHandler(&stubTenantRepo{}, &stubUserRepo{}, &stubHasher{err: errors.New("hasher broken")})
+	handler := NewHandler(&stubProvisioner{}, &stubHasher{err: errors.New("hasher broken")})
 
 	_, err := handler.Execute(context.Background(), validCommand())
 	require.Error(t, err)
@@ -62,7 +60,7 @@ func TestExecuteReturnsErrorOnHashFailure(t *testing.T) {
 }
 
 func TestExecuteReturnsErrorOnNewUserDomainFailure(t *testing.T) {
-	handler := NewHandler(&stubTenantRepo{}, &stubUserRepo{}, &stubHasher{hash: mustHash(t)})
+	handler := NewHandler(&stubProvisioner{}, &stubHasher{hash: mustHash(t)})
 	cmd := validCommand()
 	cmd.adminDisplayName = ""
 
@@ -71,43 +69,18 @@ func TestExecuteReturnsErrorOnNewUserDomainFailure(t *testing.T) {
 	assert.Contains(t, err.Error(), "new admin user")
 }
 
-func TestExecuteReturnsErrorOnTenantSaveFailure(t *testing.T) {
-	handler := NewHandler(&stubTenantRepo{saveErr: errors.New("tenant save broken")}, &stubUserRepo{}, &stubHasher{hash: mustHash(t)})
+func TestExecuteReturnsErrorOnProvisionFailure(t *testing.T) {
+	handler := NewHandler(&stubProvisioner{err: errors.New("provision broken")}, &stubHasher{hash: mustHash(t)})
 
 	_, err := handler.Execute(context.Background(), validCommand())
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "save tenant")
+	assert.Contains(t, err.Error(), "provision tenant")
 }
 
-func TestExecuteReturnsErrorOnUserSaveFailure(t *testing.T) {
-	handler := NewHandler(&stubTenantRepo{}, &stubUserRepo{saveErr: errors.New("user save broken")}, &stubHasher{hash: mustHash(t)})
+type stubProvisioner struct{ err error }
 
-	_, err := handler.Execute(context.Background(), validCommand())
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "save admin user")
-}
-
-type stubTenantRepo struct{ saveErr error }
-
-func (r *stubTenantRepo) Save(_ context.Context, _ tenant.Tenant) error { return r.saveErr }
-func (r *stubTenantRepo) ByID(_ context.Context, _ tenant.TenantID) (tenant.Tenant, error) {
-	return tenant.Tenant{}, nil
-}
-func (r *stubTenantRepo) BySlug(_ context.Context, _ tenant.Slug) (tenant.Tenant, error) {
-	return tenant.Tenant{}, nil
-}
-
-type stubUserRepo struct{ saveErr error }
-
-func (r *stubUserRepo) Save(_ context.Context, _ user.User) error { return r.saveErr }
-func (r *stubUserRepo) ByID(_ context.Context, _ user.UserID) (user.User, error) {
-	return user.User{}, nil
-}
-func (r *stubUserRepo) ByEmail(_ context.Context, _ tenant.TenantID, _ user.Email) (user.User, error) {
-	return user.User{}, nil
-}
-func (r *stubUserRepo) CountByTenant(_ context.Context, _ tenant.TenantID) (int, error) {
-	return 0, nil
+func (p *stubProvisioner) Provision(_ context.Context, _ tenant.Tenant, _ user.User) error {
+	return p.err
 }
 
 type stubHasher struct {

@@ -107,11 +107,6 @@ func (r *UserRepo) scanOne(ctx context.Context, where string, args ...any) (user
 		return usermodel.User{}, fmt.Errorf("hydrate password hash: %w", err)
 	}
 
-	var lastLogin = lastLoginAt.Time
-	if !lastLoginAt.Valid {
-		var zero = lastLogin
-		lastLogin = zero
-	}
-
-	return usermodel.ReconstituteUser(userID, tenantID, email, displayName, role, hash, mustChange, isActive, createdAt.Time, lastLogin)
+	return usermodel.ReconstituteUser(
+		userID, tenantID, email, displayName, role, hash, mustChange, isActive, createdAt.Time, lastLoginAt.Time)
 }

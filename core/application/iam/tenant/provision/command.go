@@ -16,16 +16,16 @@ type Command struct {
 }
 
 func NewCommand(slug, displayName, adminEmail, adminDisplayName, adminPassword string, occurredAt time.Time) (Command, error) {
-	fields := map[string]string{
-		"slug":             slug,
-		"displayName":      displayName,
-		"adminEmail":       adminEmail,
-		"adminDisplayName": adminDisplayName,
-		"adminPassword":    adminPassword,
+	required := []struct{ name, value string }{
+		{"slug", slug},
+		{"displayName", displayName},
+		{"adminEmail", adminEmail},
+		{"adminDisplayName", adminDisplayName},
+		{"adminPassword", adminPassword},
 	}
-	for name, value := range fields {
-		if strings.TrimSpace(value) == "" {
-			return Command{}, fmt.Errorf("%w: %s must not be empty", ErrInvalidCommand, name)
+	for _, field := range required {
+		if strings.TrimSpace(field.value) == "" {
+			return Command{}, fmt.Errorf("%w: %s must not be empty", ErrInvalidCommand, field.name)
 		}
 	}
 	if occurredAt.IsZero() {

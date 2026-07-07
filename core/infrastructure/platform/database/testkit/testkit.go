@@ -17,19 +17,14 @@ import (
 	tenantprovision "github.com/usegavel/gavel/core/application/iam/tenant/provision"
 	usermodel "github.com/usegavel/gavel/core/domain/iam/model/user"
 	"github.com/usegavel/gavel/core/infrastructure/iam/argon2"
+	"github.com/usegavel/gavel/core/infrastructure/iam/bootstrap"
 	pgiam "github.com/usegavel/gavel/core/infrastructure/iam/postgres"
 	"github.com/usegavel/gavel/core/infrastructure/platform/database"
 )
 
 // SeedAdminPassword is the plaintext the seeded admin is given in tests, so
 // suites that exercise login can authenticate with a known credential.
-const (
-	SeedAdminPassword        = "changeme"
-	defaultTenantSlug        = "default"
-	defaultTenantDisplayName = "Default"
-	defaultAdminEmail        = "admin@gavel.local"
-	defaultAdminDisplayName  = "Administrator"
-)
+const SeedAdminPassword = "changeme"
 
 var (
 	once          sync.Once
@@ -93,7 +88,8 @@ func TestDB(t *testing.T) *database.DB {
 
 	handler := tenantprovision.NewHandler(pgiam.NewTenantProvisioner(sharedDB), cachedHasher{hash: seedAdminHash})
 	cmd, err := tenantprovision.NewCommand(
-		defaultTenantSlug, defaultTenantDisplayName, defaultAdminEmail, defaultAdminDisplayName, SeedAdminPassword, seedTime)
+		bootstrap.DefaultTenantSlug, bootstrap.DefaultTenantDisplayName, bootstrap.DefaultAdminEmail,
+		bootstrap.DefaultAdminDisplayName, SeedAdminPassword, seedTime)
 	require.NoError(t, err)
 	_, err = handler.Execute(ctx, cmd)
 	require.NoError(t, err)

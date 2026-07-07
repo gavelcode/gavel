@@ -8,10 +8,10 @@ import (
 	"github.com/usegavel/gavel/core/domain/iam/service"
 )
 
-// Provisioner is the in-memory TenantProvisioner for tests. It saves the tenant
-// then the admin, stopping on the first error, so a rejected tenant (e.g. a
-// taken slug) never leaves a half-provisioned admin behind — the same
-// all-or-nothing contract the Postgres provisioner gives via a transaction.
+// Provisioner is the in-memory TenantProvisioner for tests. It gives the same
+// all-or-nothing contract as the Postgres provisioner's transaction: if the
+// admin save fails after the tenant was saved, the tenant is rolled back, so the
+// fake never leaves a phantom tenant that a real run would not.
 type Provisioner struct {
 	tenants *TenantRepository
 	users   *UserRepository
@@ -27,5 +27,9 @@ func (p *Provisioner) Provision(ctx context.Context, tenant tenantmodel.Tenant, 
 	if err := p.tenants.Save(ctx, tenant); err != nil {
 		return err
 	}
-	return p.users.Save(ctx, admin)
+	if err := p.users.Save(ctx, admin); err != nil {
+		p.tenants.remove(tenant.ID())
+		return err
+	}
+	return nil
 }

@@ -16,11 +16,10 @@ import (
 	tenantsuspend "github.com/usegavel/gavel/core/application/iam/tenant/suspend"
 	"github.com/usegavel/gavel/core/domain/iam/model/tenant"
 	"github.com/usegavel/gavel/core/infrastructure/iam/argon2"
+	"github.com/usegavel/gavel/core/infrastructure/iam/bootstrap"
 	pgiam "github.com/usegavel/gavel/core/infrastructure/iam/postgres"
 	"github.com/usegavel/gavel/core/infrastructure/platform/database"
 )
-
-const defaultAdminDisplayName = "Administrator"
 
 // tenantCmd groups the operator-only tenant lifecycle commands. Provisioning and
 // suspending/activating a tenant crosses the tenant boundary, so it belongs to
@@ -81,7 +80,7 @@ func provisionTenantCmd() *cobra.Command {
 	command.Flags().StringVar(&tenantSlug, "slug", "", "unique slug for the tenant (required)")
 	command.Flags().StringVar(&displayName, "display-name", "", "human-readable tenant name (required)")
 	command.Flags().StringVar(&adminEmail, "admin-email", "", "email of the first administrator (required)")
-	command.Flags().StringVar(&adminName, "admin-name", defaultAdminDisplayName, "display name of the first administrator")
+	command.Flags().StringVar(&adminName, "admin-name", bootstrap.DefaultAdminDisplayName, "display name of the first administrator")
 	command.Flags().StringVar(&adminPassword, "admin-password", "", "admin password; generated and logged once if unset")
 	mustMarkRequired(command, "slug", "display-name", "admin-email")
 	return command
@@ -155,12 +154,15 @@ func activateTenantCmd() *cobra.Command {
 	return command
 }
 
+// openOperatorDB opens and migrates the database for an operator command, the
+// same as serve, so `tenant provision` against a never-migrated database gets
+// the schema applied instead of a raw "relation does not exist" error.
 func openOperatorDB(ctx context.Context) (*database.DB, *slog.Logger, error) {
 	cfg, err := config.Load()
 	if err != nil {
 		return nil, nil, err
 	}
-	dbConn, err := database.Open(ctx, cfg.DatabaseURL)
+	dbConn, err := openAndMigrateDB(ctx, cfg)
 	if err != nil {
 		return nil, nil, err
 	}

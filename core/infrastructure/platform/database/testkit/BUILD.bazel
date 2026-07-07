@@ -9,6 +9,7 @@ go_library(
         "//core/application/iam/tenant/provision",
         "//core/domain/iam/model/user",
         "//core/infrastructure/iam/argon2",
+        "//core/infrastructure/iam/bootstrap",
         "//core/infrastructure/iam/postgres",
         "//core/infrastructure/platform/database",
         "@com_github_stretchr_testify//require",

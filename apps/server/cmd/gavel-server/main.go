@@ -55,9 +55,11 @@ import (
 	"github.com/usegavel/gavel/core/application/project/updatequalitygate"
 	searchquery "github.com/usegavel/gavel/core/application/supporting/search"
 	"github.com/usegavel/gavel/core/domain/iam/model/tenant"
+	"github.com/usegavel/gavel/core/domain/iam/model/user"
 	casefilepostgres "github.com/usegavel/gavel/core/infrastructure/casefile/postgres"
 	gavelspacepostgres "github.com/usegavel/gavel/core/infrastructure/gavelspace/postgres"
 	"github.com/usegavel/gavel/core/infrastructure/iam/argon2"
+	"github.com/usegavel/gavel/core/infrastructure/iam/bootstrap"
 	"github.com/usegavel/gavel/core/infrastructure/iam/crypto"
 	pgiam "github.com/usegavel/gavel/core/infrastructure/iam/postgres"
 	"github.com/usegavel/gavel/core/infrastructure/platform/database"
@@ -77,9 +79,10 @@ import (
 )
 
 const (
-	defaultTenantSlug        = "default"
-	defaultTenantDisplayName = "Default"
-	defaultAdminEmail        = "admin@gavel.local"
+	// seedAdvisoryLock serializes first-boot seeding across replicas so only the
+	// winner checks and seeds — the others wait, then see the admin and no-op,
+	// without each paying the Argon2 hash.
+	seedAdvisoryLock = 8723452
 
 	readHeaderTimeout = 10 * time.Second
 	writeTimeout      = 60 * time.Second
@@ -160,48 +163,115 @@ func openAndMigrateDB(ctx context.Context, cfg *config.Config) (*database.DB, er
 	return dbConn, nil
 }
 
-// seedFirstAdmin provisions the default tenant and its admin on a fresh
-// database. Only serve does this — migrate stays schema-only, so a migration
-// job never logs a credential. It short-circuits when the default tenant is
-// already there, so a re-boot neither generates a password nor pays the Argon2
-// cost. The password comes from GAVEL_ADMIN_PASSWORD or is generated; provision
-// commits the tenant and admin atomically, and the generated password is logged
-// only after that commit. Concurrent replicas racing a fresh database serialize
-// on the tenant's unique slug: the loser gets ErrSlugTaken and no-ops.
+// seedFirstAdmin makes sure the default tenant and its admin exist. Only serve
+// does this — migrate stays schema-only, so a migration job never logs a
+// credential. It holds a Postgres advisory lock so replicas booting a fresh
+// database serialize: the winner seeds, the rest see the admin and no-op without
+// paying the Argon2 hash. The admin is (re)created whenever it is missing — a
+// fresh database is provisioned tenant+admin atomically; a database whose admin
+// was deleted gets the admin recreated in the existing tenant, so an operator is
+// never permanently locked out. A generated password is logged once, after the
+// write.
 func seedFirstAdmin(ctx context.Context, dbConn *database.DB, cfg *config.Config, logger *slog.Logger) error {
-	slug, err := tenant.NewSlug(defaultTenantSlug)
+	release, err := acquireSeedLock(ctx, dbConn)
 	if err != nil {
 		return err
 	}
-	if _, err := pgiam.NewTenantRepo(dbConn).BySlug(ctx, slug); err == nil {
-		return nil
-	} else if !errors.Is(err, tenant.ErrTenantNotFound) {
-		return fmt.Errorf("check default tenant: %w", err)
+	defer release()
+
+	tenants := pgiam.NewTenantRepo(dbConn)
+	users := pgiam.NewUserRepo(dbConn)
+
+	slug, err := tenant.NewSlug(bootstrap.DefaultTenantSlug)
+	if err != nil {
+		return err
+	}
+	email, err := user.NewEmail(bootstrap.DefaultAdminEmail)
+	if err != nil {
+		return err
 	}
 
+	foundTenant, err := tenants.BySlug(ctx, slug)
+	switch {
+	case err == nil:
+		_, lookupErr := users.ByEmail(ctx, foundTenant.ID(), email)
+		if lookupErr == nil {
+			return nil
+		}
+		if !errors.Is(lookupErr, user.ErrUserNotFound) {
+			return fmt.Errorf("check default admin: %w", lookupErr)
+		}
+		return seedDefaultAdmin(ctx, tenants, users, foundTenant.ID(), cfg, logger)
+	case errors.Is(err, tenant.ErrTenantNotFound):
+		return provisionDefaultTenant(ctx, dbConn, cfg, logger)
+	default:
+		return fmt.Errorf("check default tenant: %w", err)
+	}
+}
+
+// acquireSeedLock takes a session-level Postgres advisory lock on a dedicated
+// connection, returning a release func that unlocks and closes it.
+func acquireSeedLock(ctx context.Context, dbConn *database.DB) (func(), error) {
+	seedConn, err := dbConn.Conn(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("acquire seed conn: %w", err)
+	}
+	if _, err := seedConn.ExecContext(ctx, "SELECT pg_advisory_lock($1)", seedAdvisoryLock); err != nil {
+		_ = seedConn.Close()
+		return nil, fmt.Errorf("acquire seed lock: %w", err)
+	}
+	return func() {
+		_, _ = seedConn.ExecContext(context.Background(), "SELECT pg_advisory_unlock($1)", seedAdvisoryLock)
+		_ = seedConn.Close()
+	}, nil
+}
+
+func provisionDefaultTenant(ctx context.Context, dbConn *database.DB, cfg *config.Config, logger *slog.Logger) error {
 	password, generated, err := firstadmin.ResolvePassword(cfg.AdminPassword, rand.Reader)
 	if err != nil {
 		return err
 	}
-
 	handler := tenantprovision.NewHandler(pgiam.NewTenantProvisioner(dbConn), argon2.New(rand.Reader))
 	cmd, err := tenantprovision.NewCommand(
-		defaultTenantSlug, defaultTenantDisplayName, defaultAdminEmail, defaultAdminDisplayName, password, time.Now().UTC())
+		bootstrap.DefaultTenantSlug, bootstrap.DefaultTenantDisplayName, bootstrap.DefaultAdminEmail,
+		bootstrap.DefaultAdminDisplayName, password, time.Now().UTC())
 	if err != nil {
 		return err
 	}
 	if _, err := handler.Execute(ctx, cmd); err != nil {
-		if errors.Is(err, tenant.ErrSlugTaken) {
-			return nil
-		}
 		return err
 	}
+	logGeneratedPassword(logger, generated, password)
+	return nil
+}
 
+func seedDefaultAdmin(
+	ctx context.Context, tenants *pgiam.TenantRepo, users *pgiam.UserRepo,
+	tenantID tenant.TenantID, cfg *config.Config, logger *slog.Logger,
+) error {
+	password, generated, err := firstadmin.ResolvePassword(cfg.AdminPassword, rand.Reader)
+	if err != nil {
+		return err
+	}
+	handler := iamcreateuser.NewHandler(tenants, users, argon2.New(rand.Reader))
+	cmd, err := iamcreateuser.NewCommand(
+		tenantID.String(), bootstrap.DefaultAdminEmail, bootstrap.DefaultAdminDisplayName,
+		user.RoleAdmin.String(), password, true, time.Now().UTC())
+	if err != nil {
+		return err
+	}
+	if _, err := handler.Execute(ctx, cmd); err != nil {
+		return err
+	}
+	logGeneratedPassword(logger, generated, password)
+	return nil
+}
+
+func logGeneratedPassword(logger *slog.Logger, generated bool, password string) {
 	if generated {
 		logger.Warn("GAVEL_ADMIN_PASSWORD not set; generated a one-time initial admin password, change it after first login",
 			"admin_password", password)
 	}
-	return nil
 }
 
 func buildAPIServer(dbConn *database.DB, cfg *config.Config, logger *slog.Logger) (*apiv1.Server, *auth.Middleware, *pgiam.SessionRepo) {
@@ -292,7 +362,7 @@ func buildAPIServer(dbConn *database.DB, cfg *config.Config, logger *slog.Logger
 			ListMyTokens:   listTokensH,
 			CreateUser:     createUserH,
 			Cookie:         cookie,
-			DefaultTenant:  defaultTenantSlug,
+			DefaultTenant:  bootstrap.DefaultTenantSlug,
 			Now:            time.Now,
 		}),
 		OpsHandler: opsv1.New(),

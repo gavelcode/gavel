@@ -20,6 +20,8 @@ type Config struct {
 	DataDir     string
 	SARIFDir    string
 
+	AdminPassword string
+
 	SessionTTL    time.Duration
 	SessionCookie string
 	SecureCookies bool
@@ -43,6 +45,7 @@ func Load() (*Config, error) {
 	return &Config{
 		Addr:           getenv("GAVEL_ADDR", ":8080"),
 		DatabaseURL:    getenv("GAVEL_DATABASE_URL", "postgres://localhost:5432/gavel?sslmode=disable"),
+		AdminPassword:  getenv("GAVEL_ADMIN_PASSWORD", ""),
 		DataDir:        dataDir,
 		SARIFDir:       sarifDir,
 		SessionTTL:     time.Duration(ttlHours) * time.Hour,

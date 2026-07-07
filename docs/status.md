@@ -123,9 +123,10 @@ bounded context in `core/`.
   the `AuthMiddleware` (backed by `resolveprincipal`), the
   `SessionCookie` helper, and the body-size middleware.
 
-Bootstrap is seeded by `seed.sql` (applied by `database.Migrate()`): the
-`default` tenant + admin `admin@gavel.local` (password `changeme`,
-`must_change_password=true`) on a fresh database.
+First boot seeds the `default` tenant + admin `admin@gavel.local`
+(`must_change_password=true`) only when no user exists yet. The admin password
+comes from `GAVEL_ADMIN_PASSWORD`, or a strong random one is generated and
+logged once; it is hashed with a per-install random Argon2id salt.
 
 > Pull requests took the same path: once the model grew real behaviour
 > (status transitions with rules, invariants on filing, domain events) the
@@ -136,9 +137,10 @@ Bootstrap is seeded by `seed.sql` (applied by `database.Migrate()`): the
 ## `apps/server/` (composition root)
 
 - Backend starts with `bazel run //apps/server/cmd/gavel-server -- serve`.
-- Auto-migrations on startup (versioned goose migrations + `seed.sql` on a fresh DB).
-- Seeds the `default` tenant and admin `admin@gavel.local` (password
-  `changeme`, `must_change_password=true`) on a fresh database.
+- Auto-migrations on startup (versioned goose migrations) plus a first-boot seed.
+- Seeds the `default` tenant and admin `admin@gavel.local`
+  (`must_change_password=true`) only when no user exists; the admin password is
+  `GAVEL_ADMIN_PASSWORD` or a random one logged once, hashed with a random salt.
 - The server is a composition root in three layers:
   - `cmd/gavel-server/main.go` — instantiates IAM + core repositories
     against PostgreSQL, wires every application handler, mounts the
@@ -154,8 +156,9 @@ Bootstrap is seeded by `seed.sql` (applied by `database.Migrate()`): the
     embedded frontend FS loader, SPA fallback handler.
 - Persistence adapters live in `core/infrastructure/<bc>/postgres/` and
   implement the domain Repository ports plus the application Finder
-  ports. The dbkit wrapper, pgx connection, bootstrap SQL, and
-  testcontainer helper live in `core/infrastructure/platform/database/`.
+  ports. The dbkit wrapper, pgx connection, embedded goose migrations,
+  first-boot seed, and testcontainer helper live in
+  `core/infrastructure/platform/database/`.
 - All HTTP paths are declared in `openapi/v1/*.yaml` and served under
   `/api/v1`. Highlights:
   - **Auth**: `POST /sessions`, `DELETE /sessions/current`, `GET /me`,

@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
@@ -16,6 +17,7 @@ import (
 
 	apiv1 "github.com/usegavel/gavel/apps/server/internal/api/v1"
 	"github.com/usegavel/gavel/apps/server/internal/platform/config"
+	"github.com/usegavel/gavel/apps/server/internal/platform/firstadmin"
 	"github.com/usegavel/gavel/apps/server/internal/platform/frontend"
 	"github.com/usegavel/gavel/apps/server/internal/platform/spa"
 	"github.com/usegavel/gavel/core/application/casefile/classify"
@@ -104,13 +106,17 @@ func serveCmd() *cobra.Command {
 				return err
 			}
 
+			logger := slog.New(slog.NewTextHandler(os.Stderr, nil))
 			dbConn, err := openAndMigrateDB(cmd.Context(), cfg)
 			if err != nil {
 				return err
 			}
 			defer func() { _ = dbConn.Close() }()
 
-			logger := slog.New(slog.NewTextHandler(os.Stderr, nil))
+			if err := seedFirstAdmin(cmd.Context(), dbConn, cfg, logger); err != nil {
+				return err
+			}
+
 			server, authMw, sessions := buildAPIServer(dbConn, cfg, logger)
 			router := mountRootRouter(apiv1.NewMux(server, authMw), logger)
 			return serveHTTP(cfg, router, sessions, logger)
@@ -147,6 +153,39 @@ func openAndMigrateDB(ctx context.Context, cfg *config.Config) (*database.DB, er
 		return nil, err
 	}
 	return dbConn, nil
+}
+
+// seedFirstAdmin creates the first admin on a fresh database. Only serve does
+// this — migrate stays schema-only, so a migration job never logs a credential
+// to a stream nobody reads. The password comes from GAVEL_ADMIN_PASSWORD, or a
+// strong one is generated; it is resolved and hashed inside the seed's
+// first-boot gate, so it happens exactly once — on the replica that actually
+// seeds — and never on a re-run. A generated password is logged only after the
+// seed commits, so the operator never copies a credential that was rolled back.
+func seedFirstAdmin(ctx context.Context, dbConn *database.DB, cfg *config.Config, logger *slog.Logger) error {
+	var generatedPassword string
+	seeded, err := database.Seed(ctx, dbConn, func() (string, error) {
+		password, generated, err := firstadmin.ResolvePassword(cfg, rand.Reader)
+		if err != nil {
+			return "", err
+		}
+		if generated {
+			generatedPassword = password
+		}
+		hash, err := argon2.New(rand.Reader).Hash(password)
+		if err != nil {
+			return "", fmt.Errorf("hash admin password: %w", err)
+		}
+		return hash.String(), nil
+	})
+	if err != nil {
+		return err
+	}
+	if seeded && generatedPassword != "" {
+		logger.Warn("GAVEL_ADMIN_PASSWORD not set; generated a one-time initial admin password, change it after first login",
+			"admin_password", generatedPassword)
+	}
+	return nil
 }
 
 func buildAPIServer(dbConn *database.DB, cfg *config.Config, logger *slog.Logger) (*apiv1.Server, *auth.Middleware, *pgiam.SessionRepo) {

@@ -2,6 +2,7 @@ package testkit
 
 import (
 	"context"
+	"crypto/rand"
 	"fmt"
 	"os"
 	"sync"
@@ -13,19 +14,30 @@ import (
 	tcpg "github.com/testcontainers/testcontainers-go/modules/postgres"
 	"github.com/testcontainers/testcontainers-go/wait"
 
+	"github.com/usegavel/gavel/core/infrastructure/iam/argon2"
 	"github.com/usegavel/gavel/core/infrastructure/platform/database"
 )
 
+// SeedAdminPassword is the plaintext the seeded admin is given in tests, so
+// suites that exercise login can authenticate with a known credential.
+const SeedAdminPassword = "changeme"
+
 var (
-	once      sync.Once
-	sharedDB  *database.DB
-	sharedDSN string
-	initErr   error
+	once          sync.Once
+	sharedDB      *database.DB
+	sharedDSN     string
+	seedAdminHash string
+	initErr       error
 )
 
 const (
 	pgReadyLogOccurrences = 2
 	containerStartTimeout = 30 * time.Second
+
+	// testIsolationAdvisoryLock serializes per-test truncate+seed on the reused
+	// container. It must stay distinct from database.seedAdvisoryLock (8723452),
+	// which Seed takes underneath, or the two would contend and hang.
+	testIsolationAdvisoryLock = 8723451
 )
 
 const truncateSQL = `
@@ -50,15 +62,16 @@ func TestDB(t *testing.T) *database.DB {
 	ctx := context.Background()
 	conn, err := sharedDB.Conn(ctx)
 	require.NoError(t, err)
-	_, err = conn.ExecContext(ctx, "SELECT pg_advisory_lock(8723451)")
+	_, err = conn.ExecContext(ctx, "SELECT pg_advisory_lock($1)", testIsolationAdvisoryLock)
 	require.NoError(t, err)
 	t.Cleanup(func() {
-		_, _ = conn.ExecContext(ctx, "SELECT pg_advisory_unlock(8723451)")
+		_, _ = conn.ExecContext(ctx, "SELECT pg_advisory_unlock($1)", testIsolationAdvisoryLock)
 		_ = conn.Close()
 	})
 	_, err = sharedDB.ExecContext(ctx, truncateSQL)
 	require.NoError(t, err)
-	require.NoError(t, database.Seed(sharedDB))
+	_, err = database.Seed(ctx, sharedDB, func() (string, error) { return seedAdminHash, nil })
+	require.NoError(t, err)
 	return sharedDB
 }
 
@@ -75,7 +88,14 @@ func initialize() {
 	sharedDB, sharedDSN, initErr = startPostgresContainer(context.Background())
 	if initErr != nil {
 		fmt.Fprintf(os.Stderr, "WARN: %v\n", initErr)
+		return
 	}
+	hash, err := argon2.New(rand.Reader).Hash(SeedAdminPassword)
+	if err != nil {
+		initErr = err
+		return
+	}
+	seedAdminHash = hash.String()
 }
 
 func startPostgresContainer(ctx context.Context) (*database.DB, string, error) {

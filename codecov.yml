@@ -1,0 +1,18 @@
+# The authoritative quality gate is `gavel judge` (the dogfood CI job): 90% per
+# project with a baseline, and a written policy that accepts genuinely-uncovered
+# defensive error guards (docs/design/coverage-exclusion-policy.md). Codecov is a
+# secondary, stricter signal that only ingests //core/... coverage, so its patch
+# status flags exactly those accepted defensive branches. Keep patch informational
+# so it never blocks, align project to gavel's 90%, and drop only generated code —
+# never real files, which would hide coverage the policy forbids hiding.
+coverage:
+  status:
+    project:
+      default:
+        target: 90%
+    patch:
+      default:
+        informational: true
+
+ignore:
+  - "**/gen/**"

@@ -26,6 +26,7 @@ go_test(
     deps = [
         ":loadgavelspace",
         "//core/domain/gavelspace/model",
+        "//core/domain/iam/model/tenant",
         "//core/domain/project/model",
         "//core/domain/project/model/archpolicy",
         "@com_github_stretchr_testify//assert",

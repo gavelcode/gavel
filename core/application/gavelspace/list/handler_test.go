@@ -30,7 +30,7 @@ func TestNewQuery(t *testing.T) {
 
 	for _, testCase := range tests {
 		t.Run(testCase.name, func(t *testing.T) {
-			query, err := list.NewQuery(testCase.limit, testCase.offset)
+			query, err := list.NewQuery(testTenant, testCase.limit, testCase.offset)
 			if testCase.wantErr {
 				assert.Error(t, err)
 				return
@@ -55,7 +55,7 @@ func TestExecuteReturnsResult(t *testing.T) {
 	fake := &fakeGavelspaceLister{items: expected, total: 2}
 	h := list.NewHandler(fake)
 
-	query, err := list.NewQuery(10, 0)
+	query, err := list.NewQuery(testTenant, 10, 0)
 	require.NoError(t, err)
 
 	result, err := h.Execute(context.Background(), query)
@@ -72,7 +72,7 @@ func TestExecutePropagatesError(t *testing.T) {
 	fake := &fakeGavelspaceLister{err: queryErr}
 	h := list.NewHandler(fake)
 
-	query, err := list.NewQuery(10, 0)
+	query, err := list.NewQuery(testTenant, 10, 0)
 	require.NoError(t, err)
 
 	_, err = h.Execute(context.Background(), query)
@@ -81,7 +81,22 @@ func TestExecutePropagatesError(t *testing.T) {
 }
 
 func TestErrInvalidQueryIsClassifiedAsValidation(t *testing.T) {
-	_, err := list.NewQuery(0, 0)
+	_, err := list.NewQuery(testTenant, 0, 0)
 	require.Error(t, err)
 	assert.Equal(t, failure.Validation, failure.Of(err))
+}
+
+func TestNewQueryRejectsEmptyTenant(t *testing.T) {
+	_, err := list.NewQuery("", 10, 0)
+	require.Error(t, err)
+}
+
+func TestExecuteInvalidTenant(t *testing.T) {
+	h := list.NewHandler(&fakeGavelspaceLister{})
+	query, err := list.NewQuery("not-a-uuid", 10, 0)
+	require.NoError(t, err)
+
+	_, err = h.Execute(context.Background(), query)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "tenant id")
 }

@@ -13,6 +13,7 @@ go_library(
     embedsrcs = [
         "migrations/00001_bootstrap.sql",
         "migrations/00002_tenant_scoping.sql",
+        "migrations/00003_gavelspace_tenant_not_null.sql",
     ],
     importpath = "github.com/usegavel/gavel/core/infrastructure/platform/database",
     visibility = ["//visibility:public"],

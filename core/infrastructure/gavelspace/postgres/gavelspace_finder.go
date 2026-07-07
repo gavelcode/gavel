@@ -7,6 +7,7 @@ import (
 
 	gsget "github.com/usegavel/gavel/core/application/gavelspace/get"
 	gslist "github.com/usegavel/gavel/core/application/gavelspace/list"
+	"github.com/usegavel/gavel/core/domain/iam/model/tenant"
 	"github.com/usegavel/gavel/core/infrastructure/platform/database"
 )
 
@@ -18,9 +19,9 @@ func NewGavelspaceFinder(db *database.DB) *GavelspaceFinder {
 	return &GavelspaceFinder{db: db}
 }
 
-func (q *GavelspaceFinder) List(ctx context.Context, limit, offset int) ([]gslist.GavelspaceSummary, int, error) {
+func (q *GavelspaceFinder) List(ctx context.Context, tenantID tenant.TenantID, limit, offset int) ([]gslist.GavelspaceSummary, int, error) {
 	var total int
-	if err := q.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM gavelspaces").Scan(&total); err != nil {
+	if err := q.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM gavelspaces WHERE tenant_id = ?", tenantID.UUID()).Scan(&total); err != nil {
 		return nil, 0, fmt.Errorf("count gavelspaces: %w", err)
 	}
 
@@ -29,9 +30,10 @@ func (q *GavelspaceFinder) List(ctx context.Context, limit, offset int) ([]gslis
 		       (SELECT COUNT(*) FROM gavelspace_projects WHERE gavelspace_name = g.name) AS project_count,
 		       g.created_at
 		FROM gavelspaces g
+		WHERE g.tenant_id = ?
 		ORDER BY g.name
 		LIMIT ? OFFSET ?
-	`, limit, offset)
+	`, tenantID.UUID(), limit, offset)
 	if err != nil {
 		return nil, 0, fmt.Errorf("list gavelspaces: %w", err)
 	}
@@ -53,12 +55,12 @@ func (q *GavelspaceFinder) List(ctx context.Context, limit, offset int) ([]gslis
 	return items, total, rows.Err()
 }
 
-func (q *GavelspaceFinder) GetByName(ctx context.Context, name string) (*gsget.GavelspaceDetail, error) {
+func (q *GavelspaceFinder) GetByName(ctx context.Context, tenantID tenant.TenantID, name string) (*gsget.GavelspaceDetail, error) {
 	var detail gsget.GavelspaceDetail
 	var createdAtStr string
 	err := q.db.QueryRowContext(ctx,
-		"SELECT name, created_at FROM gavelspaces WHERE name = ?",
-		name).Scan(&detail.Name, &createdAtStr)
+		"SELECT name, created_at FROM gavelspaces WHERE name = ? AND tenant_id = ?",
+		name, tenantID.UUID()).Scan(&detail.Name, &createdAtStr)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, fmt.Errorf("%w: %s", errGavelspaceNotFound, name)

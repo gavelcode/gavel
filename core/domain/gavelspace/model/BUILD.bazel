@@ -14,6 +14,7 @@ go_library(
     importpath = "github.com/usegavel/gavel/core/domain/gavelspace/model",
     visibility = ["//visibility:public"],
     deps = [
+        "//core/domain/iam/model/tenant",
         "//core/domain/project/model",
         "//core/domain/shared/event",
         "//core/domain/shared/failure",
@@ -30,6 +31,7 @@ go_test(
     ],
     deps = [
         ":model",
+        "//core/domain/iam/model/tenant",
         "//core/domain/project/model",
         "@com_github_google_uuid//:uuid",
         "@com_github_stretchr_testify//assert",

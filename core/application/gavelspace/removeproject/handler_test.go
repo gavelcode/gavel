@@ -26,7 +26,7 @@ func TestHandlerExecuteSuccessful(t *testing.T) {
 	_, err := handler.Execute(context.Background(), cmd)
 	require.NoError(t, err)
 
-	persisted, err := gavelspaces.FindByName(context.Background(), gavelspace.ID())
+	persisted, err := gavelspaces.FindByName(context.Background(), testTenantID, gavelspace.ID())
 	require.NoError(t, err)
 	assert.Empty(t, persisted.Projects(), "project ref removed from gavelspace")
 }
@@ -43,7 +43,7 @@ func TestHandlerExecuteGavelspaceNotFound(t *testing.T) {
 
 func TestHandlerExecuteProjectNotInGavelspace(t *testing.T) {
 	gavelspaces := newFakeGavelspaceRepo()
-	gavelspace, err := gsmodel.NewGavelspace("monorepo")
+	gavelspace, err := gsmodel.NewGavelspace(testTenantID, "monorepo")
 	require.NoError(t, err)
 	gavelspaces.seed(gavelspace)
 
@@ -71,13 +71,13 @@ func TestHandlerExecuteSaveErrorPropagated(t *testing.T) {
 
 func TestHandlerExecuteInvalidProjectIDRejected(t *testing.T) {
 	gavelspaces := newFakeGavelspaceRepo()
-	gavelspace, err := gsmodel.NewGavelspace("monorepo")
+	gavelspace, err := gsmodel.NewGavelspace(testTenantID, "monorepo")
 	require.NoError(t, err)
 	gavelspaces.seed(gavelspace)
 
 	handler := removeproject.NewHandler(gavelspaces)
 
-	cmd, err := removeproject.NewCommand("monorepo", "valid-id-format")
+	cmd, err := removeproject.NewCommand(testTenant, "monorepo", "valid-id-format")
 	require.NoError(t, err)
 
 	_, err = handler.Execute(context.Background(), cmd)
@@ -98,7 +98,7 @@ func TestHandlerExecuteDrainsRemovedEvent(t *testing.T) {
 	require.Len(t, result.Events, 1, "ProjectRemoved event drained to caller")
 	assert.Equal(t, gsmodel.EventNameProjectRemoved, result.Events[0].Name)
 
-	persisted, err := gavelspaces.FindByName(context.Background(), gavelspace.ID())
+	persisted, err := gavelspaces.FindByName(context.Background(), testTenantID, gavelspace.ID())
 	require.NoError(t, err)
 	assert.Empty(t, persisted.Events(), "events drained before persistence; not retained")
 }
@@ -109,17 +109,28 @@ func TestNewHandlerRejectsNilRepo(t *testing.T) {
 
 func mustCommand(t *testing.T, gavelspaceName, projectID string) removeproject.Command {
 	t.Helper()
-	cmd, err := removeproject.NewCommand(gavelspaceName, projectID)
+	cmd, err := removeproject.NewCommand(testTenant, gavelspaceName, projectID)
 	require.NoError(t, err)
 	return cmd
 }
 
 func seededGavelspace(t *testing.T, name string, projectID projectmodel.ProjectID, targetPattern string) gsmodel.Gavelspace {
 	t.Helper()
-	gavelspace, err := gsmodel.NewGavelspace(name)
+	gavelspace, err := gsmodel.NewGavelspace(testTenantID, name)
 	require.NoError(t, err)
 	ref, err := gsmodel.NewProjectRef(projectID, targetPattern)
 	require.NoError(t, err)
 	require.NoError(t, gavelspace.AddProject(ref, time.Now().UTC()))
 	return gavelspace
+}
+
+func TestHandlerExecuteInvalidTenant(t *testing.T) {
+	gavelspaces := newFakeGavelspaceRepo()
+	handler := removeproject.NewHandler(gavelspaces)
+	cmd, err := removeproject.NewCommand("not-a-uuid", "monorepo", uuid.NewString())
+	require.NoError(t, err)
+
+	_, err = handler.Execute(context.Background(), cmd)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "tenant id")
 }

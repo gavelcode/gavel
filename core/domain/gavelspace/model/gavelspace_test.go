@@ -9,10 +9,14 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/usegavel/gavel/core/domain/gavelspace/model"
+	"github.com/usegavel/gavel/core/domain/iam/model/tenant"
 	projectmodel "github.com/usegavel/gavel/core/domain/project/model"
 )
 
-var testTime = time.Date(2026, 5, 21, 12, 0, 0, 0, time.UTC)
+var (
+	testTime   = time.Date(2026, 5, 21, 12, 0, 0, 0, time.UTC)
+	testTenant = tenant.NewTenantID(uuid.MustParse("22222222-2222-2222-2222-222222222222"))
+)
 
 func TestNewGavelspace(t *testing.T) {
 	tests := []struct {
@@ -28,7 +32,7 @@ func TestNewGavelspace(t *testing.T) {
 
 	for _, tcase := range tests {
 		t.Run(tcase.name, func(t *testing.T) {
-			gspace, err := model.NewGavelspace(tcase.input)
+			gspace, err := model.NewGavelspace(testTenant, tcase.input)
 
 			if tcase.wantError {
 				require.Error(t, err)
@@ -38,6 +42,7 @@ func TestNewGavelspace(t *testing.T) {
 
 			require.NoError(t, err)
 			assert.Equal(t, tcase.wantName, gspace.ID().String())
+			assert.True(t, testTenant.Equal(gspace.TenantID()))
 			assert.Empty(t, gspace.Projects())
 			assert.Empty(t, gspace.Events())
 		})
@@ -45,7 +50,7 @@ func TestNewGavelspace(t *testing.T) {
 }
 
 func TestGavelspaceAddProject(t *testing.T) {
-	gspace, err := model.NewGavelspace("workspace")
+	gspace, err := model.NewGavelspace(testTenant, "workspace")
 	require.NoError(t, err)
 
 	projID := projectmodel.NewProjectID(uuid.New())
@@ -70,7 +75,7 @@ func TestGavelspaceAddProject(t *testing.T) {
 }
 
 func TestGavelspaceAddProjectDuplicateTargetPattern(t *testing.T) {
-	gspace, err := model.NewGavelspace("workspace")
+	gspace, err := model.NewGavelspace(testTenant, "workspace")
 	require.NoError(t, err)
 
 	ref1, err := model.NewProjectRef(projectmodel.NewProjectID(uuid.New()), "//src/...")
@@ -86,7 +91,7 @@ func TestGavelspaceAddProjectDuplicateTargetPattern(t *testing.T) {
 }
 
 func TestGavelspaceAddProjectDifferentPatterns(t *testing.T) {
-	gspace, err := model.NewGavelspace("workspace")
+	gspace, err := model.NewGavelspace(testTenant, "workspace")
 	require.NoError(t, err)
 
 	ref1, err := model.NewProjectRef(projectmodel.NewProjectID(uuid.New()), "//src/...")
@@ -102,7 +107,7 @@ func TestGavelspaceAddProjectDifferentPatterns(t *testing.T) {
 }
 
 func TestGavelspaceRemoveProject(t *testing.T) {
-	gspace, err := model.NewGavelspace("workspace")
+	gspace, err := model.NewGavelspace(testTenant, "workspace")
 	require.NoError(t, err)
 
 	projID := projectmodel.NewProjectID(uuid.New())
@@ -125,7 +130,7 @@ func TestGavelspaceRemoveProject(t *testing.T) {
 }
 
 func TestGavelspaceRemoveProjectNotFound(t *testing.T) {
-	gspace, err := model.NewGavelspace("workspace")
+	gspace, err := model.NewGavelspace(testTenant, "workspace")
 	require.NoError(t, err)
 
 	err = gspace.RemoveProject(projectmodel.NewProjectID(uuid.New()), testTime)
@@ -134,7 +139,7 @@ func TestGavelspaceRemoveProjectNotFound(t *testing.T) {
 }
 
 func TestGavelspaceProjectsDefensiveCopy(t *testing.T) {
-	gspace, err := model.NewGavelspace("workspace")
+	gspace, err := model.NewGavelspace(testTenant, "workspace")
 	require.NoError(t, err)
 
 	projID := projectmodel.NewProjectID(uuid.New())
@@ -158,7 +163,7 @@ func TestReconstituteGavelspace(t *testing.T) {
 		ref2, err := model.NewProjectRef(projectmodel.NewProjectID(uuid.New()), "//lib/...")
 		require.NoError(t, err)
 
-		gspace, err := model.ReconstituteGavelspace(name, []model.ProjectRef{ref1, ref2})
+		gspace, err := model.ReconstituteGavelspace(name, testTenant, []model.ProjectRef{ref1, ref2})
 		require.NoError(t, err)
 
 		assert.Equal(t, "workspace", gspace.ID().String())
@@ -173,7 +178,7 @@ func TestReconstituteGavelspace(t *testing.T) {
 		require.NoError(t, err)
 
 		input := []model.ProjectRef{ref}
-		gspace, err := model.ReconstituteGavelspace(name, input)
+		gspace, err := model.ReconstituteGavelspace(name, testTenant, input)
 		require.NoError(t, err)
 
 		input[0] = model.ProjectRef{}
@@ -187,14 +192,14 @@ func TestReconstituteGavelspace(t *testing.T) {
 		ref2, err := model.NewProjectRef(projectmodel.NewProjectID(uuid.New()), "//src/...")
 		require.NoError(t, err)
 
-		_, err = model.ReconstituteGavelspace(name, []model.ProjectRef{ref1, ref2})
+		_, err = model.ReconstituteGavelspace(name, testTenant, []model.ProjectRef{ref1, ref2})
 		require.Error(t, err)
 		assert.ErrorIs(t, err, model.ErrDuplicateTargetPattern)
 	})
 }
 
 func TestGavelspaceClearEvents(t *testing.T) {
-	gspace, err := model.NewGavelspace("workspace")
+	gspace, err := model.NewGavelspace(testTenant, "workspace")
 	require.NoError(t, err)
 
 	ref, err := model.NewProjectRef(projectmodel.NewProjectID(uuid.New()), "//src/...")

@@ -29,6 +29,7 @@ import (
 	"github.com/usegavel/gavel/core/domain/casefile/model/evidence"
 	"github.com/usegavel/gavel/core/domain/casefile/model/evidence/finding"
 	gavelspacemodel "github.com/usegavel/gavel/core/domain/gavelspace/model"
+	"github.com/usegavel/gavel/core/domain/iam/model/tenant"
 	projectmodel "github.com/usegavel/gavel/core/domain/project/model"
 	"github.com/usegavel/gavel/core/domain/project/model/qualitygate"
 	casefilememory "github.com/usegavel/gavel/core/infrastructure/casefile/memory"
@@ -298,7 +299,7 @@ func (s *stubTargetResolver) FindAffectedTargets(_ context.Context, _ string, _ 
 
 func newGavelspace(t *testing.T, name string) gavelspacemodel.Gavelspace {
 	t.Helper()
-	gs, err := gavelspacemodel.NewGavelspace(name)
+	gs, err := gavelspacemodel.NewGavelspace(tenant.LocalTenantID, name)
 	require.NoError(t, err)
 	return gs
 }

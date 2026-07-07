@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	gsmodel "github.com/usegavel/gavel/core/domain/gavelspace/model"
+	"github.com/usegavel/gavel/core/domain/iam/model/tenant"
 )
 
 var errNotFound = errors.New("not found")
@@ -21,7 +22,7 @@ func newFakeGavelspaceRepo() *fakeGavelspaceRepo {
 	return &fakeGavelspaceRepo{store: make(map[string]gsmodel.Gavelspace)}
 }
 
-func (r *fakeGavelspaceRepo) FindByName(_ context.Context, name gsmodel.GavelspaceID) (gsmodel.Gavelspace, error) {
+func (r *fakeGavelspaceRepo) FindByName(_ context.Context, _ tenant.TenantID, name gsmodel.GavelspaceID) (gsmodel.Gavelspace, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	if r.findErr != nil {
@@ -49,3 +50,5 @@ func (r *fakeGavelspaceRepo) count() int {
 	defer r.mu.Unlock()
 	return len(r.store)
 }
+
+const testTenant = "22222222-2222-2222-2222-222222222222"

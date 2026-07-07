@@ -10,6 +10,7 @@ import (
 	gsget "github.com/usegavel/gavel/core/application/gavelspace/get"
 	gslist "github.com/usegavel/gavel/core/application/gavelspace/list"
 	gsmodel "github.com/usegavel/gavel/core/domain/gavelspace/model"
+	"github.com/usegavel/gavel/core/domain/iam/model/tenant"
 	"github.com/usegavel/gavel/core/domain/shared/failure"
 )
 
@@ -39,7 +40,7 @@ func (s *gavelspaceStore) Save(_ context.Context, gs gsmodel.Gavelspace) error {
 	return nil
 }
 
-func (s *gavelspaceStore) FindByName(_ context.Context, name gsmodel.GavelspaceID) (gsmodel.Gavelspace, error) {
+func (s *gavelspaceStore) FindByName(_ context.Context, _ tenant.TenantID, name gsmodel.GavelspaceID) (gsmodel.Gavelspace, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	gs, ok := s.byName[name.String()]
@@ -49,7 +50,7 @@ func (s *gavelspaceStore) FindByName(_ context.Context, name gsmodel.GavelspaceI
 	return gs, nil
 }
 
-func (s *gavelspaceStore) List(_ context.Context, limit, offset int) ([]gslist.GavelspaceSummary, int, error) {
+func (s *gavelspaceStore) List(_ context.Context, _ tenant.TenantID, limit, offset int) ([]gslist.GavelspaceSummary, int, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	names := make([]string, 0, len(s.byName))
@@ -81,7 +82,7 @@ func (s *gavelspaceStore) List(_ context.Context, limit, offset int) ([]gslist.G
 	return out, total, nil
 }
 
-func (s *gavelspaceStore) GetByName(_ context.Context, name string) (*gsget.GavelspaceDetail, error) {
+func (s *gavelspaceStore) GetByName(_ context.Context, _ tenant.TenantID, name string) (*gsget.GavelspaceDetail, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	gs, ok := s.byName[name]

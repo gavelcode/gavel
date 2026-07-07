@@ -12,6 +12,7 @@ import (
 	"github.com/usegavel/gavel/core/application/shared/apperr"
 	"github.com/usegavel/gavel/core/userinterface/api/v1/gen"
 	"github.com/usegavel/gavel/core/userinterface/api/v1/server/httpx"
+	auth "github.com/usegavel/gavel/core/userinterface/api/v1/server/httpx/auth"
 )
 
 type Deps struct {
@@ -31,9 +32,14 @@ func New(deps Deps) *Handler {
 }
 
 func (h *Handler) ListGavelspaces(ctx context.Context, req gen.ListGavelspacesRequestObject) (gen.ListGavelspacesResponseObject, error) {
+	principal, ok := auth.PrincipalFromContext(ctx)
+	if !ok {
+		return gen.ListGavelspaces401JSONResponse{UnauthorizedJSONResponse: httpx.Unauthorized("unauthenticated")}, nil
+	}
+
 	limit, offset := httpx.PageFromCursor(req.Params.Limit, req.Params.Cursor)
 
-	q, err := gslist.NewQuery(limit, offset)
+	q, err := gslist.NewQuery(principal.TenantID, limit, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -53,11 +59,15 @@ func (h *Handler) ListGavelspaces(ctx context.Context, req gen.ListGavelspacesRe
 }
 
 func (h *Handler) CreateGavelspace(ctx context.Context, req gen.CreateGavelspaceRequestObject) (gen.CreateGavelspaceResponseObject, error) {
+	principal, ok := auth.PrincipalFromContext(ctx)
+	if !ok {
+		return gen.CreateGavelspace401JSONResponse{UnauthorizedJSONResponse: httpx.Unauthorized("unauthenticated")}, nil
+	}
 	if req.Body == nil {
 		return gen.CreateGavelspace400JSONResponse{BadRequestJSONResponse: httpx.BadRequest("missing body")}, nil
 	}
 
-	cmd, err := gscreate.NewCommand(req.Body.Name)
+	cmd, err := gscreate.NewCommand(principal.TenantID, req.Body.Name)
 	if err != nil {
 		return gen.CreateGavelspace400JSONResponse{BadRequestJSONResponse: httpx.BadRequest(err.Error())}, nil
 	}
@@ -76,7 +86,12 @@ func (h *Handler) CreateGavelspace(ctx context.Context, req gen.CreateGavelspace
 }
 
 func (h *Handler) GetGavelspace(ctx context.Context, req gen.GetGavelspaceRequestObject) (gen.GetGavelspaceResponseObject, error) {
-	q, err := gsget.NewQuery(string(req.Name))
+	principal, ok := auth.PrincipalFromContext(ctx)
+	if !ok {
+		return gen.GetGavelspace401JSONResponse{UnauthorizedJSONResponse: httpx.Unauthorized("unauthenticated")}, nil
+	}
+
+	q, err := gsget.NewQuery(principal.TenantID, string(req.Name))
 	if err != nil {
 		return nil, err
 	}
@@ -100,11 +115,15 @@ func (h *Handler) GetGavelspace(ctx context.Context, req gen.GetGavelspaceReques
 }
 
 func (h *Handler) RegisterGavelspaceProject(ctx context.Context, req gen.RegisterGavelspaceProjectRequestObject) (gen.RegisterGavelspaceProjectResponseObject, error) {
+	principal, ok := auth.PrincipalFromContext(ctx)
+	if !ok {
+		return gen.RegisterGavelspaceProject401JSONResponse{UnauthorizedJSONResponse: httpx.Unauthorized("unauthenticated")}, nil
+	}
 	if req.Body == nil {
 		return gen.RegisterGavelspaceProject400JSONResponse{BadRequestJSONResponse: httpx.BadRequest("missing body")}, nil
 	}
 
-	cmd, err := gsregisterproject.NewCommand(string(req.Name), req.Body.ProjectId.String(), req.Body.TargetPattern)
+	cmd, err := gsregisterproject.NewCommand(principal.TenantID, string(req.Name), req.Body.ProjectId.String(), req.Body.TargetPattern)
 	if err != nil {
 		return gen.RegisterGavelspaceProject400JSONResponse{BadRequestJSONResponse: httpx.BadRequest(err.Error())}, nil
 	}
@@ -124,7 +143,12 @@ func (h *Handler) RegisterGavelspaceProject(ctx context.Context, req gen.Registe
 }
 
 func (h *Handler) RemoveGavelspaceProject(ctx context.Context, req gen.RemoveGavelspaceProjectRequestObject) (gen.RemoveGavelspaceProjectResponseObject, error) {
-	cmd, err := gsremoveproject.NewCommand(string(req.Name), req.ProjectId.String())
+	principal, ok := auth.PrincipalFromContext(ctx)
+	if !ok {
+		return gen.RemoveGavelspaceProject401JSONResponse{UnauthorizedJSONResponse: httpx.Unauthorized("unauthenticated")}, nil
+	}
+
+	cmd, err := gsremoveproject.NewCommand(principal.TenantID, string(req.Name), req.ProjectId.String())
 	if err != nil {
 		return gen.RemoveGavelspaceProject400JSONResponse{BadRequestJSONResponse: httpx.BadRequest(err.Error())}, nil
 	}

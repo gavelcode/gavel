@@ -53,6 +53,7 @@ go_test(
         "//core/domain/casefile/model/evidence",
         "//core/domain/casefile/model/evidence/finding",
         "//core/domain/gavelspace/model",
+        "//core/domain/iam/model/tenant",
         "//core/domain/project/model",
         "//core/domain/project/model/qualitygate",
         "//core/infrastructure/casefile/memory",

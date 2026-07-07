@@ -21,7 +21,7 @@ func TestNewCommand(t *testing.T) {
 
 	for _, testCase := range tests {
 		t.Run(testCase.name, func(t *testing.T) {
-			cmd, err := create.NewCommand(testCase.input)
+			cmd, err := create.NewCommand(testTenant, testCase.input)
 
 			if testCase.wantErr {
 				require.Error(t, err)
@@ -32,4 +32,10 @@ func TestNewCommand(t *testing.T) {
 			assert.Equal(t, testCase.input, cmd.Name())
 		})
 	}
+}
+
+func TestNewCommandRejectsEmptyTenant(t *testing.T) {
+	_, err := create.NewCommand("", "monorepo")
+	require.Error(t, err)
+	assert.ErrorIs(t, err, create.ErrInvalidCommand)
 }

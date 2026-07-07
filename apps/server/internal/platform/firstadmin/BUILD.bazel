@@ -1,0 +1,23 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "firstadmin",
+    srcs = ["firstadmin.go"],
+    importpath = "github.com/usegavel/gavel/apps/server/internal/platform/firstadmin",
+    visibility = ["//apps/server:__subpackages__"],
+    deps = [
+        "//apps/server/internal/platform/config",
+        "//core/infrastructure/iam/crypto",
+    ],
+)
+
+go_test(
+    name = "firstadmin_test",
+    srcs = ["firstadmin_test.go"],
+    deps = [
+        ":firstadmin",
+        "//apps/server/internal/platform/config",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

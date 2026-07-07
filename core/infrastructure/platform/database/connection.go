@@ -18,9 +18,6 @@ import (
 //go:embed migrations/*.sql
 var migrationsFS embed.FS
 
-//go:embed seed.sql
-var seedFS embed.FS
-
 const (
 	maxOpenConns    = 25
 	maxIdleConns    = 10
@@ -51,21 +48,12 @@ func Open(ctx context.Context, dsn string) (*DB, error) {
 }
 
 func Migrate(ctx context.Context, database *DB) error {
-	fresh, err := isFreshDB(database.DB)
-	if err != nil {
-		return fmt.Errorf("check fresh db: %w", err)
-	}
-
 	provider, err := migrationProvider(database.DB)
 	if err != nil {
 		return err
 	}
 	if _, err := provider.Up(ctx); err != nil {
 		return fmt.Errorf("apply migrations: %w", err)
-	}
-
-	if fresh {
-		return Seed(database)
 	}
 	return nil
 }
@@ -104,29 +92,4 @@ func (gooseLogger) Printf(format string, v ...any) {
 
 func (gooseLogger) Fatalf(format string, v ...any) {
 	slog.Error(strings.TrimSpace(fmt.Sprintf(format, v...)))
-}
-
-func isFreshDB(db *sql.DB) (bool, error) {
-	var exists bool
-	err := db.QueryRow(`
-		SELECT EXISTS (
-			SELECT FROM information_schema.tables
-			WHERE table_schema = 'public' AND table_name = 'iam_tenants'
-		)
-	`).Scan(&exists)
-	if err != nil {
-		return false, err
-	}
-	return !exists, nil
-}
-
-func Seed(db *DB) error {
-	ddl, err := seedFS.ReadFile("seed.sql")
-	if err != nil {
-		return fmt.Errorf("read seed.sql: %w", err)
-	}
-	if _, err := db.Exec(string(ddl)); err != nil {
-		return fmt.Errorf("apply seed: %w", err)
-	}
-	return nil
 }

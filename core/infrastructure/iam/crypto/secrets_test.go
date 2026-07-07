@@ -35,6 +35,26 @@ func TestSecretGeneratorYieldsValidUniqueAPITokens(t *testing.T) {
 	assert.Equal(t, "gav_", secretA.String()[:4])
 }
 
+func TestSecretGeneratorYieldsUniqueRandomSecrets(t *testing.T) {
+	g := crypto.NewSecretGenerator(rand.Reader)
+
+	a, err := g.NewRandomSecret()
+	require.NoError(t, err)
+	b, err := g.NewRandomSecret()
+	require.NoError(t, err)
+	assert.NotEqual(t, a, b, "random secrets must be unique across calls")
+	assert.Equal(t, 43, len(a), "same 32-byte entropy as the other minted secrets")
+}
+
+func TestNewRandomSecretReturnsErrorOnReaderFailure(t *testing.T) {
+	g := crypto.NewSecretGenerator(iotest.ErrReader(errors.New("rng broken")))
+
+	_, err := g.NewRandomSecret()
+
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "read random bytes")
+}
+
 func TestNewSessionTokenReturnsErrorOnReaderFailure(t *testing.T) {
 	g := crypto.NewSecretGenerator(iotest.ErrReader(errors.New("rng broken")))
 

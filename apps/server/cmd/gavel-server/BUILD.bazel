@@ -15,6 +15,7 @@ go_library(
     deps = [
         "//apps/server/internal/api/v1",
         "//apps/server/internal/platform/config",
+        "//apps/server/internal/platform/firstadmin",
         "//apps/server/internal/platform/frontend",
         "//apps/server/internal/platform/spa",
         "//core/application/casefile/classify",

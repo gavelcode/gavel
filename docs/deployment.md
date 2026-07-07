@@ -32,6 +32,7 @@ createdb gavel
 |----------|---------|-------------|
 | `GAVEL_ADDR` | `:8080` | HTTP listen address |
 | `GAVEL_DATABASE_URL` | `postgres://localhost:5432/gavel?sslmode=disable` | PostgreSQL connection string |
+| `GAVEL_ADMIN_PASSWORD` | *(generated)* | Initial admin password, used only on first boot. If unset, a strong random one is generated and logged once. |
 | `GAVEL_SESSION_TTL_HOURS` | `168` (7 days) | Session expiration |
 | `GAVEL_SECURE_COOKIES` | `false` | Set to `true` in production (requires HTTPS) |
 | `GAVEL_DATA_DIR` | `./data` | Data directory for file storage |
@@ -48,18 +49,27 @@ Or apply migrations only (without starting the server):
 gavel-server migrate
 ```
 
+`migrate` applies the schema and nothing else — it does **not** seed the tenant
+or admin. First-boot seeding happens only under `serve`, so a `migrate`-only
+init job leaves an empty `iam_users`; you must run `serve` at least once to get
+the admin credential. Both are idempotent and safe to re-run.
+
 ## First boot
 
-On a fresh database, `database.Migrate()` applies the versioned migrations
-under `migrations/` (starting with `00001_bootstrap.sql`) and then a seed
-(`seed.sql`) that creates:
+On a fresh database, `gavel-server serve` applies the versioned migrations under
+`migrations/` (starting with `00001_bootstrap.sql`) and then, only when no user
+exists yet, seeds:
 
 1. The `default` tenant
-2. An admin user `admin@gavel.local` with the password `changeme` and
-   `must_change_password=true`
+2. An admin user `admin@gavel.local` with `must_change_password=true`
 
-**Change the password on first login.** The seeded `changeme` is public; the
-security control is the forced password change before the server is exposed.
+The admin's password comes from `GAVEL_ADMIN_PASSWORD`. If you don't set it,
+`gavel-server` generates a strong random one and logs it **once** at startup
+(`admin_password=…`) — copy it, log in, and change it. No known credential is
+ever shipped, and the password is hashed with a per-install random Argon2id salt
+before it reaches the database. Seeding only fires when the `iam_users` table is
+empty, so as long as any user remains it never runs again — a deliberately
+removed admin is not resurrected while other users exist.
 
 ## Health checks
 

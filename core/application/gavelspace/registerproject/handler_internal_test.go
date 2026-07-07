@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	gsmodel "github.com/usegavel/gavel/core/domain/gavelspace/model"
+	"github.com/usegavel/gavel/core/domain/iam/model/tenant"
 )
 
 type stubRepo struct {
@@ -16,7 +17,7 @@ type stubRepo struct {
 	findErr error
 }
 
-func (s *stubRepo) FindByName(_ context.Context, _ gsmodel.GavelspaceID) (gsmodel.Gavelspace, error) {
+func (s *stubRepo) FindByName(_ context.Context, _ tenant.TenantID, _ gsmodel.GavelspaceID) (gsmodel.Gavelspace, error) {
 	if s.findErr != nil {
 		return gsmodel.Gavelspace{}, s.findErr
 	}
@@ -29,6 +30,7 @@ func TestExecuteInvalidGavelspaceNameFromDomain(t *testing.T) {
 	handler := &Handler{gavelspaces: &stubRepo{}}
 
 	cmd := Command{
+		tenantID:       testTenant,
 		gavelspaceName: "   ",
 		projectID:      uuid.NewString(),
 		targetPattern:  "//svc/...",
@@ -40,12 +42,13 @@ func TestExecuteInvalidGavelspaceNameFromDomain(t *testing.T) {
 }
 
 func TestExecuteInvalidTargetPatternFromDomain(t *testing.T) {
-	gs, err := gsmodel.NewGavelspace("alpha")
+	gs, err := gsmodel.NewGavelspace(tenant.NewTenantID(uuid.MustParse(testTenant)), "alpha")
 	require.NoError(t, err)
 
 	handler := &Handler{gavelspaces: &stubRepo{gs: gs}}
 
 	cmd := Command{
+		tenantID:       testTenant,
 		gavelspaceName: "alpha",
 		projectID:      uuid.NewString(),
 		targetPattern:  "   ",
@@ -55,3 +58,5 @@ func TestExecuteInvalidTargetPatternFromDomain(t *testing.T) {
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "new project ref")
 }
+
+const testTenant = "22222222-2222-2222-2222-222222222222"

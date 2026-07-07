@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"github.com/usegavel/gavel/core/application/gavelspace/get"
+	"github.com/usegavel/gavel/core/domain/iam/model/tenant"
 )
 
 type fakeGavelspaceGetter struct {
@@ -13,7 +14,7 @@ type fakeGavelspaceGetter struct {
 	err    error
 }
 
-func (f *fakeGavelspaceGetter) GetByName(_ context.Context, _ string) (*get.GavelspaceDetail, error) {
+func (f *fakeGavelspaceGetter) GetByName(_ context.Context, _ tenant.TenantID, _ string) (*get.GavelspaceDetail, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	if f.err != nil {
@@ -21,3 +22,5 @@ func (f *fakeGavelspaceGetter) GetByName(_ context.Context, _ string) (*get.Gave
 	}
 	return f.result, nil
 }
+
+const testTenant = "22222222-2222-2222-2222-222222222222"

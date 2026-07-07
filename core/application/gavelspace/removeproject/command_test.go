@@ -24,7 +24,7 @@ func TestNewCommand(t *testing.T) {
 
 	for _, testCase := range tests {
 		t.Run(testCase.name, func(t *testing.T) {
-			cmd, err := removeproject.NewCommand(testCase.gavelspaceName, testCase.projectID)
+			cmd, err := removeproject.NewCommand(testTenant, testCase.gavelspaceName, testCase.projectID)
 
 			if testCase.wantErr {
 				require.Error(t, err)
@@ -36,4 +36,10 @@ func TestNewCommand(t *testing.T) {
 			assert.Equal(t, testCase.projectID, cmd.ProjectID())
 		})
 	}
+}
+
+func TestNewCommandRejectsEmptyTenant(t *testing.T) {
+	_, err := removeproject.NewCommand("", "monorepo", "proj-1")
+	require.Error(t, err)
+	assert.ErrorIs(t, err, removeproject.ErrInvalidCommand)
 }

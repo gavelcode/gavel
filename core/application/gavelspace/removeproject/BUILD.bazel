@@ -14,6 +14,7 @@ go_library(
         "//core/application/shared/event",
         "//core/domain/gavelspace/model",
         "//core/domain/gavelspace/service",
+        "//core/domain/iam/model/tenant",
         "//core/domain/project/model",
         "//core/domain/shared/failure",
     ],
@@ -30,6 +31,7 @@ go_test(
     embed = [":removeproject"],
     deps = [
         "//core/domain/gavelspace/model",
+        "//core/domain/iam/model/tenant",
         "//core/domain/project/model",
         "@com_github_google_uuid//:uuid",
         "@com_github_stretchr_testify//assert",

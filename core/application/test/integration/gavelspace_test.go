@@ -20,7 +20,7 @@ func mustCreateGavelspace(t *testing.T, repo *memgavelspace.GavelspaceRepository
 	ctx := context.Background()
 
 	handler := gavelspacecreate.NewHandler(repo)
-	cmd, err := gavelspacecreate.NewCommand(name)
+	cmd, err := gavelspacecreate.NewCommand(testTenant, name)
 	require.NoError(t, err)
 
 	result, err := handler.Execute(ctx, cmd)
@@ -35,7 +35,7 @@ func TestGavelspaceLifecycle_CreateAndRetrieve(t *testing.T) {
 	repo := memgavelspace.NewGavelspaceRepository()
 
 	handler := gavelspacecreate.NewHandler(repo)
-	cmd, err := gavelspacecreate.NewCommand("my-monorepo")
+	cmd, err := gavelspacecreate.NewCommand(testTenant, "my-monorepo")
 	require.NoError(t, err)
 
 	result, err := handler.Execute(ctx, cmd)
@@ -46,7 +46,7 @@ func TestGavelspaceLifecycle_CreateAndRetrieve(t *testing.T) {
 	gsID, err := gsmodel.NewGavelspaceID("my-monorepo")
 	require.NoError(t, err)
 
-	found, err := repo.FindByName(ctx, gsID)
+	found, err := repo.FindByName(ctx, testTenantID, gsID)
 	require.NoError(t, err)
 
 	assert.Equal(t, "my-monorepo", found.ID().String())
@@ -62,7 +62,7 @@ func TestGavelspaceLifecycle_RegisterProject(t *testing.T) {
 	projectID := mustCreateProject(t, projRepo, "register-proj")
 
 	regHandler := registerproject.NewHandler(gsRepo)
-	regCmd, err := registerproject.NewCommand(gsName, projectID, "//register-proj/...")
+	regCmd, err := registerproject.NewCommand(testTenant, gsName, projectID, "//register-proj/...")
 	require.NoError(t, err)
 
 	_, err = regHandler.Execute(ctx, regCmd)
@@ -71,7 +71,7 @@ func TestGavelspaceLifecycle_RegisterProject(t *testing.T) {
 	gsID, err := gsmodel.NewGavelspaceID(gsName)
 	require.NoError(t, err)
 
-	found, err := gsRepo.FindByName(ctx, gsID)
+	found, err := gsRepo.FindByName(ctx, testTenantID, gsID)
 	require.NoError(t, err)
 
 	projects := found.Projects()
@@ -89,13 +89,13 @@ func TestGavelspaceLifecycle_RegisterAndRemoveProject(t *testing.T) {
 	projectID := mustCreateProject(t, projRepo, "remove-proj")
 
 	regHandler := registerproject.NewHandler(gsRepo)
-	regCmd, err := registerproject.NewCommand(gsName, projectID, "//remove-proj/...")
+	regCmd, err := registerproject.NewCommand(testTenant, gsName, projectID, "//remove-proj/...")
 	require.NoError(t, err)
 	_, err = regHandler.Execute(ctx, regCmd)
 	require.NoError(t, err)
 
 	rmHandler := removeproject.NewHandler(gsRepo)
-	rmCmd, err := removeproject.NewCommand(gsName, projectID)
+	rmCmd, err := removeproject.NewCommand(testTenant, gsName, projectID)
 	require.NoError(t, err)
 	_, err = rmHandler.Execute(ctx, rmCmd)
 	require.NoError(t, err)
@@ -103,7 +103,7 @@ func TestGavelspaceLifecycle_RegisterAndRemoveProject(t *testing.T) {
 	gsID, err := gsmodel.NewGavelspaceID(gsName)
 	require.NoError(t, err)
 
-	found, err := gsRepo.FindByName(ctx, gsID)
+	found, err := gsRepo.FindByName(ctx, testTenantID, gsID)
 	require.NoError(t, err)
 
 	assert.Empty(t, found.Projects())
@@ -119,12 +119,12 @@ func TestGavelspaceLifecycle_RejectDuplicateRegistration(t *testing.T) {
 
 	regHandler := registerproject.NewHandler(gsRepo)
 
-	regCmd, err := registerproject.NewCommand(gsName, projectID, "//dup-proj/...")
+	regCmd, err := registerproject.NewCommand(testTenant, gsName, projectID, "//dup-proj/...")
 	require.NoError(t, err)
 	_, err = regHandler.Execute(ctx, regCmd)
 	require.NoError(t, err)
 
-	dupCmd, err := registerproject.NewCommand(gsName, projectID, "//dup-proj/...")
+	dupCmd, err := registerproject.NewCommand(testTenant, gsName, projectID, "//dup-proj/...")
 	require.NoError(t, err)
 	_, err = regHandler.Execute(ctx, dupCmd)
 	require.Error(t, err, "registering the same target pattern twice must fail")

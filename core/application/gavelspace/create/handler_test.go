@@ -48,7 +48,19 @@ func TestNewHandlerRejectsNilDependency(t *testing.T) {
 
 func mustCommand(t *testing.T, name string) create.Command {
 	t.Helper()
-	cmd, err := create.NewCommand(name)
+	cmd, err := create.NewCommand(testTenant, name)
 	require.NoError(t, err)
 	return cmd
+}
+
+func TestHandlerExecuteInvalidTenant(t *testing.T) {
+	repo := newFakeGavelspaceRepo()
+	handler := create.NewHandler(repo)
+	cmd, err := create.NewCommand("not-a-uuid", "monorepo")
+	require.NoError(t, err)
+
+	_, err = handler.Execute(context.Background(), cmd)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "tenant id")
+	assert.Equal(t, 0, repo.count())
 }

@@ -7,6 +7,7 @@ import (
 	"github.com/usegavel/gavel/core/application/shared/event"
 	gsmodel "github.com/usegavel/gavel/core/domain/gavelspace/model"
 	gsservice "github.com/usegavel/gavel/core/domain/gavelspace/service"
+	"github.com/usegavel/gavel/core/domain/iam/model/tenant"
 )
 
 type Handler struct {
@@ -21,7 +22,12 @@ func NewHandler(gavelspaces gsservice.GavelspaceRepository) *Handler {
 }
 
 func (h *Handler) Execute(ctx context.Context, cmd Command) (Result, error) {
-	gavelspace, err := gsmodel.NewGavelspace(cmd.Name())
+	tenantID, err := tenant.ParseTenantID(cmd.TenantID())
+	if err != nil {
+		return Result{}, fmt.Errorf("tenant id: %w", err)
+	}
+
+	gavelspace, err := gsmodel.NewGavelspace(tenantID, cmd.Name())
 	if err != nil {
 		return Result{}, fmt.Errorf("new gavelspace: %w", err)
 	}

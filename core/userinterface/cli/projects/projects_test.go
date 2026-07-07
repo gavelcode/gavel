@@ -16,6 +16,7 @@ import (
 	"github.com/usegavel/gavel/core/application/gavelspace/loadgavelspace"
 	"github.com/usegavel/gavel/core/domain/casefile/model/evidence"
 	gavelspacemodel "github.com/usegavel/gavel/core/domain/gavelspace/model"
+	"github.com/usegavel/gavel/core/domain/iam/model/tenant"
 	projectmodel "github.com/usegavel/gavel/core/domain/project/model"
 	"github.com/usegavel/gavel/core/domain/project/model/archpolicy"
 	"github.com/usegavel/gavel/core/domain/project/model/qualitygate"
@@ -39,7 +40,7 @@ func workspaceFail() (string, error) { return "", errors.New("no workspace") }
 
 func newGavelspace(t *testing.T, name string) gavelspacemodel.Gavelspace {
 	t.Helper()
-	gs, err := gavelspacemodel.NewGavelspace(name)
+	gs, err := gavelspacemodel.NewGavelspace(tenant.LocalTenantID, name)
 	require.NoError(t, err)
 	return gs
 }

@@ -8,6 +8,7 @@ import (
 	"github.com/usegavel/gavel/core/application/shared/event"
 	gsmodel "github.com/usegavel/gavel/core/domain/gavelspace/model"
 	gsservice "github.com/usegavel/gavel/core/domain/gavelspace/service"
+	"github.com/usegavel/gavel/core/domain/iam/model/tenant"
 	projectmodel "github.com/usegavel/gavel/core/domain/project/model"
 )
 
@@ -28,12 +29,17 @@ func (h *Handler) Execute(ctx context.Context, cmd Command) (Result, error) {
 		return Result{}, fmt.Errorf("gavelspace name: %w", err)
 	}
 
+	tenantID, err := tenant.ParseTenantID(cmd.TenantID())
+	if err != nil {
+		return Result{}, fmt.Errorf("tenant id: %w", err)
+	}
+
 	projectID, err := projectmodel.ParseProjectID(cmd.ProjectID())
 	if err != nil {
 		return Result{}, fmt.Errorf("project id: %w", err)
 	}
 
-	gavelspace, err := h.gavelspaces.FindByName(ctx, name)
+	gavelspace, err := h.gavelspaces.FindByName(ctx, tenantID, name)
 	if err != nil {
 		return Result{}, fmt.Errorf("load gavelspace: %w", err)
 	}

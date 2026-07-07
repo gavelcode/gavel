@@ -16,7 +16,7 @@ import (
 
 func TestHandlerRegistersExistingProject(t *testing.T) {
 	repo := newFakeGavelspaceRepo()
-	gs, err := gsmodel.NewGavelspace("alpha")
+	gs, err := gsmodel.NewGavelspace(testTenantID, "alpha")
 	require.NoError(t, err)
 	gs.ClearEvents()
 	repo.seed(gs)
@@ -24,7 +24,7 @@ func TestHandlerRegistersExistingProject(t *testing.T) {
 	handler := registerproject.NewHandler(repo)
 	id := projectmodel.NewProjectID(uuid.New())
 
-	cmd, err := registerproject.NewCommand("alpha", id.String(), "//svc/...")
+	cmd, err := registerproject.NewCommand(testTenant, "alpha", id.String(), "//svc/...")
 	require.NoError(t, err)
 
 	result, err := handler.Execute(context.Background(), cmd)
@@ -33,7 +33,7 @@ func TestHandlerRegistersExistingProject(t *testing.T) {
 
 	name, err := gsmodel.NewGavelspaceID("alpha")
 	require.NoError(t, err)
-	loaded, err := repo.FindByName(context.Background(), name)
+	loaded, err := repo.FindByName(context.Background(), testTenantID, name)
 	require.NoError(t, err)
 	require.Len(t, loaded.Projects(), 1, "project added to gavelspace")
 }
@@ -42,7 +42,7 @@ func TestHandlerGavelspaceNotFound(t *testing.T) {
 	repo := newFakeGavelspaceRepo()
 	handler := registerproject.NewHandler(repo)
 	id := projectmodel.NewProjectID(uuid.New())
-	cmd, err := registerproject.NewCommand(uuid.NewString(), id.String(), "//svc/...")
+	cmd, err := registerproject.NewCommand(testTenant, uuid.NewString(), id.String(), "//svc/...")
 	require.NoError(t, err)
 
 	_, err = handler.Execute(context.Background(), cmd)
@@ -55,12 +55,12 @@ func TestNewHandlerPanicsOnNilRepo(t *testing.T) {
 
 func TestHandlerExecuteInvalidProjectID(t *testing.T) {
 	repo := newFakeGavelspaceRepo()
-	gs, err := gsmodel.NewGavelspace("alpha")
+	gs, err := gsmodel.NewGavelspace(testTenantID, "alpha")
 	require.NoError(t, err)
 	repo.seed(gs)
 
 	handler := registerproject.NewHandler(repo)
-	cmd, err := registerproject.NewCommand("alpha", "not-a-uuid", "//svc/...")
+	cmd, err := registerproject.NewCommand(testTenant, "alpha", "not-a-uuid", "//svc/...")
 	require.NoError(t, err)
 
 	_, err = handler.Execute(context.Background(), cmd)
@@ -70,7 +70,7 @@ func TestHandlerExecuteInvalidProjectID(t *testing.T) {
 
 func TestHandlerExecuteSaveError(t *testing.T) {
 	repo := newFakeGavelspaceRepo()
-	gs, err := gsmodel.NewGavelspace("alpha")
+	gs, err := gsmodel.NewGavelspace(testTenantID, "alpha")
 	require.NoError(t, err)
 	gs.ClearEvents()
 	repo.seed(gs)
@@ -78,10 +78,22 @@ func TestHandlerExecuteSaveError(t *testing.T) {
 
 	handler := registerproject.NewHandler(repo)
 	id := projectmodel.NewProjectID(uuid.New())
-	cmd, err := registerproject.NewCommand("alpha", id.String(), "//svc/...")
+	cmd, err := registerproject.NewCommand(testTenant, "alpha", id.String(), "//svc/...")
 	require.NoError(t, err)
 
 	_, err = handler.Execute(context.Background(), cmd)
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "save gavelspace")
+}
+
+func TestHandlerExecuteInvalidTenant(t *testing.T) {
+	repo := newFakeGavelspaceRepo()
+	handler := registerproject.NewHandler(repo)
+	id := projectmodel.NewProjectID(uuid.New())
+	cmd, err := registerproject.NewCommand("not-a-uuid", "alpha", id.String(), "//svc/...")
+	require.NoError(t, err)
+
+	_, err = handler.Execute(context.Background(), cmd)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "tenant id")
 }

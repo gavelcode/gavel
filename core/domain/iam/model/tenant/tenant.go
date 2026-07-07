@@ -72,6 +72,18 @@ func (t *Tenant) Suspend(occurredAt time.Time) error {
 	return nil
 }
 
+func (t *Tenant) Activate(occurredAt time.Time) error {
+	if t.status.IsActive() {
+		return fmt.Errorf("%w: tenant is already active", ErrInvalidTenant)
+	}
+	if occurredAt.IsZero() {
+		return fmt.Errorf("%w: occurredAt must not be zero", ErrInvalidTenant)
+	}
+	t.status = StatusActive
+	t.events = append(t.events, NewTenantActivated(t.id, occurredAt))
+	return nil
+}
+
 func (t *Tenant) Events() []event.DomainEvent {
 	copied := make([]event.DomainEvent, len(t.events))
 	copy(copied, t.events)

@@ -5,6 +5,7 @@ import "time"
 const (
 	EventNameTenantCreated   = "iam.tenant_created"
 	EventNameTenantSuspended = "iam.tenant_suspended"
+	EventNameTenantActivated = "iam.tenant_activated"
 )
 
 type TenantCreated struct {
@@ -41,3 +42,16 @@ func NewTenantSuspended(tenantID TenantID, occurredAt time.Time) TenantSuspended
 func (e TenantSuspended) EventName() string     { return EventNameTenantSuspended }
 func (e TenantSuspended) OccurredAt() time.Time { return e.occurredAt }
 func (e TenantSuspended) TenantID() TenantID    { return e.tenantID }
+
+type TenantActivated struct {
+	tenantID   TenantID
+	occurredAt time.Time
+}
+
+func NewTenantActivated(tenantID TenantID, occurredAt time.Time) TenantActivated {
+	return TenantActivated{tenantID: tenantID, occurredAt: occurredAt}
+}
+
+func (e TenantActivated) EventName() string     { return EventNameTenantActivated }
+func (e TenantActivated) OccurredAt() time.Time { return e.occurredAt }
+func (e TenantActivated) TenantID() TenantID    { return e.tenantID }

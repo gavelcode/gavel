@@ -116,3 +116,37 @@ func TestTenantSuspendRejectsZeroTimestamp(t *testing.T) {
 	require.Error(t, err)
 	assert.ErrorIs(t, err, tenant.ErrInvalidTenant)
 }
+
+func TestTenantActivate(t *testing.T) {
+	slug := mustTenantSlug(t, "acme")
+	tnt, _ := tenant.NewTenant(slug, "Acme Corp", iamTestTime)
+	require.NoError(t, tnt.Suspend(iamTestTime.Add(time.Hour)))
+	tnt.ClearEvents()
+
+	activatedAt := iamTestTime.Add(2 * time.Hour)
+	err := tnt.Activate(activatedAt)
+	require.NoError(t, err)
+	assert.True(t, tnt.Status().IsActive())
+
+	events := tnt.Events()
+	require.Len(t, events, 1)
+	activated, ok := events[0].(tenant.TenantActivated)
+	require.True(t, ok, "event must be TenantActivated, got %T", events[0])
+	assert.True(t, activated.TenantID().Equal(tnt.ID()))
+	assert.Equal(t, activatedAt, activated.OccurredAt())
+	assert.Equal(t, tenant.EventNameTenantActivated, activated.EventName())
+
+	err = tnt.Activate(activatedAt.Add(time.Hour))
+	require.Error(t, err, "Activate on an already-active tenant.Tenant must be rejected")
+	assert.ErrorIs(t, err, tenant.ErrInvalidTenant)
+}
+
+func TestTenantActivateRejectsZeroTimestamp(t *testing.T) {
+	slug := mustTenantSlug(t, "acme")
+	tnt, _ := tenant.NewTenant(slug, "Acme Corp", iamTestTime)
+	require.NoError(t, tnt.Suspend(iamTestTime.Add(time.Hour)))
+
+	err := tnt.Activate(time.Time{})
+	require.Error(t, err)
+	assert.ErrorIs(t, err, tenant.ErrInvalidTenant)
+}

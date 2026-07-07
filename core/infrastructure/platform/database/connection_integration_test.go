@@ -32,6 +32,21 @@ func TestMigrateRecordsSchemaVersion(t *testing.T) {
 	assert.GreaterOrEqual(t, version, int64(1), "the bootstrap migration must be recorded")
 }
 
+func TestMigrateScopesJudicialTablesByTenant(t *testing.T) {
+	db := testkit.TestDB(t)
+	ctx := context.Background()
+
+	for _, table := range []string{"gavelspaces", "projects", "casefiles", "pleadings"} {
+		var hasColumn bool
+		err := db.QueryRowContext(ctx,
+			`SELECT EXISTS (
+				SELECT FROM information_schema.columns
+				WHERE table_name = $1 AND column_name = 'tenant_id')`, table).Scan(&hasColumn)
+		require.NoError(t, err)
+		assert.True(t, hasColumn, "%s must be tenant-scoped with a tenant_id column", table)
+	}
+}
+
 func TestBeginTxAndCommit(t *testing.T) {
 	db := testkit.TestDB(t)
 	ctx := context.Background()

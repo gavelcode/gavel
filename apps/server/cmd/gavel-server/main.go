@@ -91,6 +91,7 @@ func main() {
 	}
 	root.AddCommand(serveCmd())
 	root.AddCommand(migrateCmd())
+	root.AddCommand(tenantCmd())
 	if err := root.Execute(); err != nil {
 		os.Exit(1)
 	}
@@ -165,7 +166,7 @@ func openAndMigrateDB(ctx context.Context, cfg *config.Config) (*database.DB, er
 func seedFirstAdmin(ctx context.Context, dbConn *database.DB, cfg *config.Config, logger *slog.Logger) error {
 	var generatedPassword string
 	seeded, err := database.Seed(ctx, dbConn, func() (string, error) {
-		password, generated, err := firstadmin.ResolvePassword(cfg, rand.Reader)
+		password, generated, err := firstadmin.ResolvePassword(cfg.AdminPassword, rand.Reader)
 		if err != nil {
 			return "", err
 		}

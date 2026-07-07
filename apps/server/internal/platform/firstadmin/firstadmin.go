@@ -9,17 +9,17 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/usegavel/gavel/apps/server/internal/platform/config"
 	"github.com/usegavel/gavel/core/infrastructure/iam/crypto"
 )
 
-// ResolvePassword returns the first-boot admin password: the operator's
-// GAVEL_ADMIN_PASSWORD when set, otherwise a freshly generated secret. generated
-// is true only for the generated case, so the caller can log it once after the
-// seed commits and never for an operator-supplied value.
-func ResolvePassword(cfg *config.Config, rng io.Reader) (password string, generated bool, err error) {
-	if cfg.AdminPassword != "" {
-		return cfg.AdminPassword, false, nil
+// ResolvePassword returns the admin password to seed: the operator-supplied one
+// when non-empty, otherwise a freshly generated secret. generated is true only
+// for the generated case, so the caller can log it once after the write commits
+// and never for an operator-supplied value. It is used both by first-boot
+// (GAVEL_ADMIN_PASSWORD) and by tenant provisioning (--admin-password).
+func ResolvePassword(configured string, rng io.Reader) (password string, generated bool, err error) {
+	if configured != "" {
+		return configured, false, nil
 	}
 	secret, err := crypto.NewSecretGenerator(rng).NewRandomSecret()
 	if err != nil {

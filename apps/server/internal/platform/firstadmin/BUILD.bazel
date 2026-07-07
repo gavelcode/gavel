@@ -5,10 +5,7 @@ go_library(
     srcs = ["firstadmin.go"],
     importpath = "github.com/usegavel/gavel/apps/server/internal/platform/firstadmin",
     visibility = ["//apps/server:__subpackages__"],
-    deps = [
-        "//apps/server/internal/platform/config",
-        "//core/infrastructure/iam/crypto",
-    ],
+    deps = ["//core/infrastructure/iam/crypto"],
 )
 
 go_test(
@@ -16,7 +13,6 @@ go_test(
     srcs = ["firstadmin_test.go"],
     deps = [
         ":firstadmin",
-        "//apps/server/internal/platform/config",
         "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//require",
     ],

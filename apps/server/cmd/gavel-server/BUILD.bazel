@@ -9,7 +9,10 @@ go_binary(
 
 go_library(
     name = "gavel-server_lib",
-    srcs = ["main.go"],
+    srcs = [
+        "main.go",
+        "tenant_commands.go",
+    ],
     importpath = "github.com/usegavel/gavel/apps/server/cmd/gavel-server",
     visibility = ["//visibility:private"],
     deps = [
@@ -39,6 +42,9 @@ go_library(
         "//core/application/iam/logout",
         "//core/application/iam/resolveprincipal",
         "//core/application/iam/revoketoken",
+        "//core/application/iam/tenant/activate",
+        "//core/application/iam/tenant/provision",
+        "//core/application/iam/tenant/suspend",
         "//core/application/pleading/file",
         "//core/application/pleading/get",
         "//core/application/pleading/list",
@@ -50,6 +56,7 @@ go_library(
         "//core/application/project/updatelanguages",
         "//core/application/project/updatequalitygate",
         "//core/application/supporting/search",
+        "//core/domain/iam/model/tenant",
         "//core/infrastructure/casefile/postgres",
         "//core/infrastructure/gavelspace/postgres",
         "//core/infrastructure/iam/argon2",

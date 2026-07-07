@@ -10,7 +10,10 @@ go_library(
         "querier.go",
         "tx.go",
     ],
-    embedsrcs = ["migrations/00001_bootstrap.sql"],
+    embedsrcs = [
+        "migrations/00001_bootstrap.sql",
+        "migrations/00002_tenant_scoping.sql",
+    ],
     importpath = "github.com/usegavel/gavel/core/infrastructure/platform/database",
     visibility = ["//visibility:public"],
     deps = [

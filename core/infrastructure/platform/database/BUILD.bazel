@@ -7,7 +7,7 @@ go_library(
     srcs = [
         "connection.go",
         "db.go",
-        "seed.go",
+        "querier.go",
         "tx.go",
     ],
     embedsrcs = ["migrations/00001_bootstrap.sql"],

@@ -55,6 +55,23 @@ func TestProvisionPersistsTenantAndAdmin(t *testing.T) {
 	savedAdmin, err := postgres.NewUserRepo(testDB).ByEmail(ctx, newTenant.ID(), email)
 	require.NoError(t, err)
 	assert.Equal(t, usermodel.RoleAdmin, savedAdmin.Role())
+
+	// Read the security-relevant columns straight from Postgres, so a repo INSERT
+	// that dropped or defaulted them wrong is caught rather than shipping green.
+	var (
+		mustChange   bool
+		active       bool
+		tenantStatus string
+	)
+	require.NoError(t, testDB.QueryRow(
+		"SELECT must_change_password, is_active FROM iam_users WHERE email = 'admin@acme.com'").
+		Scan(&mustChange, &active))
+	assert.True(t, mustChange, "the provisioned admin must be forced to change the password on first login")
+	assert.True(t, active, "the provisioned admin must be active")
+
+	require.NoError(t, testDB.QueryRow(
+		"SELECT status FROM iam_tenants WHERE slug = 'acme'").Scan(&tenantStatus))
+	assert.Equal(t, "active", tenantStatus, "the provisioned tenant must be active")
 }
 
 func TestProvisionRollsBackTenantWhenAdminSaveFails(t *testing.T) {

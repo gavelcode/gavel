@@ -9,14 +9,11 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/usegavel/gavel/apps/server/internal/platform/config"
 	"github.com/usegavel/gavel/apps/server/internal/platform/firstadmin"
 )
 
 func TestResolvePasswordUsesConfiguredValue(t *testing.T) {
-	cfg := &config.Config{AdminPassword: "s3cret-from-env"}
-
-	password, generated, err := firstadmin.ResolvePassword(cfg, rand.Reader)
+	password, generated, err := firstadmin.ResolvePassword("s3cret-from-env", rand.Reader)
 
 	require.NoError(t, err)
 	assert.Equal(t, "s3cret-from-env", password)
@@ -24,9 +21,7 @@ func TestResolvePasswordUsesConfiguredValue(t *testing.T) {
 }
 
 func TestResolvePasswordGeneratesWhenUnset(t *testing.T) {
-	cfg := &config.Config{AdminPassword: ""}
-
-	password, generated, err := firstadmin.ResolvePassword(cfg, rand.Reader)
+	password, generated, err := firstadmin.ResolvePassword("", rand.Reader)
 
 	require.NoError(t, err)
 	assert.NotEmpty(t, password)
@@ -34,9 +29,7 @@ func TestResolvePasswordGeneratesWhenUnset(t *testing.T) {
 }
 
 func TestResolvePasswordErrorsWhenGenerationFails(t *testing.T) {
-	cfg := &config.Config{AdminPassword: ""}
-
-	_, _, err := firstadmin.ResolvePassword(cfg, iotest.ErrReader(errors.New("rng broken")))
+	_, _, err := firstadmin.ResolvePassword("", iotest.ErrReader(errors.New("rng broken")))
 
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "generate initial admin password")

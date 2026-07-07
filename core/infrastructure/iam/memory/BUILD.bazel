@@ -6,6 +6,7 @@ go_library(
         "apitoken_repository.go",
         "fake_hasher.go",
         "fake_secret_generator.go",
+        "provisioner.go",
         "session_repository.go",
         "tenant_repository.go",
         "user_repository.go",

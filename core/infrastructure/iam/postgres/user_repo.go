@@ -15,12 +15,12 @@ import (
 )
 
 type UserRepo struct {
-	db *database.DB
+	db database.Querier
 }
 
 var _ service.UserRepository = (*UserRepo)(nil)
 
-func NewUserRepo(db *database.DB) *UserRepo {
+func NewUserRepo(db database.Querier) *UserRepo {
 	return &UserRepo{db: db}
 }
 
@@ -107,11 +107,6 @@ func (r *UserRepo) scanOne(ctx context.Context, where string, args ...any) (user
 		return usermodel.User{}, fmt.Errorf("hydrate password hash: %w", err)
 	}
 
-	var lastLogin = lastLoginAt.Time
-	if !lastLoginAt.Valid {
-		var zero = lastLogin
-		lastLogin = zero
-	}
-
-	return usermodel.ReconstituteUser(userID, tenantID, email, displayName, role, hash, mustChange, isActive, createdAt.Time, lastLogin)
+	return usermodel.ReconstituteUser(
+		userID, tenantID, email, displayName, role, hash, mustChange, isActive, createdAt.Time, lastLoginAt.Time)
 }

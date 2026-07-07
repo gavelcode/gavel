@@ -123,10 +123,12 @@ bounded context in `core/`.
   the `AuthMiddleware` (backed by `resolveprincipal`), the
   `SessionCookie` helper, and the body-size middleware.
 
-First boot seeds the `default` tenant + admin `admin@gavel.local`
-(`must_change_password=true`) only when no user exists yet. The admin password
-comes from `GAVEL_ADMIN_PASSWORD`, or a strong random one is generated and
-logged once; it is hashed with a per-install random Argon2id salt.
+First boot ensures the `default` tenant + admin `admin@gavel.local`
+(`must_change_password=true`) exist, recreating the admin whenever it is missing
+so an operator is never locked out; a fresh database is provisioned tenant+admin
+atomically, and replicas serialize on a Postgres advisory lock. The admin
+password comes from `GAVEL_ADMIN_PASSWORD`, or a strong random one is generated
+and logged once; it is hashed with a per-install random Argon2id salt.
 
 > Pull requests took the same path: once the model grew real behaviour
 > (status transitions with rules, invariants on filing, domain events) the
@@ -138,9 +140,10 @@ logged once; it is hashed with a per-install random Argon2id salt.
 
 - Backend starts with `bazel run //apps/server/cmd/gavel-server -- serve`.
 - Auto-migrations on startup (versioned goose migrations) plus a first-boot seed.
-- Seeds the `default` tenant and admin `admin@gavel.local`
-  (`must_change_password=true`) only when no user exists; the admin password is
-  `GAVEL_ADMIN_PASSWORD` or a random one logged once, hashed with a random salt.
+- Ensures the `default` tenant and admin `admin@gavel.local`
+  (`must_change_password=true`), recreating the admin if it is missing; the admin
+  password is `GAVEL_ADMIN_PASSWORD` or a random one logged once, hashed with a
+  random salt.
 - The server is a composition root in three layers:
   - `cmd/gavel-server/main.go` — instantiates IAM + core repositories
     against PostgreSQL, wires every application handler, mounts the

@@ -74,7 +74,11 @@ func insertGavelspaceWithProject(t *testing.T, testDB *database.DB, gavelspaceNa
 	t.Helper()
 	ctx := context.Background()
 	_, err := testDB.ExecContext(ctx,
-		"INSERT INTO gavelspaces (name) VALUES (?) ON CONFLICT DO NOTHING", gavelspaceName)
+		"INSERT INTO iam_tenants (id, slug, display_name, status, created_at) VALUES (?, 'local', 'Local', 'active', NOW()) ON CONFLICT DO NOTHING",
+		"11111111-1111-1111-1111-111111111111")
+	require.NoError(t, err)
+	_, err = testDB.ExecContext(ctx,
+		"INSERT INTO gavelspaces (name, tenant_id) VALUES (?, ?) ON CONFLICT DO NOTHING", gavelspaceName, "11111111-1111-1111-1111-111111111111")
 	require.NoError(t, err)
 	_, err = testDB.ExecContext(ctx,
 		"INSERT INTO gavelspace_projects (gavelspace_name, project_id) VALUES (?, ?)",

@@ -8,6 +8,7 @@ import (
 	"github.com/google/uuid"
 
 	gsmodel "github.com/usegavel/gavel/core/domain/gavelspace/model"
+	"github.com/usegavel/gavel/core/domain/iam/model/tenant"
 	projectmodel "github.com/usegavel/gavel/core/domain/project/model"
 	"github.com/usegavel/gavel/core/domain/shared/failure"
 	"github.com/usegavel/gavel/core/infrastructure/platform/database"
@@ -31,11 +32,11 @@ func (r *Repository) Save(ctx context.Context, gavelspace gsmodel.Gavelspace) er
 	defer func() { _ = transaction.Rollback() }()
 
 	_, err = transaction.ExecContext(ctx, `
-		INSERT INTO gavelspaces (name)
-		VALUES (?)
+		INSERT INTO gavelspaces (name, tenant_id)
+		VALUES (?, ?)
 		ON CONFLICT(name) DO UPDATE SET
 		    updated_at = ?
-	`, gavelspace.ID().String(), database.Now())
+	`, gavelspace.ID().String(), gavelspace.TenantID().UUID(), database.Now())
 	if err != nil {
 		return fmt.Errorf("upsert gavelspace: %w", err)
 	}
@@ -67,11 +68,12 @@ func (r *Repository) replaceProjectRefs(ctx context.Context, transaction *databa
 	return nil
 }
 
-func (r *Repository) FindByName(ctx context.Context, name gsmodel.GavelspaceID) (gsmodel.Gavelspace, error) {
+func (r *Repository) FindByName(ctx context.Context, tenantID tenant.TenantID, name gsmodel.GavelspaceID) (gsmodel.Gavelspace, error) {
 	var nameStr string
+	var tenantIDVal uuid.UUID
 	err := r.db.QueryRowContext(ctx,
-		"SELECT name FROM gavelspaces WHERE name = ?",
-		name.String()).Scan(&nameStr)
+		"SELECT name, tenant_id FROM gavelspaces WHERE name = ? AND tenant_id = ?",
+		name.String(), tenantID.UUID()).Scan(&nameStr, &tenantIDVal)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return gsmodel.Gavelspace{}, fmt.Errorf("%w: %s", errGavelspaceNotFound, name)
@@ -84,7 +86,7 @@ func (r *Repository) FindByName(ctx context.Context, name gsmodel.GavelspaceID) 
 		return gsmodel.Gavelspace{}, fmt.Errorf("load project refs: %w", err)
 	}
 
-	return gsmodel.ReconstituteGavelspace(name, refs)
+	return gsmodel.ReconstituteGavelspace(name, tenant.NewTenantID(tenantIDVal), refs)
 }
 
 func (r *Repository) loadProjectRefs(ctx context.Context, gavelspaceName string) ([]gsmodel.ProjectRef, error) {

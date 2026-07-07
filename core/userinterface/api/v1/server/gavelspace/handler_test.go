@@ -34,7 +34,7 @@ func TestListGavelspaces_ReturnsItems(t *testing.T) {
 	listFinder := &fakeListFinder{items: []gslist.GavelspaceSummary{summary}, total: 1}
 	handler := newTestHandler(listFinder, &fakeGetFinder{})
 
-	resp, err := handler.ListGavelspaces(context.Background(), gen.ListGavelspacesRequestObject{})
+	resp, err := handler.ListGavelspaces(authContext(), gen.ListGavelspacesRequestObject{})
 
 	require.NoError(t, err)
 	jsonResp, ok := resp.(gen.ListGavelspaces200JSONResponse)
@@ -48,7 +48,7 @@ func TestListGavelspaces_EmptyList(t *testing.T) {
 	listFinder := &fakeListFinder{items: nil, total: 0}
 	handler := newTestHandler(listFinder, &fakeGetFinder{})
 
-	resp, err := handler.ListGavelspaces(context.Background(), gen.ListGavelspacesRequestObject{})
+	resp, err := handler.ListGavelspaces(authContext(), gen.ListGavelspacesRequestObject{})
 
 	require.NoError(t, err)
 	jsonResp, ok := resp.(gen.ListGavelspaces200JSONResponse)
@@ -61,7 +61,7 @@ func TestListGavelspaces_FinderError(t *testing.T) {
 	listFinder := &fakeListFinder{err: errFake}
 	handler := newTestHandler(listFinder, &fakeGetFinder{})
 
-	resp, err := handler.ListGavelspaces(context.Background(), gen.ListGavelspacesRequestObject{})
+	resp, err := handler.ListGavelspaces(authContext(), gen.ListGavelspacesRequestObject{})
 
 	require.Error(t, err)
 	assert.Nil(t, resp)
@@ -72,7 +72,7 @@ func TestGetGavelspace_ReturnsDetail(t *testing.T) {
 	getFinder := &fakeGetFinder{detail: detail}
 	handler := newTestHandler(&fakeListFinder{}, getFinder)
 
-	resp, err := handler.GetGavelspace(context.Background(), gen.GetGavelspaceRequestObject{Name: "gavel"})
+	resp, err := handler.GetGavelspace(authContext(), gen.GetGavelspaceRequestObject{Name: "gavel"})
 
 	require.NoError(t, err)
 	jsonResp, ok := resp.(gen.GetGavelspace200JSONResponse)
@@ -88,7 +88,7 @@ func TestGetGavelspace_NotFoundReturns404(t *testing.T) {
 	getFinder := &fakeGetFinder{err: errNotFound}
 	handler := newTestHandler(&fakeListFinder{}, getFinder)
 
-	resp, err := handler.GetGavelspace(context.Background(), gen.GetGavelspaceRequestObject{Name: "missing"})
+	resp, err := handler.GetGavelspace(authContext(), gen.GetGavelspaceRequestObject{Name: "missing"})
 
 	require.NoError(t, err)
 	_, ok := resp.(gen.GetGavelspace404JSONResponse)
@@ -106,7 +106,7 @@ func TestCreateGavelspace_Success(t *testing.T) {
 	})
 
 	body := gen.CreateGavelspaceRequest{Name: "test-gs"}
-	resp, err := handler.CreateGavelspace(context.Background(), gen.CreateGavelspaceRequestObject{Body: &body})
+	resp, err := handler.CreateGavelspace(authContext(), gen.CreateGavelspaceRequestObject{Body: &body})
 
 	require.NoError(t, err)
 	jsonResp, ok := resp.(gen.CreateGavelspace201JSONResponse)
@@ -117,7 +117,7 @@ func TestCreateGavelspace_Success(t *testing.T) {
 func TestCreateGavelspace_NilBody(t *testing.T) {
 	handler := newTestHandler(&fakeListFinder{}, &fakeGetFinder{})
 
-	resp, err := handler.CreateGavelspace(context.Background(), gen.CreateGavelspaceRequestObject{Body: nil})
+	resp, err := handler.CreateGavelspace(authContext(), gen.CreateGavelspaceRequestObject{Body: nil})
 
 	require.NoError(t, err)
 	_, ok := resp.(gen.CreateGavelspace400JSONResponse)
@@ -135,7 +135,7 @@ func TestCreateGavelspace_ConflictOnDuplicate(t *testing.T) {
 	})
 
 	body := gen.CreateGavelspaceRequest{Name: "dup-gs"}
-	resp, err := handler.CreateGavelspace(context.Background(), gen.CreateGavelspaceRequestObject{Body: &body})
+	resp, err := handler.CreateGavelspace(authContext(), gen.CreateGavelspaceRequestObject{Body: &body})
 
 	require.NoError(t, err)
 	_, ok := resp.(gen.CreateGavelspace409JSONResponse)
@@ -145,7 +145,7 @@ func TestCreateGavelspace_ConflictOnDuplicate(t *testing.T) {
 func TestRegisterGavelspaceProject_NilBody(t *testing.T) {
 	handler := newTestHandler(&fakeListFinder{}, &fakeGetFinder{})
 
-	resp, err := handler.RegisterGavelspaceProject(context.Background(), gen.RegisterGavelspaceProjectRequestObject{
+	resp, err := handler.RegisterGavelspaceProject(authContext(), gen.RegisterGavelspaceProjectRequestObject{
 		Name: "gavel",
 		Body: nil,
 	})
@@ -158,7 +158,7 @@ func TestRegisterGavelspaceProject_NilBody(t *testing.T) {
 func TestRemoveGavelspaceProject_NotFound(t *testing.T) {
 	handler := newTestHandler(&fakeListFinder{}, &fakeGetFinder{})
 
-	resp, err := handler.RemoveGavelspaceProject(context.Background(), gen.RemoveGavelspaceProjectRequestObject{
+	resp, err := handler.RemoveGavelspaceProject(authContext(), gen.RemoveGavelspaceProjectRequestObject{
 		Name:      "gavel",
 		ProjectId: httpx.ParseUUIDOrZero("00000000-0000-0000-0000-000000000001"),
 	})
@@ -172,7 +172,7 @@ func TestCreateGavelspace_InvalidNameReturns400(t *testing.T) {
 	handler := newTestHandler(&fakeListFinder{}, &fakeGetFinder{})
 
 	body := gen.CreateGavelspaceRequest{Name: ""}
-	resp, err := handler.CreateGavelspace(context.Background(), gen.CreateGavelspaceRequestObject{Body: &body})
+	resp, err := handler.CreateGavelspace(authContext(), gen.CreateGavelspaceRequestObject{Body: &body})
 
 	require.NoError(t, err)
 	_, ok := resp.(gen.CreateGavelspace400JSONResponse)
@@ -183,7 +183,7 @@ func TestGetGavelspace_FinderErrorReturnsError(t *testing.T) {
 	getFinder := &fakeGetFinder{err: errFake}
 	handler := newTestHandler(&fakeListFinder{}, getFinder)
 
-	resp, err := handler.GetGavelspace(context.Background(), gen.GetGavelspaceRequestObject{Name: "gavel"})
+	resp, err := handler.GetGavelspace(authContext(), gen.GetGavelspaceRequestObject{Name: "gavel"})
 
 	require.Error(t, err)
 	assert.Nil(t, resp)
@@ -200,12 +200,12 @@ func TestRegisterGavelspaceProject_SuccessReturns204(t *testing.T) {
 	})
 
 	createBody := gen.CreateGavelspaceRequest{Name: "test-reg"}
-	_, err := handler.CreateGavelspace(context.Background(), gen.CreateGavelspaceRequestObject{Body: &createBody})
+	_, err := handler.CreateGavelspace(authContext(), gen.CreateGavelspaceRequestObject{Body: &createBody})
 	require.NoError(t, err)
 
 	projectID := httpx.ParseUUIDOrZero("11111111-1111-1111-1111-111111111111")
 	regBody := gen.RegisterGavelspaceProjectRequest{ProjectId: projectID, TargetPattern: "//core/..."}
-	resp, err := handler.RegisterGavelspaceProject(context.Background(), gen.RegisterGavelspaceProjectRequestObject{
+	resp, err := handler.RegisterGavelspaceProject(authContext(), gen.RegisterGavelspaceProjectRequestObject{
 		Name: "test-reg", Body: &regBody,
 	})
 
@@ -219,7 +219,7 @@ func TestRegisterGavelspaceProject_NotFoundReturns404(t *testing.T) {
 
 	projectID := httpx.ParseUUIDOrZero("11111111-1111-1111-1111-111111111111")
 	regBody := gen.RegisterGavelspaceProjectRequest{ProjectId: projectID, TargetPattern: "//core/..."}
-	resp, err := handler.RegisterGavelspaceProject(context.Background(), gen.RegisterGavelspaceProjectRequestObject{
+	resp, err := handler.RegisterGavelspaceProject(authContext(), gen.RegisterGavelspaceProjectRequestObject{
 		Name: "missing", Body: &regBody,
 	})
 
@@ -239,17 +239,17 @@ func TestRegisterGavelspaceProject_DuplicateReturns409(t *testing.T) {
 	})
 
 	createBody := gen.CreateGavelspaceRequest{Name: "dup-reg"}
-	_, err := handler.CreateGavelspace(context.Background(), gen.CreateGavelspaceRequestObject{Body: &createBody})
+	_, err := handler.CreateGavelspace(authContext(), gen.CreateGavelspaceRequestObject{Body: &createBody})
 	require.NoError(t, err)
 
 	projectID := httpx.ParseUUIDOrZero("11111111-1111-1111-1111-111111111111")
 	regBody := gen.RegisterGavelspaceProjectRequest{ProjectId: projectID, TargetPattern: "//core/..."}
-	_, err = handler.RegisterGavelspaceProject(context.Background(), gen.RegisterGavelspaceProjectRequestObject{
+	_, err = handler.RegisterGavelspaceProject(authContext(), gen.RegisterGavelspaceProjectRequestObject{
 		Name: "dup-reg", Body: &regBody,
 	})
 	require.NoError(t, err)
 
-	resp, err := handler.RegisterGavelspaceProject(context.Background(), gen.RegisterGavelspaceProjectRequestObject{
+	resp, err := handler.RegisterGavelspaceProject(authContext(), gen.RegisterGavelspaceProjectRequestObject{
 		Name: "dup-reg", Body: &regBody,
 	})
 
@@ -269,17 +269,17 @@ func TestRemoveGavelspaceProject_SuccessReturns204(t *testing.T) {
 	})
 
 	createBody := gen.CreateGavelspaceRequest{Name: "rm-test"}
-	_, err := handler.CreateGavelspace(context.Background(), gen.CreateGavelspaceRequestObject{Body: &createBody})
+	_, err := handler.CreateGavelspace(authContext(), gen.CreateGavelspaceRequestObject{Body: &createBody})
 	require.NoError(t, err)
 
 	projectID := httpx.ParseUUIDOrZero("11111111-1111-1111-1111-111111111111")
 	regBody := gen.RegisterGavelspaceProjectRequest{ProjectId: projectID, TargetPattern: "//core/..."}
-	_, err = handler.RegisterGavelspaceProject(context.Background(), gen.RegisterGavelspaceProjectRequestObject{
+	_, err = handler.RegisterGavelspaceProject(authContext(), gen.RegisterGavelspaceProjectRequestObject{
 		Name: "rm-test", Body: &regBody,
 	})
 	require.NoError(t, err)
 
-	resp, err := handler.RemoveGavelspaceProject(context.Background(), gen.RemoveGavelspaceProjectRequestObject{
+	resp, err := handler.RemoveGavelspaceProject(authContext(), gen.RemoveGavelspaceProjectRequestObject{
 		Name:      "rm-test",
 		ProjectId: projectID,
 	})
@@ -287,4 +287,34 @@ func TestRemoveGavelspaceProject_SuccessReturns204(t *testing.T) {
 	require.NoError(t, err)
 	_, ok := resp.(gen.RemoveGavelspaceProject204Response)
 	assert.True(t, ok, "expected 204 response, got %T", resp)
+}
+
+func TestGavelspaceHandlersRejectUnauthenticated(t *testing.T) {
+	handler := gavelspace.New(gavelspace.Deps{})
+	ctx := context.Background()
+
+	listResp, err := handler.ListGavelspaces(ctx, gen.ListGavelspacesRequestObject{})
+	require.NoError(t, err)
+	_, matched := listResp.(gen.ListGavelspaces401JSONResponse)
+	assert.True(t, matched, "list must reject missing principal")
+
+	createResp, err := handler.CreateGavelspace(ctx, gen.CreateGavelspaceRequestObject{Body: &gen.CreateGavelspaceRequest{Name: "x"}})
+	require.NoError(t, err)
+	_, matched = createResp.(gen.CreateGavelspace401JSONResponse)
+	assert.True(t, matched, "create must reject missing principal")
+
+	getResp, err := handler.GetGavelspace(ctx, gen.GetGavelspaceRequestObject{Name: "x"})
+	require.NoError(t, err)
+	_, matched = getResp.(gen.GetGavelspace401JSONResponse)
+	assert.True(t, matched, "get must reject missing principal")
+
+	regResp, err := handler.RegisterGavelspaceProject(ctx, gen.RegisterGavelspaceProjectRequestObject{Name: "x", Body: &gen.RegisterGavelspaceProjectRequest{}})
+	require.NoError(t, err)
+	_, matched = regResp.(gen.RegisterGavelspaceProject401JSONResponse)
+	assert.True(t, matched, "register must reject missing principal")
+
+	rmResp, err := handler.RemoveGavelspaceProject(ctx, gen.RemoveGavelspaceProjectRequestObject{Name: "x"})
+	require.NoError(t, err)
+	_, matched = rmResp.(gen.RemoveGavelspaceProject401JSONResponse)
+	assert.True(t, matched, "remove must reject missing principal")
 }

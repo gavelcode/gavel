@@ -15,6 +15,7 @@ import (
 	"github.com/usegavel/gavel/core/domain/casefile/model/evidence/finding"
 	"github.com/usegavel/gavel/core/domain/casefile/model/verdict"
 	gsmodel "github.com/usegavel/gavel/core/domain/gavelspace/model"
+	"github.com/usegavel/gavel/core/domain/iam/model/tenant"
 	projectmodel "github.com/usegavel/gavel/core/domain/project/model"
 	"github.com/usegavel/gavel/core/domain/shared/failure"
 	casefilepostgres "github.com/usegavel/gavel/core/infrastructure/casefile/postgres"
@@ -24,7 +25,21 @@ import (
 	projectpostgres "github.com/usegavel/gavel/core/infrastructure/project/postgres"
 )
 
-func setupDB(t *testing.T) *database.DB { return testkit.TestDB(t) }
+func setupDB(t *testing.T) *database.DB {
+	testDB := testkit.TestDB(t)
+	seedTenant(t, testDB)
+	return testDB
+}
+
+var testTenantID = tenant.NewTenantID(uuid.MustParse("22222222-2222-2222-2222-222222222222"))
+
+func seedTenant(t *testing.T, testDB *database.DB) {
+	t.Helper()
+	_, err := testDB.ExecContext(context.Background(),
+		`INSERT INTO iam_tenants (id, slug, display_name, status, created_at) VALUES (?, ?, ?, ?, ?)`,
+		testTenantID.UUID(), "test-tenant", "Test Tenant", "active", database.Now())
+	require.NoError(t, err)
+}
 
 func insertProject(t *testing.T, testDB *database.DB, key, name string) projectmodel.Project {
 	t.Helper()
@@ -37,7 +52,7 @@ func insertProject(t *testing.T, testDB *database.DB, key, name string) projectm
 
 func insertGavelspaceWithProjects(t *testing.T, testDB *database.DB, name string, projects []projectmodel.Project) gsmodel.Gavelspace {
 	t.Helper()
-	gavelspace, err := gsmodel.NewGavelspace(name)
+	gavelspace, err := gsmodel.NewGavelspace(testTenantID, name)
 	require.NoError(t, err)
 	now := time.Now().UTC()
 	for _, project := range projects {
@@ -86,7 +101,7 @@ func TestRepoSaveAndFindByName(t *testing.T) {
 
 	project := insertProject(t, testDB, "core", "Core")
 
-	gavelspace, err := gsmodel.NewGavelspace("my-monorepo")
+	gavelspace, err := gsmodel.NewGavelspace(testTenantID, "my-monorepo")
 	require.NoError(t, err)
 	now := time.Now().UTC()
 	ref, err := gsmodel.NewProjectRef(project.ID(), project.TargetPattern())
@@ -95,7 +110,7 @@ func TestRepoSaveAndFindByName(t *testing.T) {
 
 	require.NoError(t, repo.Save(ctx, gavelspace))
 
-	found, err := repo.FindByName(ctx, gavelspace.ID())
+	found, err := repo.FindByName(ctx, testTenantID, gavelspace.ID())
 	require.NoError(t, err)
 	assert.Equal(t, gavelspace.ID(), found.ID())
 	require.Len(t, found.Projects(), 1)
@@ -111,7 +126,7 @@ func TestRepoSaveUpdatesExistingGavelspace(t *testing.T) {
 	projectAlpha := insertProject(t, testDB, "alpha", "Alpha")
 	projectBeta := insertProject(t, testDB, "beta", "Beta")
 
-	gavelspace, err := gsmodel.NewGavelspace("evolving")
+	gavelspace, err := gsmodel.NewGavelspace(testTenantID, "evolving")
 	require.NoError(t, err)
 	now := time.Now().UTC()
 	ref, err := gsmodel.NewProjectRef(projectAlpha.ID(), projectAlpha.TargetPattern())
@@ -124,7 +139,7 @@ func TestRepoSaveUpdatesExistingGavelspace(t *testing.T) {
 	require.NoError(t, gavelspace.AddProject(ref2, now))
 	require.NoError(t, repo.Save(ctx, gavelspace))
 
-	found, err := repo.FindByName(ctx, gavelspace.ID())
+	found, err := repo.FindByName(ctx, testTenantID, gavelspace.ID())
 	require.NoError(t, err)
 	assert.Len(t, found.Projects(), 2)
 }
@@ -136,7 +151,7 @@ func TestRepoFindByNameNotFound(t *testing.T) {
 	name, err := gsmodel.NewGavelspaceID("nonexistent")
 	require.NoError(t, err)
 
-	_, err = repo.FindByName(context.Background(), name)
+	_, err = repo.FindByName(context.Background(), testTenantID, name)
 	require.Error(t, err)
 	assert.Equal(t, failure.NotFound, failure.Of(err))
 }
@@ -153,7 +168,7 @@ func TestRepoFindByNameReturnsErrorOnCancelledContext(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 
-	_, err = repo.FindByName(ctx, name)
+	_, err = repo.FindByName(ctx, testTenantID, name)
 	assert.Error(t, err)
 }
 
@@ -161,7 +176,7 @@ func TestRepoSaveReturnsErrorOnCancelledContext(t *testing.T) {
 	testDB := setupDB(t)
 	repo := gspostgres.NewRepository(testDB)
 
-	gavelspace, err := gsmodel.NewGavelspace("will-fail")
+	gavelspace, err := gsmodel.NewGavelspace(testTenantID, "will-fail")
 	require.NoError(t, err)
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -176,11 +191,11 @@ func TestRepoSaveWithEmptyProjects(t *testing.T) {
 	repo := gspostgres.NewRepository(testDB)
 	ctx := context.Background()
 
-	gavelspace, err := gsmodel.NewGavelspace("empty")
+	gavelspace, err := gsmodel.NewGavelspace(testTenantID, "empty")
 	require.NoError(t, err)
 	require.NoError(t, repo.Save(ctx, gavelspace))
 
-	found, err := repo.FindByName(ctx, gavelspace.ID())
+	found, err := repo.FindByName(ctx, testTenantID, gavelspace.ID())
 	require.NoError(t, err)
 	assert.Empty(t, found.Projects())
 }
@@ -195,7 +210,7 @@ func TestFinderList(t *testing.T) {
 	insertGavelspaceWithProjects(t, testDB, "mono-a", []projectmodel.Project{projectAlpha, projectBeta})
 	insertGavelspaceWithProjects(t, testDB, "mono-b", nil)
 
-	items, total, err := finder.List(ctx, 10, 0)
+	items, total, err := finder.List(ctx, testTenantID, 10, 0)
 	require.NoError(t, err)
 	assert.Equal(t, 2, total)
 	require.Len(t, items, 2)
@@ -217,12 +232,12 @@ func TestFinderListPagination(t *testing.T) {
 		insertGavelspaceWithProjects(t, testDB, fmt.Sprintf("page-%d", index), nil)
 	}
 
-	items, total, err := finder.List(ctx, 2, 0)
+	items, total, err := finder.List(ctx, testTenantID, 2, 0)
 	require.NoError(t, err)
 	assert.Equal(t, 3, total)
 	assert.Len(t, items, 2)
 
-	items2, _, err := finder.List(ctx, 2, 2)
+	items2, _, err := finder.List(ctx, testTenantID, 2, 2)
 	require.NoError(t, err)
 	assert.Len(t, items2, 1)
 }
@@ -231,7 +246,7 @@ func TestFinderListReturnsEmptyWhenNoGavelspaces(t *testing.T) {
 	testDB := setupDB(t)
 	finder := gspostgres.NewGavelspaceFinder(testDB)
 
-	items, total, err := finder.List(context.Background(), 10, 0)
+	items, total, err := finder.List(context.Background(), testTenantID, 10, 0)
 	require.NoError(t, err)
 	assert.Equal(t, 0, total)
 	assert.Empty(t, items)
@@ -244,7 +259,7 @@ func TestFinderListReturnsErrorOnCancelledContext(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 
-	_, _, err := finder.List(ctx, 10, 0)
+	_, _, err := finder.List(ctx, testTenantID, 10, 0)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "count gavelspaces")
 }
@@ -257,7 +272,7 @@ func TestFinderGetByName(t *testing.T) {
 	project := insertProject(t, testDB, "core", "Core")
 	insertGavelspaceWithProjects(t, testDB, "detail-test", []projectmodel.Project{project})
 
-	detail, err := finder.GetByName(ctx, "detail-test")
+	detail, err := finder.GetByName(ctx, testTenantID, "detail-test")
 	require.NoError(t, err)
 	assert.Equal(t, "detail-test", detail.Name)
 	assert.False(t, detail.CreatedAt.IsZero())
@@ -276,7 +291,7 @@ func TestFinderGetByNameWithLatestVerdict(t *testing.T) {
 	insertGavelspaceWithProjects(t, testDB, "verdict-test", []projectmodel.Project{project})
 	insertCaseFileWithPassingVerdict(t, testDB, project.ID(), "sha-pass")
 
-	detail, err := finder.GetByName(ctx, "verdict-test")
+	detail, err := finder.GetByName(ctx, testTenantID, "verdict-test")
 	require.NoError(t, err)
 	require.Len(t, detail.Projects, 1)
 	assert.Equal(t, "pass", detail.Projects[0].LatestVerdict)
@@ -286,7 +301,7 @@ func TestFinderGetByNameNotFound(t *testing.T) {
 	testDB := setupDB(t)
 	finder := gspostgres.NewGavelspaceFinder(testDB)
 
-	_, err := finder.GetByName(context.Background(), "nonexistent")
+	_, err := finder.GetByName(context.Background(), testTenantID, "nonexistent")
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "gavelspace not found")
 }
@@ -300,7 +315,7 @@ func TestFinderGetByNameReturnsErrorOnCancelledContext(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 
-	_, err := finder.GetByName(ctx, "ctx-get")
+	_, err := finder.GetByName(ctx, testTenantID, "ctx-get")
 	assert.Error(t, err)
 }
 
@@ -345,7 +360,7 @@ func TestFinderGetByNameWithEmptyProjects(t *testing.T) {
 
 	insertGavelspaceWithProjects(t, testDB, "no-projects", nil)
 
-	detail, err := finder.GetByName(context.Background(), "no-projects")
+	detail, err := finder.GetByName(context.Background(), testTenantID, "no-projects")
 	require.NoError(t, err)
 	assert.Equal(t, "no-projects", detail.Name)
 	assert.Empty(t, detail.Projects)
@@ -362,7 +377,7 @@ func TestFinderListReturnsErrorOnCorruptedCreatedAt(t *testing.T) {
 		"UPDATE gavelspaces SET created_at = 'not-a-date' WHERE name = ?", "bad-ts")
 	require.NoError(t, err)
 
-	_, _, err = finder.List(ctx, 10, 0)
+	_, _, err = finder.List(ctx, testTenantID, 10, 0)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "created_at")
 }
@@ -378,7 +393,7 @@ func TestFinderGetByNameReturnsErrorOnCorruptedCreatedAt(t *testing.T) {
 		"UPDATE gavelspaces SET created_at = 'not-a-date' WHERE name = ?", "bad-ts-get")
 	require.NoError(t, err)
 
-	_, err = finder.GetByName(ctx, "bad-ts-get")
+	_, err = finder.GetByName(ctx, testTenantID, "bad-ts-get")
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "created_at")
 }
@@ -398,7 +413,7 @@ func TestFinderListReturnsErrorOnDataQuerySchemaCorruption(t *testing.T) {
 	})
 
 	finder := gspostgres.NewGavelspaceFinder(testDB)
-	_, _, err = finder.List(ctx, 10, 0)
+	_, _, err = finder.List(ctx, testTenantID, 10, 0)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "list gavelspaces")
 }
@@ -419,7 +434,7 @@ func TestFinderGetByNameReturnsErrorOnProjectRefQueryFailure(t *testing.T) {
 	})
 
 	finder := gspostgres.NewGavelspaceFinder(testDB)
-	_, err = finder.GetByName(ctx, "proj-ref-break")
+	_, err = finder.GetByName(ctx, testTenantID, "proj-ref-break")
 	assert.Error(t, err)
 }
 
@@ -428,7 +443,7 @@ func TestRepoSaveReturnsErrorOnForeignKeyViolation(t *testing.T) {
 	repo := gspostgres.NewRepository(testDB)
 	ctx := context.Background()
 
-	gavelspace, err := gsmodel.NewGavelspace("fk-fail")
+	gavelspace, err := gsmodel.NewGavelspace(testTenantID, "fk-fail")
 	require.NoError(t, err)
 	require.NoError(t, repo.Save(ctx, gavelspace))
 
@@ -458,7 +473,7 @@ func TestRepoFindByNameReturnsErrorOnProjectRefSchemaCorruption(t *testing.T) {
 			"ALTER TABLE gavelspace_projects RENAME COLUMN target_pattern_corrupted TO target_pattern")
 	})
 
-	_, err = repo.FindByName(ctx, gavelspace.ID())
+	_, err = repo.FindByName(ctx, testTenantID, gavelspace.ID())
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "load project refs")
 }
@@ -476,7 +491,7 @@ func TestRepoFindByNameReturnsErrorOnCorruptedTargetPattern(t *testing.T) {
 		gavelspace.ID().String())
 	require.NoError(t, err)
 
-	_, err = repo.FindByName(ctx, gavelspace.ID())
+	_, err = repo.FindByName(ctx, testTenantID, gavelspace.ID())
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "project ref")
 }

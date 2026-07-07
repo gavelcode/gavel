@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/google/uuid"
 	"github.com/usegavel/gavel/core/application/casefile/classify"
 	"github.com/usegavel/gavel/core/application/casefile/createcasefile"
 	"github.com/usegavel/gavel/core/application/casefile/evidencedto"
@@ -19,7 +20,9 @@ import (
 	gsregister "github.com/usegavel/gavel/core/application/gavelspace/registerproject"
 	projectcreate "github.com/usegavel/gavel/core/application/project/create"
 	"github.com/usegavel/gavel/core/application/project/updatequalitygate"
+
 	"github.com/usegavel/gavel/core/domain/gavelspace/model"
+	"github.com/usegavel/gavel/core/domain/iam/model/tenant"
 	memgavelspace "github.com/usegavel/gavel/core/infrastructure/gavelspace/memory"
 	memproject "github.com/usegavel/gavel/core/infrastructure/project/memory"
 )
@@ -146,20 +149,20 @@ func TestCrossBC_GavelspaceProjectRegistration(t *testing.T) {
 	require.NoError(t, err)
 	projectID := createRes.ProjectID
 
-	gsCmd, err := gscreate.NewCommand("test-monorepo")
+	gsCmd, err := gscreate.NewCommand(testTenant, "test-monorepo")
 	require.NoError(t, err)
 	gsRes, err := fixture.createGS.Execute(ctx, gsCmd)
 	require.NoError(t, err)
 	assert.Equal(t, "test-monorepo", gsRes.Name)
 
-	regCmd, err := gsregister.NewCommand("test-monorepo", projectID, "//gs/...")
+	regCmd, err := gsregister.NewCommand(testTenant, "test-monorepo", projectID, "//gs/...")
 	require.NoError(t, err)
 	_, err = fixture.registerProject.Execute(ctx, regCmd)
 	require.NoError(t, err)
 
 	gsID, err := model.NewGavelspaceID("test-monorepo")
 	require.NoError(t, err)
-	gs, err := fixture.gavelspaceRepo.FindByName(ctx, gsID)
+	gs, err := fixture.gavelspaceRepo.FindByName(ctx, testTenantID, gsID)
 	require.NoError(t, err)
 
 	projects := gs.Projects()
@@ -186,3 +189,7 @@ func TestCrossBC_GavelspaceProjectRegistration(t *testing.T) {
 	assert.Equal(t, 1, result.Counters.FindingsCount)
 	assert.InDelta(t, 90.0, result.Counters.CoveragePercent, 0.001)
 }
+
+const testTenant = "22222222-2222-2222-2222-222222222222"
+
+var testTenantID = tenant.NewTenantID(uuid.MustParse(testTenant))

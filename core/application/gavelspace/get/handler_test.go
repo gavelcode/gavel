@@ -27,7 +27,7 @@ func TestNewQuery(t *testing.T) {
 
 	for _, testCase := range tests {
 		t.Run(testCase.name, func(t *testing.T) {
-			query, err := get.NewQuery(testCase.input)
+			query, err := get.NewQuery(testTenant, testCase.input)
 			if testCase.wantErr {
 				assert.Error(t, err)
 				return
@@ -55,7 +55,7 @@ func TestExecuteReturnsResult(t *testing.T) {
 	fake := &fakeGavelspaceGetter{result: expected}
 	h := get.NewHandler(fake)
 
-	query, err := get.NewQuery("my-monorepo")
+	query, err := get.NewQuery(testTenant, "my-monorepo")
 	require.NoError(t, err)
 
 	result, err := h.Execute(context.Background(), query)
@@ -72,7 +72,7 @@ func TestExecutePropagatesError(t *testing.T) {
 	fake := &fakeGavelspaceGetter{err: queryErr}
 	h := get.NewHandler(fake)
 
-	query, err := get.NewQuery("missing-repo")
+	query, err := get.NewQuery(testTenant, "missing-repo")
 	require.NoError(t, err)
 
 	_, err = h.Execute(context.Background(), query)
@@ -81,7 +81,22 @@ func TestExecutePropagatesError(t *testing.T) {
 }
 
 func TestErrInvalidQueryIsClassifiedAsValidation(t *testing.T) {
-	_, err := get.NewQuery("")
+	_, err := get.NewQuery(testTenant, "")
 	require.Error(t, err)
 	assert.Equal(t, failure.Validation, failure.Of(err))
+}
+
+func TestNewQueryRejectsEmptyTenant(t *testing.T) {
+	_, err := get.NewQuery("", "my-monorepo")
+	require.Error(t, err)
+}
+
+func TestExecuteInvalidTenant(t *testing.T) {
+	h := get.NewHandler(&fakeGavelspaceGetter{})
+	query, err := get.NewQuery("not-a-uuid", "my-monorepo")
+	require.NoError(t, err)
+
+	_, err = h.Execute(context.Background(), query)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "tenant id")
 }

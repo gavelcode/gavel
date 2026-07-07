@@ -4,27 +4,29 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/usegavel/gavel/core/domain/iam/model/tenant"
 	projectmodel "github.com/usegavel/gavel/core/domain/project/model"
 	"github.com/usegavel/gavel/core/domain/shared/event"
 )
 
 type Gavelspace struct {
 	id             GavelspaceID
+	tenantID       tenant.TenantID
 	projects       []ProjectRef
 	serverConfig   ServerConfig
 	findingsSource string
 	events         []event.DomainEvent
 }
 
-func NewGavelspace(name string) (Gavelspace, error) {
+func NewGavelspace(tenantID tenant.TenantID, name string) (Gavelspace, error) {
 	id, err := NewGavelspaceID(name)
 	if err != nil {
 		return Gavelspace{}, err
 	}
-	return Gavelspace{id: id}, nil
+	return Gavelspace{id: id, tenantID: tenantID}, nil
 }
 
-func ReconstituteGavelspace(gavelspaceID GavelspaceID, projects []ProjectRef) (Gavelspace, error) {
+func ReconstituteGavelspace(gavelspaceID GavelspaceID, tenantID tenant.TenantID, projects []ProjectRef) (Gavelspace, error) {
 	seen := make(map[string]bool, len(projects))
 	for _, p := range projects {
 		if seen[p.targetPattern] {
@@ -34,10 +36,11 @@ func ReconstituteGavelspace(gavelspaceID GavelspaceID, projects []ProjectRef) (G
 	}
 	copied := make([]ProjectRef, len(projects))
 	copy(copied, projects)
-	return Gavelspace{id: gavelspaceID, projects: copied}, nil
+	return Gavelspace{id: gavelspaceID, tenantID: tenantID, projects: copied}, nil
 }
 
 func (g *Gavelspace) ID() GavelspaceID           { return g.id }
+func (g *Gavelspace) TenantID() tenant.TenantID  { return g.tenantID }
 func (g *Gavelspace) ServerConfig() ServerConfig { return g.serverConfig }
 func (g *Gavelspace) FindingsSource() string     { return g.findingsSource }
 

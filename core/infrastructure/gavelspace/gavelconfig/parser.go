@@ -12,6 +12,7 @@ import (
 	"github.com/usegavel/gavel/core/domain/casefile/model/evidence"
 	"github.com/usegavel/gavel/core/domain/casefile/model/evidence/coverage"
 	gavelspacemodel "github.com/usegavel/gavel/core/domain/gavelspace/model"
+	"github.com/usegavel/gavel/core/domain/iam/model/tenant"
 	projectmodel "github.com/usegavel/gavel/core/domain/project/model"
 	"github.com/usegavel/gavel/core/domain/project/model/qualitygate"
 )
@@ -44,7 +45,7 @@ func mapToDomain(dto configDTO) (WorkspaceConfig, error) {
 		return WorkspaceConfig{}, fmt.Errorf("%w: must define at least one project", ErrParseConfig)
 	}
 
-	gavelspace, err := gavelspacemodel.NewGavelspace(dto.Name)
+	gavelspace, err := gavelspacemodel.NewGavelspace(tenant.LocalTenantID, dto.Name)
 	if err != nil {
 		return WorkspaceConfig{}, fmt.Errorf("name: %w", err)
 	}

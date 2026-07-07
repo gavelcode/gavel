@@ -5,7 +5,9 @@ import (
 	"errors"
 	"sync"
 
+	"github.com/google/uuid"
 	gsmodel "github.com/usegavel/gavel/core/domain/gavelspace/model"
+	"github.com/usegavel/gavel/core/domain/iam/model/tenant"
 )
 
 var errNotFound = errors.New("not found")
@@ -27,7 +29,7 @@ func (r *fakeGavelspaceRepo) seed(gavelspace gsmodel.Gavelspace) {
 	r.store[gavelspace.ID().String()] = gavelspace
 }
 
-func (r *fakeGavelspaceRepo) FindByName(_ context.Context, name gsmodel.GavelspaceID) (gsmodel.Gavelspace, error) {
+func (r *fakeGavelspaceRepo) FindByName(_ context.Context, _ tenant.TenantID, name gsmodel.GavelspaceID) (gsmodel.Gavelspace, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	if r.findErr != nil {
@@ -49,3 +51,7 @@ func (r *fakeGavelspaceRepo) Save(_ context.Context, gavelspace gsmodel.Gavelspa
 	r.store[gavelspace.ID().String()] = gavelspace
 	return nil
 }
+
+const testTenant = "22222222-2222-2222-2222-222222222222"
+
+var testTenantID = tenant.NewTenantID(uuid.MustParse(testTenant))

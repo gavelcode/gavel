@@ -10,7 +10,7 @@ import (
 )
 
 func TestGavelspace_ServerConfig(t *testing.T) {
-	gspace, err := model.NewGavelspace("myrepo")
+	gspace, err := model.NewGavelspace(testTenant, "myrepo")
 	require.NoError(t, err)
 
 	assert.False(t, gspace.ServerConfig().IsConfigured())
@@ -23,7 +23,7 @@ func TestGavelspace_ServerConfig(t *testing.T) {
 }
 
 func TestGavelspace_FindingsSource(t *testing.T) {
-	gspace, err := model.NewGavelspace("myrepo")
+	gspace, err := model.NewGavelspace(testTenant, "myrepo")
 	require.NoError(t, err)
 
 	assert.Equal(t, "", gspace.FindingsSource())

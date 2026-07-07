@@ -14,6 +14,7 @@ go_library(
         "//core/application/shared/event",
         "//core/domain/gavelspace/model",
         "//core/domain/gavelspace/service",
+        "//core/domain/iam/model/tenant",
         "//core/domain/shared/failure",
     ],
 )
@@ -28,6 +29,7 @@ go_test(
     deps = [
         ":create",
         "//core/domain/gavelspace/model",
+        "//core/domain/iam/model/tenant",
         "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//require",
     ],

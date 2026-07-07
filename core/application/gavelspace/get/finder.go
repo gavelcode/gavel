@@ -1,7 +1,11 @@
 package get
 
-import "context"
+import (
+	"context"
+
+	"github.com/usegavel/gavel/core/domain/iam/model/tenant"
+)
 
 type Finder interface {
-	GetByName(ctx context.Context, name string) (*GavelspaceDetail, error)
+	GetByName(ctx context.Context, tenantID tenant.TenantID, name string) (*GavelspaceDetail, error)
 }

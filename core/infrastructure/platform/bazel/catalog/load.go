@@ -5,11 +5,7 @@ import (
 	"fmt"
 )
 
-// catalog.yaml is synced from @gavel_tools//lint/catalog.yaml by `make
-// catalog-sync` and kept in lockstep by `make catalog-check`. Embedding it —
-// rather than reading it from Bazel runfiles — is what lets the distributed
-// standalone binary run `init` and `judge` off a Bazel workspace it did not
-// build itself.
+// Embedded (not read from Bazel runfiles) so the standalone binary runs off a workspace it did not build.
 //
 //go:embed catalog.yaml
 var embeddedCatalog []byte

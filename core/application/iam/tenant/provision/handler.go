@@ -27,12 +27,6 @@ func NewHandler(provisioner service.TenantProvisioner, hasher service.PasswordHa
 	return &Handler{provisioner: provisioner, hasher: hasher}
 }
 
-// Execute provisions a tenant together with its first administrator, mirroring
-// Vernon's coarse provisionTenant: a tenant without an admin is unusable, so the
-// two are created as one use case. The admin is forced to change the password on
-// first login. The application builds both aggregates; the TenantProvisioner
-// commits them atomically, so a partial provision — a tenant with no admin —
-// cannot happen.
 func (h *Handler) Execute(ctx context.Context, cmd Command) (Result, error) {
 	slug, err := tenant.NewSlug(cmd.Slug())
 	if err != nil {

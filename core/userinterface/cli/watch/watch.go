@@ -18,9 +18,7 @@ import (
 
 const (
 	detectWorkspaceTimeout = 30 * time.Second
-	// Version detection is best-effort metadata for the started event; cap it
-	// low so a cold/contended bazel never delays the watcher from registering.
-	detectVersionTimeout = 5 * time.Second
+	detectVersionTimeout   = 5 * time.Second
 )
 
 func NewCommand(handler *analyzetarget.Handler, resolver analyzetarget.TargetResolver) *cobra.Command {

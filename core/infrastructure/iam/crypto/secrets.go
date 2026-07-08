@@ -38,9 +38,6 @@ func (g *SecretGenerator) NewAPITokenSecret() (apitoken.Secret, error) {
 	return apitoken.NewSecret("gav_" + body)
 }
 
-// NewRandomSecret mints a bare URL-safe random string with the same entropy as
-// the minted tokens, for callers that need a raw secret rather than a typed
-// session or API token — e.g. the first-boot admin password.
 func (g *SecretGenerator) NewRandomSecret() (string, error) {
 	return g.randomBase64Body()
 }

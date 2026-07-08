@@ -8,11 +8,7 @@ import (
 	"strings"
 )
 
-// selfModuleRe matches `module(name = "gavel"...)` or `"gavel_tools"`,
-// whether the call is on a single line or split across multiple indented
-// lines. Those modules ship the aspects themselves, so a naive
-// strings.Contains check would miss the multi-line form and inject a
-// self-referential bazel_dep(name = "gavel_tools", ...) that bazel rejects.
+// Matches single- and multi-line module() so gavel/gavel_tools never self-inject a bazel_dep.
 const (
 	dirPermission  = 0o755
 	filePermission = 0o644
@@ -168,8 +164,7 @@ const (
 	registryLineCount = 2
 )
 
-// Bazel drops its implicit BCR default as soon as any --registry is declared,
-// so the gavel registry and BCR must both be listed explicitly.
+// Bazel drops its implicit BCR default once any --registry is set, so both must be listed.
 func ensureRegistryLines(root string) (bool, error) {
 	path := filepath.Join(root, ".bazelrc")
 	existing, err := os.ReadFile(path)

@@ -21,18 +21,12 @@ import (
 	"github.com/usegavel/gavel/core/infrastructure/platform/database"
 )
 
-// tenantCmd groups the operator-only tenant lifecycle commands. Provisioning and
-// suspending/activating a tenant crosses the tenant boundary, so it belongs to
-// whoever operates the host — the same privilege as serve/migrate — not to any
-// in-tenant admin or an HTTP endpoint.
 func tenantCmd() *cobra.Command {
 	command := &cobra.Command{
 		Use:   "tenant",
 		Short: "Manage tenants (operator-only)",
 	}
 	for _, sub := range []*cobra.Command{provisionTenantCmd(), suspendTenantCmd(), activateTenantCmd()} {
-		// A runtime failure (e.g. a taken slug) is not a usage error, so don't
-		// dump the flags help on top of it — the error message stands on its own.
 		sub.SilenceUsage = true
 		command.AddCommand(sub)
 	}
@@ -154,9 +148,6 @@ func activateTenantCmd() *cobra.Command {
 	return command
 }
 
-// openOperatorDB opens and migrates the database for an operator command, the
-// same as serve, so `tenant provision` against a never-migrated database gets
-// the schema applied instead of a raw "relation does not exist" error.
 func openOperatorDB(ctx context.Context) (*database.DB, *slog.Logger, error) {
 	cfg, err := config.Load()
 	if err != nil {

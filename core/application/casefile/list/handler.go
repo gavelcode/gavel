@@ -1,6 +1,11 @@
 package list
 
-import "context"
+import (
+	"context"
+	"fmt"
+
+	"github.com/usegavel/gavel/core/domain/iam/model/tenant"
+)
 
 type Handler struct {
 	lister Finder
@@ -14,7 +19,11 @@ func NewHandler(lister Finder) *Handler {
 }
 
 func (h *Handler) Execute(ctx context.Context, q Query) (Result, error) {
-	items, total, err := h.lister.ListByProject(ctx, q.TenantID(), q.ProjectID(), q.Gavelspace(), q.Limit(), q.Offset())
+	tenantID, err := tenant.ParseTenantID(q.TenantID())
+	if err != nil {
+		return Result{}, fmt.Errorf("tenant id: %w", err)
+	}
+	items, total, err := h.lister.ListByProject(ctx, tenantID, q.ProjectID(), q.Gavelspace(), q.Limit(), q.Offset())
 	if err != nil {
 		return Result{}, err
 	}

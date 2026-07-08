@@ -494,7 +494,7 @@ func TestCaseFileRepoWriteCounters(t *testing.T) {
 	}
 	require.NoError(t, repo.WriteCounters(ctx, caseFile.ID().String(), counters))
 
-	detail, err := cfFinder.GetByID(ctx, testTenantID.String(), caseFile.ID().String())
+	detail, err := cfFinder.GetByID(ctx, testTenantID, caseFile.ID().String())
 	require.NoError(t, err)
 	assert.Equal(t, 5, detail.NewFindings)
 	assert.Equal(t, 3, detail.ExistingFindings)

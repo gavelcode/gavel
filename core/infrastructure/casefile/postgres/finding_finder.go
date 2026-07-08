@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	findinglist "github.com/usegavel/gavel/core/application/casefile/listfindings"
+	"github.com/usegavel/gavel/core/domain/iam/model/tenant"
 	"github.com/usegavel/gavel/core/infrastructure/platform/database"
 )
 
@@ -17,7 +18,7 @@ func NewFindingFinder(db *database.DB) *FindingFinder {
 	return &FindingFinder{db: db}
 }
 
-func (q *FindingFinder) List(ctx context.Context, tenantID string, filters findinglist.Filters, limit, offset int) ([]findinglist.FindingView, int, error) {
+func (q *FindingFinder) List(ctx context.Context, tenantID tenant.TenantID, filters findinglist.Filters, limit, offset int) ([]findinglist.FindingView, int, error) {
 	where, args := buildFindingWhere(tenantID, filters)
 	join := ""
 	if filters.Gavelspace != "" {
@@ -97,9 +98,9 @@ func (q *FindingFinder) ListByFile(ctx context.Context, tenantID, caseFileID, fi
 	return items, rows.Err()
 }
 
-func buildFindingWhere(tenantID string, filters findinglist.Filters) (string, []any) {
+func buildFindingWhere(tenantID tenant.TenantID, filters findinglist.Filters) (string, []any) {
 	conditions := []string{"f.casefile_id IN (SELECT id FROM casefiles WHERE tenant_id = ?)"}
-	args := []any{tenantID}
+	args := []any{tenantID.UUID()}
 
 	if filters.ProjectID != "" {
 		conditions = append(conditions, "f.project_id = ?")

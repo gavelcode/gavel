@@ -24,7 +24,7 @@ type fakeListFinder struct {
 	err   error
 }
 
-func (f *fakeListFinder) ListByProject(_ context.Context, _, _, _, _ string, _, _ int) ([]pleadinglist.PleadingSummary, int, error) {
+func (f *fakeListFinder) ListByProject(_ context.Context, _ tenant.TenantID, _, _, _ string, _, _ int) ([]pleadinglist.PleadingSummary, int, error) {
 	return f.items, f.total, f.err
 }
 
@@ -33,7 +33,7 @@ type fakeGetFinder struct {
 	err    error
 }
 
-func (f *fakeGetFinder) GetByID(_ context.Context, _, _ string) (*pleadingget.PleadingDetail, error) {
+func (f *fakeGetFinder) GetByID(_ context.Context, _ tenant.TenantID, _ string) (*pleadingget.PleadingDetail, error) {
 	return f.detail, f.err
 }
 

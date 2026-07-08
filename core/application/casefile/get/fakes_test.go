@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"github.com/usegavel/gavel/core/application/casefile/get"
+	"github.com/usegavel/gavel/core/domain/iam/model/tenant"
 )
 
 type fakeCaseFileGetter struct {
@@ -13,7 +14,7 @@ type fakeCaseFileGetter struct {
 	err    error
 }
 
-func (f *fakeCaseFileGetter) GetByID(_ context.Context, _, _ string) (*get.CaseFileDetail, error) {
+func (f *fakeCaseFileGetter) GetByID(_ context.Context, _ tenant.TenantID, _ string) (*get.CaseFileDetail, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	if f.err != nil {

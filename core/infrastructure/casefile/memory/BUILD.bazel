@@ -12,6 +12,7 @@ go_library(
         "//core/domain/casefile/model",
         "//core/domain/casefile/model/evidence/finding",
         "//core/domain/casefile/service",
+        "//core/domain/iam/model/tenant",
         "//core/domain/project/model",
         "//core/domain/shared/failure",
     ],

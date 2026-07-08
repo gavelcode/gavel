@@ -61,6 +61,10 @@ func (h *Handler) CreateCaseFile(ctx context.Context, req gen.CreateCaseFileRequ
 }
 
 func (h *Handler) IngestCaseFileEvidence(ctx context.Context, req gen.IngestCaseFileEvidenceRequestObject) (gen.IngestCaseFileEvidenceResponseObject, error) {
+	principal, ok := auth.PrincipalFromContext(ctx)
+	if !ok {
+		return gen.IngestCaseFileEvidence401JSONResponse{UnauthorizedJSONResponse: httpx.Unauthorized("unauthenticated")}, nil
+	}
 	if req.Body == nil {
 		return gen.IngestCaseFileEvidence400JSONResponse{BadRequestJSONResponse: httpx.BadRequest("missing body")}, nil
 	}
@@ -70,7 +74,7 @@ func (h *Handler) IngestCaseFileEvidence(ctx context.Context, req gen.IngestCase
 		return gen.IngestCaseFileEvidence400JSONResponse{BadRequestJSONResponse: httpx.BadRequest(err.Error())}, nil
 	}
 
-	cmd, err := ingestevidence.NewCommand(req.Id.String(), []evidencedto.Evidence{dto})
+	cmd, err := ingestevidence.NewCommand(principal.TenantID, req.Id.String(), []evidencedto.Evidence{dto})
 	if err != nil {
 		return gen.IngestCaseFileEvidence400JSONResponse{BadRequestJSONResponse: httpx.BadRequest(err.Error())}, nil
 	}
@@ -99,6 +103,10 @@ func (h *Handler) IngestCaseFileEvidence(ctx context.Context, req gen.IngestCase
 }
 
 func (h *Handler) FinalizeCaseFile(ctx context.Context, req gen.FinalizeCaseFileRequestObject) (gen.FinalizeCaseFileResponseObject, error) {
+	principal, ok := auth.PrincipalFromContext(ctx)
+	if !ok {
+		return gen.FinalizeCaseFile401JSONResponse{UnauthorizedJSONResponse: httpx.Unauthorized("unauthenticated")}, nil
+	}
 	if req.Body == nil || req.Body.Verdict.Outcome == "" {
 		return gen.FinalizeCaseFile400JSONResponse{BadRequestJSONResponse: httpx.BadRequest("verdict is required")}, nil
 	}
@@ -112,7 +120,7 @@ func (h *Handler) FinalizeCaseFile(ctx context.Context, req gen.FinalizeCaseFile
 		}
 	}
 
-	cmd, err := finalize.NewCommand(req.Id.String(),
+	cmd, err := finalize.NewCommand(principal.TenantID, req.Id.String(),
 		finalize.WithPrecomputedVerdict(finalize.PrecomputedVerdict{
 			Outcome:     string(req.Body.Verdict.Outcome),
 			Rulings:     rulingInputs,

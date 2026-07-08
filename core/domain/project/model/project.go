@@ -40,6 +40,9 @@ type Project struct {
 }
 
 func NewProject(tenantID tenant.TenantID, key, name, targetPattern string) (Project, error) {
+	if tenantID.IsZero() {
+		return Project{}, fmt.Errorf("%w: tenantID must not be zero", ErrInvalidProject)
+	}
 	if err := validateKey(key); err != nil {
 		return Project{}, err
 	}

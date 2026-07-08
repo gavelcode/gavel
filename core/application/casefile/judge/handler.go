@@ -12,6 +12,7 @@ import (
 	"github.com/usegavel/gavel/core/domain/casefile/model/tracking"
 	"github.com/usegavel/gavel/core/domain/casefile/model/verdict"
 	caseservice "github.com/usegavel/gavel/core/domain/casefile/service"
+	"github.com/usegavel/gavel/core/domain/iam/model/tenant"
 	projectservice "github.com/usegavel/gavel/core/domain/project/service"
 )
 
@@ -31,12 +32,17 @@ func NewHandler(caseFiles caseservice.CaseFileRepository, projects projectservic
 }
 
 func (h *Handler) Execute(ctx context.Context, cmd Command) (Result, error) {
+	tenantID, err := tenant.ParseTenantID(cmd.TenantID())
+	if err != nil {
+		return Result{}, fmt.Errorf("tenant id: %w", err)
+	}
+
 	caseFileID, err := casefile.ParseCaseFileID(cmd.CaseFileID())
 	if err != nil {
 		return Result{}, fmt.Errorf("reconstitute case file ID: %w", err)
 	}
 
-	caseFile, err := h.caseFiles.FindByID(ctx, caseFileID)
+	caseFile, err := h.caseFiles.FindByID(ctx, tenantID, caseFileID)
 	if err != nil {
 		return Result{}, fmt.Errorf("load case file: %w", err)
 	}

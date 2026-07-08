@@ -134,12 +134,12 @@ func TestCaseFileSubmitChainPrecomputedVerdict(t *testing.T) {
 		buildFindingEvidence("fp-1"),
 		buildCoverageEvidence(100, 90),
 	}
-	ingestCmd, err := ingestevidence.NewCommand(createRes.CaseFileID, evidences)
+	ingestCmd, err := ingestevidence.NewCommand(tenant.LocalTenantID.String(), createRes.CaseFileID, evidences)
 	require.NoError(t, err)
 	_, err = ingestH.Execute(context.Background(), ingestCmd)
 	require.NoError(t, err)
 
-	finalizeCmd, err := finalize.NewCommand(createRes.CaseFileID,
+	finalizeCmd, err := finalize.NewCommand(tenant.LocalTenantID.String(), createRes.CaseFileID,
 		finalize.WithPrecomputedVerdict(finalize.PrecomputedVerdict{
 			Outcome:     "fail",
 			EvaluatedAt: now,
@@ -202,7 +202,7 @@ func TestCaseFileSubmitChainDoubleFinalizeRejected(t *testing.T) {
 	assert.Equal(t, "pass", result.Verdict.Outcome)
 
 	finalizeH := newFinalizeHandler(cfRepo, projRepo)
-	finalizeCmd, err := finalize.NewCommand(result.CaseFileID)
+	finalizeCmd, err := finalize.NewCommand(tenant.LocalTenantID.String(), result.CaseFileID)
 	require.NoError(t, err)
 
 	_, err = finalizeH.Execute(context.Background(), finalizeCmd)
@@ -316,7 +316,7 @@ func (r *fakeCaseFileRepo) Save(_ context.Context, cf casefile.CaseFile) error {
 	return nil
 }
 
-func (r *fakeCaseFileRepo) FindByID(_ context.Context, id casefile.CaseFileID) (casefile.CaseFile, error) {
+func (r *fakeCaseFileRepo) FindByID(_ context.Context, _ tenant.TenantID, id casefile.CaseFileID) (casefile.CaseFile, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	cf, ok := r.store[id.String()]

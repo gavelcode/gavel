@@ -58,12 +58,12 @@ type repoBackedCaseFileFinder struct {
 	repo *memcasefile.CaseFileRepository
 }
 
-func (finder *repoBackedCaseFileFinder) GetByID(ctx context.Context, id string) (*casefileget.CaseFileDetail, error) {
+func (finder *repoBackedCaseFileFinder) GetByID(ctx context.Context, _, id string) (*casefileget.CaseFileDetail, error) {
 	cfID, err := casefile.ParseCaseFileID(id)
 	if err != nil {
 		return nil, err
 	}
-	caseFile, err := finder.repo.FindByID(ctx, cfID)
+	caseFile, err := finder.repo.FindByID(ctx, tenant.LocalTenantID, cfID)
 	if err != nil {
 		return nil, err
 	}
@@ -103,11 +103,11 @@ func (finder *repoBackedCaseFileFinder) GetByID(ctx context.Context, id string) 
 	return detail, nil
 }
 
-func (finder *repoBackedCaseFileFinder) ListByProject(_ context.Context, _, _ string, _, _ int) ([]casefilelist.CaseFileSummary, int, error) {
+func (finder *repoBackedCaseFileFinder) ListByProject(_ context.Context, _, _, _ string, _, _ int) ([]casefilelist.CaseFileSummary, int, error) {
 	return nil, 0, nil
 }
 
-func (finder *repoBackedCaseFileFinder) List(_ context.Context, _ findinglist.Filters, _, _ int) ([]findinglist.FindingView, int, error) {
+func (finder *repoBackedCaseFileFinder) List(_ context.Context, _ string, _ findinglist.Filters, _, _ int) ([]findinglist.FindingView, int, error) {
 	return nil, 0, nil
 }
 

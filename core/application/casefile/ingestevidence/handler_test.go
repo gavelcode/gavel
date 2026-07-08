@@ -28,7 +28,7 @@ func TestExecuteAppendsEvidencesAndPersists(t *testing.T) {
 	cfID := seedCaseFile(t, caseFiles, projects)
 
 	handler := ingestevidence.NewHandler(caseFiles)
-	cmd, err := ingestevidence.NewCommand(cfID, []evidencedto.Evidence{newFindings(t)})
+	cmd, err := ingestevidence.NewCommand(testTenantExternal.String(), cfID, []evidencedto.Evidence{newFindings(t)})
 	require.NoError(t, err)
 
 	res, err := handler.Execute(context.Background(), cmd)
@@ -41,7 +41,7 @@ func TestExecuteCaseFileNotFound(t *testing.T) {
 	caseFiles := casefilememory.NewCaseFileRepository()
 
 	handler := ingestevidence.NewHandler(caseFiles)
-	cmd, _ := ingestevidence.NewCommand(uuid.NewString(), []evidencedto.Evidence{newFindings(t)})
+	cmd, _ := ingestevidence.NewCommand(testTenantExternal.String(), uuid.NewString(), []evidencedto.Evidence{newFindings(t)})
 
 	_, err := handler.Execute(context.Background(), cmd)
 	require.Error(t, err)
@@ -49,10 +49,10 @@ func TestExecuteCaseFileNotFound(t *testing.T) {
 }
 
 func TestNewCommandRejectsInvalidInputs(t *testing.T) {
-	_, err := ingestevidence.NewCommand("", []evidencedto.Evidence{newFindings(t)})
+	_, err := ingestevidence.NewCommand(testTenantExternal.String(), "", []evidencedto.Evidence{newFindings(t)})
 	require.ErrorIs(t, err, ingestevidence.ErrInvalidCommand)
 
-	_, err = ingestevidence.NewCommand(uuid.NewString(), nil)
+	_, err = ingestevidence.NewCommand(testTenantExternal.String(), uuid.NewString(), nil)
 	require.ErrorIs(t, err, ingestevidence.ErrInvalidCommand)
 }
 

@@ -17,8 +17,8 @@ func NewFindingFinder(db *database.DB) *FindingFinder {
 	return &FindingFinder{db: db}
 }
 
-func (q *FindingFinder) List(ctx context.Context, filters findinglist.Filters, limit, offset int) ([]findinglist.FindingView, int, error) {
-	where, args := buildFindingWhere(filters)
+func (q *FindingFinder) List(ctx context.Context, tenantID string, filters findinglist.Filters, limit, offset int) ([]findinglist.FindingView, int, error) {
+	where, args := buildFindingWhere(tenantID, filters)
 	join := ""
 	if filters.Gavelspace != "" {
 		join = " INNER JOIN gavelspace_projects gp ON gp.project_id = f.project_id"
@@ -64,7 +64,7 @@ func (q *FindingFinder) List(ctx context.Context, filters findinglist.Filters, l
 	return items, total, rows.Err()
 }
 
-func (q *FindingFinder) ListByFile(ctx context.Context, caseFileID, filePath string) ([]findinglist.FindingView, error) {
+func (q *FindingFinder) ListByFile(ctx context.Context, tenantID, caseFileID, filePath string) ([]findinglist.FindingView, error) {
 	rows, err := q.db.QueryContext(ctx, `
 		SELECT f.tool, f.rule_id, f.severity, f.file_path, f.line,
 		       f.message, f.fingerprint, f.status,
@@ -76,9 +76,9 @@ func (q *FindingFinder) ListByFile(ctx context.Context, caseFileID, filePath str
 		LEFT JOIN evidences e ON f.evidence_id = e.id
 		LEFT JOIN casefiles cf ON cf.id = f.casefile_id
 		LEFT JOIN projects p ON p.id = cf.project_id
-		WHERE f.casefile_id = ? AND f.file_path = ?
+		WHERE f.casefile_id = ? AND f.file_path = ? AND cf.tenant_id = ?
 		ORDER BY f.line ASC
-	`, caseFileID, filePath)
+	`, caseFileID, filePath, tenantID)
 	if err != nil {
 		return nil, fmt.Errorf("list findings by file: %w", err)
 	}
@@ -97,9 +97,9 @@ func (q *FindingFinder) ListByFile(ctx context.Context, caseFileID, filePath str
 	return items, rows.Err()
 }
 
-func buildFindingWhere(filters findinglist.Filters) (string, []any) {
-	var conditions []string
-	var args []any
+func buildFindingWhere(tenantID string, filters findinglist.Filters) (string, []any) {
+	conditions := []string{"f.casefile_id IN (SELECT id FROM casefiles WHERE tenant_id = ?)"}
+	args := []any{tenantID}
 
 	if filters.ProjectID != "" {
 		conditions = append(conditions, "f.project_id = ?")
@@ -130,8 +130,5 @@ func buildFindingWhere(filters findinglist.Filters) (string, []any) {
 		args = append(args, filters.Gavelspace)
 	}
 
-	if len(conditions) == 0 {
-		return "", nil
-	}
 	return " WHERE " + strings.Join(conditions, " AND "), args
 }

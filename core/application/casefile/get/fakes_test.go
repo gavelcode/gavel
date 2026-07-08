@@ -13,7 +13,7 @@ type fakeCaseFileGetter struct {
 	err    error
 }
 
-func (f *fakeCaseFileGetter) GetByID(_ context.Context, _ string) (*get.CaseFileDetail, error) {
+func (f *fakeCaseFileGetter) GetByID(_ context.Context, _, _ string) (*get.CaseFileDetail, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	if f.err != nil {

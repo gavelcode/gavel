@@ -897,3 +897,9 @@ func mustFinding(t *testing.T, tool, ruleID string, severity finding.Severity, f
 	require.NoError(t, err)
 	return f
 }
+
+func TestNewCaseFileRejectsZeroTenant(t *testing.T) {
+	_, err := model.NewCaseFile(tenant.TenantID{}, mustProjectID(t), "abc123", "main", testTime, testTime)
+	require.Error(t, err)
+	assert.ErrorIs(t, err, model.ErrInvalidCaseFile)
+}

@@ -27,6 +27,8 @@ func ParseTenantID(s string) (TenantID, error) {
 	return TenantID{value: parsedUUID}, nil
 }
 
+func (id TenantID) IsZero() bool { return id.value == uuid.Nil }
+
 func (id TenantID) UUID() uuid.UUID { return id.value }
 
 func (id TenantID) String() string { return id.value.String() }

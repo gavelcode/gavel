@@ -21,6 +21,7 @@ type RulingInput struct {
 }
 
 type Command struct {
+	tenantID           string
 	caseFileID         string
 	fingerprints       []string
 	archIDs            []string
@@ -31,11 +32,14 @@ type Command struct {
 	fileCoverage       []projectmodel.FileCoverageEntry
 }
 
-func NewCommand(caseFileID string, opts ...Option) (Command, error) {
+func NewCommand(tenantID, caseFileID string, opts ...Option) (Command, error) {
+	if strings.TrimSpace(tenantID) == "" {
+		return Command{}, fmt.Errorf("%w: tenantID must not be empty", ErrInvalidCommand)
+	}
 	if strings.TrimSpace(caseFileID) == "" {
 		return Command{}, fmt.Errorf("%w: caseFileID must not be empty", ErrInvalidCommand)
 	}
-	cmd := Command{caseFileID: caseFileID}
+	cmd := Command{tenantID: tenantID, caseFileID: caseFileID}
 	for _, opt := range opts {
 		opt(&cmd)
 	}
@@ -80,6 +84,7 @@ func WithPrecomputedVerdict(v PrecomputedVerdict) Option {
 	return func(c *Command) { c.precomputedVerdict = &v }
 }
 
+func (c Command) TenantID() string                               { return c.tenantID }
 func (c Command) CaseFileID() string                             { return c.caseFileID }
 func (c Command) Fingerprints() []string                         { return c.fingerprints }
 func (c Command) ArchIDs() []string                              { return c.archIDs }

@@ -32,6 +32,9 @@ type CaseFile struct {
 }
 
 func NewCaseFile(tenantID tenant.TenantID, projectID projectmodel.ProjectID, commitSHA, branch string, startedAt, createdAt time.Time) (CaseFile, error) {
+	if tenantID.IsZero() {
+		return CaseFile{}, fmt.Errorf("%w: tenantID must not be zero", ErrInvalidCaseFile)
+	}
 	if err := validateCaseFileFields(commitSHA, branch, startedAt); err != nil {
 		return CaseFile{}, err
 	}

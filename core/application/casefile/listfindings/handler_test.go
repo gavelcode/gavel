@@ -30,7 +30,7 @@ func TestNewQuery(t *testing.T) {
 
 	for _, testCase := range tests {
 		t.Run(testCase.name, func(t *testing.T) {
-			query, err := list.NewQuery(testCase.filters, testCase.limit, testCase.offset)
+			query, err := list.NewQuery("22222222-2222-2222-2222-222222222222", testCase.filters, testCase.limit, testCase.offset)
 			if testCase.wantErr {
 				assert.Error(t, err)
 				return
@@ -75,7 +75,7 @@ func TestExecuteReturnsResult(t *testing.T) {
 	fake := &fakeFindingLister{items: expected, total: 25}
 	h := list.NewHandler(fake)
 
-	query, err := list.NewQuery(list.Filters{ProjectID: "proj-1"}, 10, 0)
+	query, err := list.NewQuery("22222222-2222-2222-2222-222222222222", list.Filters{ProjectID: "proj-1"}, 10, 0)
 	require.NoError(t, err)
 
 	result, err := h.Execute(context.Background(), query)
@@ -90,7 +90,7 @@ func TestExecutePropagatesError(t *testing.T) {
 	fake := &fakeFindingLister{err: queryErr}
 	h := list.NewHandler(fake)
 
-	query, err := list.NewQuery(list.Filters{}, 10, 0)
+	query, err := list.NewQuery("22222222-2222-2222-2222-222222222222", list.Filters{}, 10, 0)
 	require.NoError(t, err)
 
 	_, err = h.Execute(context.Background(), query)
@@ -99,7 +99,7 @@ func TestExecutePropagatesError(t *testing.T) {
 }
 
 func TestErrInvalidQueryIsClassifiedAsValidation(t *testing.T) {
-	_, err := list.NewQuery(list.Filters{}, 0, 0)
+	_, err := list.NewQuery("22222222-2222-2222-2222-222222222222", list.Filters{}, 0, 0)
 	require.Error(t, err)
 	assert.Equal(t, failure.Validation, failure.Of(err))
 }

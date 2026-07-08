@@ -14,7 +14,7 @@ func NewHandler(lister Finder) *Handler {
 }
 
 func (h *Handler) Execute(ctx context.Context, q Query) (Result, error) {
-	items, total, err := h.lister.ListByProject(ctx, q.ProjectID(), q.Gavelspace(), q.Limit(), q.Offset())
+	items, total, err := h.lister.ListByProject(ctx, q.TenantID(), q.ProjectID(), q.Gavelspace(), q.Limit(), q.Offset())
 	if err != nil {
 		return Result{}, err
 	}

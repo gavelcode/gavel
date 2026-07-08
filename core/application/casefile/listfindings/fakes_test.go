@@ -14,7 +14,7 @@ type fakeFindingLister struct {
 	err   error
 }
 
-func (f *fakeFindingLister) List(_ context.Context, _ list.Filters, _, _ int) ([]list.FindingView, int, error) {
+func (f *fakeFindingLister) List(_ context.Context, _ string, _ list.Filters, _, _ int) ([]list.FindingView, int, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	if f.err != nil {

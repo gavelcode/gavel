@@ -569,3 +569,9 @@ func TestBaselineFallbackToDefaultBranch(t *testing.T) {
 		assert.Equal(t, []string{"feature-fp"}, bl.Fingerprints())
 	})
 }
+
+func TestNewProjectRejectsZeroTenant(t *testing.T) {
+	_, err := model.NewProject(tenant.TenantID{}, "svc", "svc", "//svc/...")
+	require.Error(t, err)
+	assert.ErrorIs(t, err, model.ErrInvalidProject)
+}

@@ -7,6 +7,7 @@ import (
 
 	casefile "github.com/usegavel/gavel/core/domain/casefile/model"
 	"github.com/usegavel/gavel/core/domain/casefile/model/evidence/finding"
+	"github.com/usegavel/gavel/core/domain/iam/model/tenant"
 	projectmodel "github.com/usegavel/gavel/core/domain/project/model"
 )
 
@@ -37,7 +38,7 @@ func (r *fakeCaseFileRepo) FindFingerprintIDsByBranch(_ context.Context, project
 	return r.fingerprints[projectID.String()+"|"+branch], nil
 }
 
-func (r *fakeCaseFileRepo) FindByID(_ context.Context, _ casefile.CaseFileID) (casefile.CaseFile, error) {
+func (r *fakeCaseFileRepo) FindByID(_ context.Context, _ tenant.TenantID, _ casefile.CaseFileID) (casefile.CaseFile, error) {
 	return casefile.CaseFile{}, errNotFound
 }
 

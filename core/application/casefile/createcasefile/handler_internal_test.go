@@ -23,7 +23,7 @@ type stubCaseFileRepo struct {
 }
 
 func (s *stubCaseFileRepo) Save(_ context.Context, _ casefile.CaseFile) error { return s.saveErr }
-func (s *stubCaseFileRepo) FindByID(_ context.Context, _ casefile.CaseFileID) (casefile.CaseFile, error) {
+func (s *stubCaseFileRepo) FindByID(_ context.Context, _ tenant.TenantID, _ casefile.CaseFileID) (casefile.CaseFile, error) {
 	return casefile.CaseFile{}, nil
 }
 func (s *stubCaseFileRepo) FindLatestByBranch(_ context.Context, _ projectmodel.ProjectID, _ string) (casefile.CaseFile, error) {

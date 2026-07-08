@@ -26,7 +26,7 @@ type FileCoverageFetcher interface {
 }
 
 type FindingsByFileFetcher interface {
-	ListByFile(ctx context.Context, caseFileID, filePath string) ([]findinglist.FindingView, error)
+	ListByFile(ctx context.Context, tenantID, caseFileID, filePath string) ([]findinglist.FindingView, error)
 }
 
 type Deps struct {
@@ -108,7 +108,7 @@ func (h *Handler) GetProjectSource(ctx context.Context, req gen.GetProjectSource
 	}
 
 	if req.Params.Casefile != nil {
-		return h.sourceWithContext(ctx, content, req.Params.Casefile.String(), path)
+		return h.sourceWithContext(ctx, principal.TenantID, content, req.Params.Casefile.String(), path)
 	}
 
 	if contentType == "" {
@@ -121,7 +121,7 @@ func (h *Handler) GetProjectSource(ctx context.Context, req gen.GetProjectSource
 	}, nil
 }
 
-func (h *Handler) sourceWithContext(ctx context.Context, content []byte, caseFileID, filePath string) (gen.GetProjectSourceResponseObject, error) {
+func (h *Handler) sourceWithContext(ctx context.Context, tenantID string, content []byte, caseFileID, filePath string) (gen.GetProjectSourceResponseObject, error) {
 	resp := gen.GetProjectSource200JSONResponse{
 		Content: string(content),
 	}
@@ -140,7 +140,7 @@ func (h *Handler) sourceWithContext(ctx context.Context, content []byte, caseFil
 	}
 
 	if h.deps.Findings != nil {
-		views, err := h.deps.Findings.ListByFile(ctx, caseFileID, filePath)
+		views, err := h.deps.Findings.ListByFile(ctx, tenantID, caseFileID, filePath)
 		if err != nil {
 			return nil, err
 		}

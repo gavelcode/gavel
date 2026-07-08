@@ -74,7 +74,7 @@ type fakeFindingFetcher struct {
 	err   error
 }
 
-func (f *fakeFindingFetcher) ListByFile(_ context.Context, _, _ string) ([]findinglist.FindingView, error) {
+func (f *fakeFindingFetcher) ListByFile(_ context.Context, _, _, _ string) ([]findinglist.FindingView, error) {
 	return f.items, f.err
 }
 

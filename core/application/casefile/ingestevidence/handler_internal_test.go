@@ -27,7 +27,7 @@ type stubCaseFileRepo struct {
 }
 
 func (s *stubCaseFileRepo) Save(_ context.Context, _ casefile.CaseFile) error { return s.saveErr }
-func (s *stubCaseFileRepo) FindByID(_ context.Context, _ casefile.CaseFileID) (casefile.CaseFile, error) {
+func (s *stubCaseFileRepo) FindByID(_ context.Context, _ tenant.TenantID, _ casefile.CaseFileID) (casefile.CaseFile, error) {
 	if s.findErr != nil {
 		return casefile.CaseFile{}, s.findErr
 	}
@@ -50,7 +50,7 @@ func TestNewHandlerPanicsOnNilRepo(t *testing.T) {
 func TestExecuteParseCaseFileIDError(t *testing.T) {
 	handler := &Handler{caseFiles: &stubCaseFileRepo{}}
 
-	cmd := Command{caseFileID: "not-a-uuid", evidences: []evidencedto.Evidence{{
+	cmd := Command{tenantID: testTenant.String(), caseFileID: "not-a-uuid", evidences: []evidencedto.Evidence{{
 		Subtype: "code_quality", Source: "test", CollectedAt: time.Now(),
 	}}}
 
@@ -67,7 +67,7 @@ func TestExecuteEvidenceToDomainError(t *testing.T) {
 
 	handler := &Handler{caseFiles: &stubCaseFileRepo{cf: cf}}
 
-	cmd := Command{caseFileID: cf.ID().String(), evidences: []evidencedto.Evidence{{
+	cmd := Command{tenantID: testTenant.String(), caseFileID: cf.ID().String(), evidences: []evidencedto.Evidence{{
 		Subtype: "INVALID", Source: "test", CollectedAt: now,
 	}}}
 
@@ -87,7 +87,7 @@ func TestExecuteAddEvidenceErrorAlreadyJudged(t *testing.T) {
 
 	handler := &Handler{caseFiles: &stubCaseFileRepo{cf: caseFile}}
 
-	cmd := Command{caseFileID: caseFile.ID().String(), evidences: []evidencedto.Evidence{{
+	cmd := Command{tenantID: testTenant.String(), caseFileID: caseFile.ID().String(), evidences: []evidencedto.Evidence{{
 		Subtype:     "code_quality",
 		Source:      "test",
 		CollectedAt: now,
@@ -110,7 +110,7 @@ func TestExecuteSaveError(t *testing.T) {
 
 	handler := &Handler{caseFiles: &stubCaseFileRepo{cf: cf, saveErr: errors.New("disk full")}}
 
-	cmd := Command{caseFileID: cf.ID().String(), evidences: []evidencedto.Evidence{{
+	cmd := Command{tenantID: testTenant.String(), caseFileID: cf.ID().String(), evidences: []evidencedto.Evidence{{
 		Subtype:     "code_quality",
 		Source:      "test",
 		CollectedAt: now,

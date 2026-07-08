@@ -3,5 +3,5 @@ package get
 import "context"
 
 type Finder interface {
-	GetByID(ctx context.Context, id string) (*CaseFileDetail, error)
+	GetByID(ctx context.Context, tenantID, id string) (*CaseFileDetail, error)
 }

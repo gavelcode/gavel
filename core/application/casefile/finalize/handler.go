@@ -18,6 +18,7 @@ import (
 	"github.com/usegavel/gavel/core/domain/casefile/model/tracking"
 	"github.com/usegavel/gavel/core/domain/casefile/model/verdict"
 	caseservice "github.com/usegavel/gavel/core/domain/casefile/service"
+	"github.com/usegavel/gavel/core/domain/iam/model/tenant"
 	projectmodel "github.com/usegavel/gavel/core/domain/project/model"
 	projectservice "github.com/usegavel/gavel/core/domain/project/service"
 )
@@ -76,11 +77,15 @@ func NewHandler(
 }
 
 func (h *Handler) Execute(ctx context.Context, cmd Command) (Result, error) {
+	tenantID, err := tenant.ParseTenantID(cmd.TenantID())
+	if err != nil {
+		return Result{}, fmt.Errorf("tenant id: %w", err)
+	}
 	cfID, err := casefilemodel.ParseCaseFileID(cmd.CaseFileID())
 	if err != nil {
 		return Result{}, fmt.Errorf("case file id: %w", err)
 	}
-	caseFile, err := h.caseFiles.FindByID(ctx, cfID)
+	caseFile, err := h.caseFiles.FindByID(ctx, tenantID, cfID)
 	if err != nil {
 		return Result{}, fmt.Errorf("load case file: %w", err)
 	}
@@ -135,7 +140,7 @@ func (h *Handler) Execute(ctx context.Context, cmd Command) (Result, error) {
 			judgeOpts = append(judgeOpts, judge.WithDeltaInput(&deltaInput))
 		}
 
-		judgeCmd, err := judge.NewCommand(caseFile.ID().String(), trackingPtr, judgeOpts...)
+		judgeCmd, err := judge.NewCommand(cmd.TenantID(), caseFile.ID().String(), trackingPtr, judgeOpts...)
 		if err != nil {
 			return Result{}, fmt.Errorf("judge command: %w", err)
 		}

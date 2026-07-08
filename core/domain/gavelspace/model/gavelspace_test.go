@@ -211,3 +211,9 @@ func TestGavelspaceClearEvents(t *testing.T) {
 
 	assert.Empty(t, gspace.Events())
 }
+
+func TestNewGavelspaceRejectsZeroTenant(t *testing.T) {
+	_, err := model.NewGavelspace(tenant.TenantID{}, "workspace")
+	require.Error(t, err)
+	assert.ErrorIs(t, err, model.ErrInvalidGavelspace)
+}

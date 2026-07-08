@@ -116,7 +116,7 @@ func (s *casefileStore) putFinding(f findinglist.FindingView) {
 	s.findings = append(s.findings, f)
 }
 
-func (s *casefileStore) GetByID(_ context.Context, id string) (*casefileget.CaseFileDetail, error) {
+func (s *casefileStore) GetByID(_ context.Context, _, id string) (*casefileget.CaseFileDetail, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	d, ok := s.byID[id]
@@ -126,7 +126,7 @@ func (s *casefileStore) GetByID(_ context.Context, id string) (*casefileget.Case
 	return d, nil
 }
 
-func (s *casefileStore) ListByProject(_ context.Context, projectID, _ string, limit, offset int) ([]casefilelist.CaseFileSummary, int, error) {
+func (s *casefileStore) ListByProject(_ context.Context, _, projectID, _ string, limit, offset int) ([]casefilelist.CaseFileSummary, int, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	ids := s.byProject[projectID]
@@ -151,7 +151,7 @@ func (s *casefileStore) ListByProject(_ context.Context, projectID, _ string, li
 	return out, total, nil
 }
 
-func (s *casefileStore) List(_ context.Context, filters findinglist.Filters, limit, offset int) ([]findinglist.FindingView, int, error) {
+func (s *casefileStore) List(_ context.Context, _ string, filters findinglist.Filters, limit, offset int) ([]findinglist.FindingView, int, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	matches := make([]findinglist.FindingView, 0, len(s.findings))

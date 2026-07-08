@@ -19,6 +19,9 @@ type Gavelspace struct {
 }
 
 func NewGavelspace(tenantID tenant.TenantID, name string) (Gavelspace, error) {
+	if tenantID.IsZero() {
+		return Gavelspace{}, fmt.Errorf("%w: tenantID must not be zero", ErrInvalidGavelspace)
+	}
 	id, err := NewGavelspaceID(name)
 	if err != nil {
 		return Gavelspace{}, err

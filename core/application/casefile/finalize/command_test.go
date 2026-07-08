@@ -10,12 +10,12 @@ import (
 )
 
 func TestNewCommandRejectsEmptyCaseFileID(t *testing.T) {
-	_, err := finalize.NewCommand("")
+	_, err := finalize.NewCommand(testTenant.String(), "")
 	assert.ErrorIs(t, err, finalize.ErrInvalidCommand)
 }
 
 func TestNewCommandRejectsPrecomputedVerdictZeroEvaluatedAt(t *testing.T) {
-	_, err := finalize.NewCommand("some-id",
+	_, err := finalize.NewCommand(testTenant.String(), "some-id",
 		finalize.WithPrecomputedVerdict(finalize.PrecomputedVerdict{
 			Outcome:     "pass",
 			EvaluatedAt: time.Time{},

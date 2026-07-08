@@ -42,13 +42,13 @@ func TestSubmitFlow_HappyPathProducesVerdict(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEmpty(t, createRes.CaseFileID, "createcasefile must return a case_file_id")
 
-	ingestCmd, err := ingestevidence.NewCommand(createRes.CaseFileID, []evidencedto.Evidence{cleanFinding(t)})
+	ingestCmd, err := ingestevidence.NewCommand(tenant.LocalTenantID.String(), createRes.CaseFileID, []evidencedto.Evidence{cleanFinding(t)})
 	require.NoError(t, err)
 	ingestRes, err := ingestH.Execute(ctx, ingestCmd)
 	require.NoError(t, err)
 	require.Len(t, ingestRes.EvidenceIDs, 1, "ingestevidence must return one id per evidence")
 
-	finalizeCmd, err := finalize.NewCommand(createRes.CaseFileID)
+	finalizeCmd, err := finalize.NewCommand(tenant.LocalTenantID.String(), createRes.CaseFileID)
 	require.NoError(t, err)
 	finalizeRes, err := finalizeH.Execute(ctx, finalizeCmd)
 	require.NoError(t, err, "finalize must succeed when classify + judge have everything they need")
@@ -83,11 +83,11 @@ func TestSubmitFlow_FreshEvaluationSkipsClassify(t *testing.T) {
 	createRes, err := createH.Execute(ctx, createCmd)
 	require.NoError(t, err)
 
-	ingestCmd, _ := ingestevidence.NewCommand(createRes.CaseFileID, []evidencedto.Evidence{cleanFinding(t)})
+	ingestCmd, _ := ingestevidence.NewCommand(tenant.LocalTenantID.String(), createRes.CaseFileID, []evidencedto.Evidence{cleanFinding(t)})
 	_, err = ingestH.Execute(ctx, ingestCmd)
 	require.NoError(t, err)
 
-	finalizeCmd, _ := finalize.NewCommand(createRes.CaseFileID)
+	finalizeCmd, _ := finalize.NewCommand(tenant.LocalTenantID.String(), createRes.CaseFileID)
 	finalizeRes, err := finalizeH.Execute(ctx, finalizeCmd)
 	require.NoError(t, err)
 
@@ -111,11 +111,11 @@ func TestSubmitFlow_DoubleFinalizeIsRejected(t *testing.T) {
 	createRes, err := createH.Execute(ctx, createCmd)
 	require.NoError(t, err)
 
-	ingestCmd, _ := ingestevidence.NewCommand(createRes.CaseFileID, []evidencedto.Evidence{cleanFinding(t)})
+	ingestCmd, _ := ingestevidence.NewCommand(tenant.LocalTenantID.String(), createRes.CaseFileID, []evidencedto.Evidence{cleanFinding(t)})
 	_, err = ingestH.Execute(ctx, ingestCmd)
 	require.NoError(t, err)
 
-	finalizeCmd, _ := finalize.NewCommand(createRes.CaseFileID)
+	finalizeCmd, _ := finalize.NewCommand(tenant.LocalTenantID.String(), createRes.CaseFileID)
 	_, err = finalizeH.Execute(ctx, finalizeCmd)
 	require.NoError(t, err)
 

@@ -8,6 +8,7 @@ go_library(
     deps = [
         "//core/domain/casefile/model",
         "//core/domain/casefile/model/evidence/finding",
+        "//core/domain/iam/model/tenant",
         "//core/domain/project/model",
     ],
 )

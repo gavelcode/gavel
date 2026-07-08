@@ -44,7 +44,7 @@ func (h *Handler) Execute(ctx context.Context, cmd Command) (Result, error) {
 		return Result{}, fmt.Errorf("create case file: %w", err)
 	}
 
-	ingestCmd, err := ingestevidence.NewCommand(createRes.CaseFileID, cmd.Evidences())
+	ingestCmd, err := ingestevidence.NewCommand(cmd.TenantID(), createRes.CaseFileID, cmd.Evidences())
 	if err != nil {
 		return Result{}, fmt.Errorf("ingest evidence: %w", err)
 	}
@@ -52,7 +52,7 @@ func (h *Handler) Execute(ctx context.Context, cmd Command) (Result, error) {
 		return Result{}, fmt.Errorf("ingest evidence: %w", err)
 	}
 
-	finalizeCmd, err := finalize.NewCommand(createRes.CaseFileID,
+	finalizeCmd, err := finalize.NewCommand(cmd.TenantID(), createRes.CaseFileID,
 		finalize.WithFingerprints(cmd.Fingerprints()),
 		finalize.WithArchIDs(cmd.ArchIDs()),
 		finalize.WithArchDelta(cmd.ArchDelta()),

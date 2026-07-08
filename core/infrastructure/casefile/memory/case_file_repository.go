@@ -8,6 +8,7 @@ import (
 	"github.com/usegavel/gavel/core/domain/casefile/model"
 	"github.com/usegavel/gavel/core/domain/casefile/model/evidence/finding"
 	"github.com/usegavel/gavel/core/domain/casefile/service"
+	"github.com/usegavel/gavel/core/domain/iam/model/tenant"
 	projectmodel "github.com/usegavel/gavel/core/domain/project/model"
 	"github.com/usegavel/gavel/core/domain/shared/failure"
 )
@@ -52,12 +53,12 @@ func (r *CaseFileRepository) Save(_ context.Context, caseFile model.CaseFile) er
 	return nil
 }
 
-func (r *CaseFileRepository) FindByID(_ context.Context, caseFileID model.CaseFileID) (model.CaseFile, error) {
+func (r *CaseFileRepository) FindByID(_ context.Context, tenantID tenant.TenantID, caseFileID model.CaseFileID) (model.CaseFile, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
 	cf, ok := r.byID[caseFileID.String()]
-	if !ok {
+	if !ok || !cf.TenantID().Equal(tenantID) {
 		return model.CaseFile{}, fmt.Errorf("%w: %s", ErrCaseFileNotFound, caseFileID)
 	}
 	return cf, nil

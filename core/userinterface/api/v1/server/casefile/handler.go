@@ -48,6 +48,10 @@ func New(deps Deps) *Handler {
 }
 
 func (h *Handler) ListCaseFiles(ctx context.Context, req gen.ListCaseFilesRequestObject) (gen.ListCaseFilesResponseObject, error) {
+	principal, ok := auth.PrincipalFromContext(ctx)
+	if !ok {
+		return gen.ListCaseFiles401JSONResponse{UnauthorizedJSONResponse: httpx.Unauthorized("unauthenticated")}, nil
+	}
 	limit, offset := httpx.PageFromCursor(req.Params.Limit, req.Params.Cursor)
 	projectID := ""
 	if req.Params.ProjectId != nil {
@@ -60,7 +64,7 @@ func (h *Handler) ListCaseFiles(ctx context.Context, req gen.ListCaseFilesReques
 	if projectID == "" && gavelspace == "" {
 		return gen.ListCaseFiles400JSONResponse{BadRequestJSONResponse: httpx.BadRequest("project_id or gavelspace is required")}, nil
 	}
-	q, err := casefilelist.NewQuery(projectID, gavelspace, limit, offset)
+	q, err := casefilelist.NewQuery(principal.TenantID, projectID, gavelspace, limit, offset)
 	if err != nil {
 		return gen.ListCaseFiles400JSONResponse{BadRequestJSONResponse: httpx.BadRequest(err.Error())}, nil
 	}
@@ -76,7 +80,11 @@ func (h *Handler) ListCaseFiles(ctx context.Context, req gen.ListCaseFilesReques
 }
 
 func (h *Handler) GetCaseFile(ctx context.Context, req gen.GetCaseFileRequestObject) (gen.GetCaseFileResponseObject, error) {
-	q, err := casefileget.NewQuery(req.Id.String())
+	principal, ok := auth.PrincipalFromContext(ctx)
+	if !ok {
+		return gen.GetCaseFile401JSONResponse{UnauthorizedJSONResponse: httpx.Unauthorized("unauthenticated")}, nil
+	}
+	q, err := casefileget.NewQuery(principal.TenantID, req.Id.String())
 	if err != nil {
 		return nil, err
 	}
@@ -91,6 +99,10 @@ func (h *Handler) GetCaseFile(ctx context.Context, req gen.GetCaseFileRequestObj
 }
 
 func (h *Handler) ListFindings(ctx context.Context, req gen.ListFindingsRequestObject) (gen.ListFindingsResponseObject, error) {
+	principal, ok := auth.PrincipalFromContext(ctx)
+	if !ok {
+		return gen.ListFindings401JSONResponse{UnauthorizedJSONResponse: httpx.Unauthorized("unauthenticated")}, nil
+	}
 	limit, offset := httpx.PageFromCursor(req.Params.Limit, req.Params.Cursor)
 
 	filters := findinglist.Filters{
@@ -107,7 +119,7 @@ func (h *Handler) ListFindings(ctx context.Context, req gen.ListFindingsRequestO
 		filters.CaseFileID = req.Params.CasefileId.String()
 	}
 
-	q, err := findinglist.NewQuery(filters, limit, offset)
+	q, err := findinglist.NewQuery(principal.TenantID, filters, limit, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -135,7 +147,7 @@ func (h *Handler) ListProjectCaseFiles(ctx context.Context, req gen.ListProjectC
 		return nil, err
 	}
 	limit, offset := httpx.PageFromCursor(req.Params.Limit, req.Params.Cursor)
-	q, err := casefilelist.NewQuery(detail.ID, "", limit, offset)
+	q, err := casefilelist.NewQuery(principal.TenantID, detail.ID, "", limit, offset)
 	if err != nil {
 		return nil, err
 	}

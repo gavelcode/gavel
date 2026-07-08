@@ -18,8 +18,8 @@ func NewCaseFileFinder(db *database.DB) *CaseFileFinder {
 	return &CaseFileFinder{db: db}
 }
 
-func (q *CaseFileFinder) ListByProject(ctx context.Context, projectID, gavelspace string, limit, offset int) ([]casefilelist.CaseFileSummary, int, error) {
-	join, where, args := buildCaseFileFilter(projectID, gavelspace)
+func (q *CaseFileFinder) ListByProject(ctx context.Context, tenantID, projectID, gavelspace string, limit, offset int) ([]casefilelist.CaseFileSummary, int, error) {
+	join, where, args := buildCaseFileFilter(tenantID, projectID, gavelspace)
 
 	var total int
 	if err := q.db.QueryRowContext(ctx,
@@ -57,8 +57,9 @@ func (q *CaseFileFinder) ListByProject(ctx context.Context, projectID, gavelspac
 	return items, total, rows.Err()
 }
 
-func buildCaseFileFilter(projectID, gavelspace string) (join, where string, args []any) {
-	var conditions []string
+func buildCaseFileFilter(tenantID, projectID, gavelspace string) (join, where string, args []any) {
+	conditions := []string{"c.tenant_id = ?"}
+	args = []any{tenantID}
 	if gavelspace != "" {
 		join = " INNER JOIN gavelspace_projects gp ON gp.project_id = c.project_id"
 		conditions = append(conditions, "gp.gavelspace_name = ?")
@@ -68,17 +69,14 @@ func buildCaseFileFilter(projectID, gavelspace string) (join, where string, args
 		conditions = append(conditions, "c.project_id = ?")
 		args = append(args, projectID)
 	}
-	if len(conditions) == 0 {
-		return "", "", nil
-	}
 	where = " WHERE " + conditions[0]
-	for _, c := range conditions[1:] {
-		where += " AND " + c
+	for _, cond := range conditions[1:] {
+		where += " AND " + cond
 	}
 	return join, where, args
 }
 
-func (q *CaseFileFinder) GetByID(ctx context.Context, caseFileID string) (*casefileget.CaseFileDetail, error) {
+func (q *CaseFileFinder) GetByID(ctx context.Context, tenantID, caseFileID string) (*casefileget.CaseFileDetail, error) {
 	var detail casefileget.CaseFileDetail
 	var verdictOutcome sql.NullString
 	var coveragePct sql.NullFloat64
@@ -95,8 +93,8 @@ func (q *CaseFileFinder) GetByID(ctx context.Context, caseFileID string) (*casef
 		FROM casefiles c
 		LEFT JOIN evidences e ON e.casefile_id = c.id AND e.subtype = 'coverage'
 		LEFT JOIN coverage_data cd ON cd.evidence_id = e.id
-		WHERE c.id = ?
-	`, caseFileID).Scan(&detail.ID, &detail.ProjectID, &detail.CommitSHA, &detail.Branch, &startedAtStr,
+		WHERE c.id = ? AND c.tenant_id = ?
+	`, caseFileID, tenantID).Scan(&detail.ID, &detail.ProjectID, &detail.CommitSHA, &detail.Branch, &startedAtStr,
 		&verdictOutcome, &detail.TotalFindings, &detail.NewFindings, &detail.ExistingFindings,
 		&detail.ResolvedFindings, &coveragePct, &createdAtStr)
 	if err != nil {

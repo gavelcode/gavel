@@ -40,7 +40,7 @@ func (r *fakeCaseFileRepo) Save(_ context.Context, caseFile casefile.CaseFile) e
 	return nil
 }
 
-func (r *fakeCaseFileRepo) FindByID(_ context.Context, caseFileID casefile.CaseFileID) (casefile.CaseFile, error) {
+func (r *fakeCaseFileRepo) FindByID(_ context.Context, _ tenant.TenantID, caseFileID casefile.CaseFileID) (casefile.CaseFile, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	if r.findErr != nil {

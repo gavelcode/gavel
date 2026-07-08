@@ -25,7 +25,7 @@ func TestNewCommand(t *testing.T) {
 
 	for _, testCase := range tests {
 		t.Run(testCase.name, func(t *testing.T) {
-			cmd, err := judge.NewCommand(testCase.caseFileID, testCase.tracking)
+			cmd, err := judge.NewCommand(testTenant.String(), testCase.caseFileID, testCase.tracking)
 
 			if testCase.wantErr {
 				require.Error(t, err)

@@ -9,6 +9,7 @@ import (
 
 	prget "github.com/usegavel/gavel/core/application/pleading/get"
 	prlist "github.com/usegavel/gavel/core/application/pleading/list"
+	"github.com/usegavel/gavel/core/domain/iam/model/tenant"
 	"github.com/usegavel/gavel/core/infrastructure/platform/database"
 )
 
@@ -20,7 +21,7 @@ func NewPleadingFinder(db *database.DB) *PleadingFinder {
 	return &PleadingFinder{db: db}
 }
 
-func (q *PleadingFinder) ListByProject(ctx context.Context, tenantID, projectID, status, gavelspace string, limit, offset int) ([]prlist.PleadingSummary, int, error) {
+func (q *PleadingFinder) ListByProject(ctx context.Context, tenantID tenant.TenantID, projectID, status, gavelspace string, limit, offset int) ([]prlist.PleadingSummary, int, error) {
 	where, args := buildPRWhere(tenantID, projectID, status, gavelspace)
 	join := ""
 	if gavelspace != "" {
@@ -45,7 +46,7 @@ func (q *PleadingFinder) ListByProject(ctx context.Context, tenantID, projectID,
 			FROM casefiles WHERE tenant_id = ?
 		) c ON c.commit_sha = pr.commit_sha AND c.rn = 1` +
 		where + ` ORDER BY pr.created_at DESC LIMIT ? OFFSET ?`
-	dataArgs := append([]any{tenantID}, args...)
+	dataArgs := append([]any{tenantID.UUID()}, args...)
 	dataArgs = append(dataArgs, limit, offset)
 
 	rows, err := q.db.QueryContext(ctx, dataSQL, dataArgs...)
@@ -65,7 +66,7 @@ func (q *PleadingFinder) ListByProject(ctx context.Context, tenantID, projectID,
 	return items, total, rows.Err()
 }
 
-func (q *PleadingFinder) GetByID(ctx context.Context, tenantID, pleadingID string) (*prget.PleadingDetail, error) {
+func (q *PleadingFinder) GetByID(ctx context.Context, tenantID tenant.TenantID, pleadingID string) (*prget.PleadingDetail, error) {
 	row := q.db.QueryRowContext(ctx, `
 		SELECT pr.id, pr.project_id, pr.number, pr.title, pr.petitioner,
 		       pr.source_branch, pr.target_branch, pr.commit_sha, pr.status,
@@ -78,7 +79,7 @@ func (q *PleadingFinder) GetByID(ctx context.Context, tenantID, pleadingID strin
 			FROM casefiles WHERE tenant_id = ?
 		) c ON c.commit_sha = pr.commit_sha AND c.rn = 1
 		WHERE pr.id = ? AND pr.tenant_id = ?
-	`, tenantID, pleadingID, tenantID)
+	`, tenantID.UUID(), pleadingID, tenantID.UUID())
 
 	var detail prget.PleadingDetail
 	var createdAtStr, updatedAtStr string
@@ -179,9 +180,9 @@ func formatSubtypeLabel(subtype string) string {
 	return s
 }
 
-func buildPRWhere(tenantID, projectID, status, gavelspace string) (string, []any) {
+func buildPRWhere(tenantID tenant.TenantID, projectID, status, gavelspace string) (string, []any) {
 	conditions := []string{"pr.tenant_id = ?"}
-	args := []any{tenantID}
+	args := []any{tenantID.UUID()}
 
 	if projectID != "" {
 		conditions = append(conditions, "pr.project_id = ?")

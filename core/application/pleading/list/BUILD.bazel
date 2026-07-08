@@ -15,6 +15,7 @@ go_library(
     visibility = ["//visibility:public"],
     deps = [
         "//core/application/pleading/gateview",
+        "//core/domain/iam/model/tenant",
         "//core/domain/shared/failure",
     ],
 )
@@ -27,6 +28,7 @@ go_test(
     ],
     deps = [
         ":list",
+        "//core/domain/iam/model/tenant",
         "//core/domain/shared/failure",
         "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//require",

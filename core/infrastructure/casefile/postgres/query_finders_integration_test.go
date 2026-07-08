@@ -25,12 +25,12 @@ func TestCaseFileQueryListByProject(t *testing.T) {
 		require.NoError(t, cfRepo.Save(ctx, caseFile))
 	}
 
-	items, total, err := query.ListByProject(ctx, testTenantID.String(), project.ID().String(), "", 2, 0)
+	items, total, err := query.ListByProject(ctx, testTenantID, project.ID().String(), "", 2, 0)
 	require.NoError(t, err)
 	assert.Equal(t, 3, total)
 	assert.Len(t, items, 2)
 
-	items2, total2, err := query.ListByProject(ctx, testTenantID.String(), project.ID().String(), "", 2, 2)
+	items2, total2, err := query.ListByProject(ctx, testTenantID, project.ID().String(), "", 2, 2)
 	require.NoError(t, err)
 	assert.Equal(t, 3, total2)
 	assert.Len(t, items2, 1)
@@ -53,7 +53,7 @@ func TestCaseFileQueryGetByID(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, cfRepo.Save(ctx, caseFile))
 
-	detail, err := query.GetByID(ctx, testTenantID.String(), caseFile.ID().String())
+	detail, err := query.GetByID(ctx, testTenantID, caseFile.ID().String())
 	require.NoError(t, err)
 	assert.Equal(t, caseFile.ID().String(), detail.ID)
 	assert.Equal(t, "abc123", detail.CommitSHA)
@@ -72,7 +72,7 @@ func TestCaseFileQueryGetByIDNotFound(t *testing.T) {
 	db := setupDB(t)
 	query := casefilepostgres.NewCaseFileFinder(db)
 
-	_, err := query.GetByID(context.Background(), testTenantID.String(), "nonexistent-id")
+	_, err := query.GetByID(context.Background(), testTenantID, "nonexistent-id")
 	assert.Error(t, err)
 }
 
@@ -88,7 +88,7 @@ func TestFindingQueryList(t *testing.T) {
 	require.NoError(t, caseFile.AddEvidence(ev, time.Now().UTC()))
 	require.NoError(t, cfRepo.Save(ctx, caseFile))
 
-	items, total, err := query.List(ctx, testTenantID.String(), findinglist.Filters{CaseFileID: caseFile.ID().String()}, 100, 0)
+	items, total, err := query.List(ctx, testTenantID, findinglist.Filters{CaseFileID: caseFile.ID().String()}, 100, 0)
 	require.NoError(t, err)
 	assert.Equal(t, 2, total)
 	assert.Len(t, items, 2)
@@ -106,7 +106,7 @@ func TestFindingQueryList_IncludesCommitAndProjectKey(t *testing.T) {
 	require.NoError(t, caseFile.AddEvidence(ev, time.Now().UTC()))
 	require.NoError(t, cfRepo.Save(ctx, caseFile))
 
-	items, _, err := query.List(ctx, testTenantID.String(), findinglist.Filters{CaseFileID: caseFile.ID().String()}, 100, 0)
+	items, _, err := query.List(ctx, testTenantID, findinglist.Filters{CaseFileID: caseFile.ID().String()}, 100, 0)
 	require.NoError(t, err)
 	require.NotEmpty(t, items)
 
@@ -128,7 +128,7 @@ func TestFindingQueryListWithFilters(t *testing.T) {
 	require.NoError(t, caseFile.AddEvidence(ev, time.Now().UTC()))
 	require.NoError(t, cfRepo.Save(ctx, caseFile))
 
-	items, total, err := query.List(ctx, testTenantID.String(), findinglist.Filters{
+	items, total, err := query.List(ctx, testTenantID, findinglist.Filters{
 		CaseFileID: caseFile.ID().String(),
 		Severity:   "error",
 	}, 100, 0)
@@ -151,7 +151,7 @@ func TestFindingQueryListFilterByTool(t *testing.T) {
 	require.NoError(t, caseFile.AddEvidence(ev, time.Now().UTC()))
 	require.NoError(t, cfRepo.Save(ctx, caseFile))
 
-	items, total, err := finder.List(ctx, testTenantID.String(), findinglist.Filters{
+	items, total, err := finder.List(ctx, testTenantID, findinglist.Filters{
 		CaseFileID: caseFile.ID().String(),
 		Tool:       "pmd",
 	}, 100, 0)
@@ -174,7 +174,7 @@ func TestFindingQueryListFilterByStatus(t *testing.T) {
 	require.NoError(t, caseFile.AddEvidence(ev, time.Now().UTC()))
 	require.NoError(t, cfRepo.Save(ctx, caseFile))
 
-	items, total, err := finder.List(ctx, testTenantID.String(), findinglist.Filters{
+	items, total, err := finder.List(ctx, testTenantID, findinglist.Filters{
 		CaseFileID: caseFile.ID().String(),
 		Status:     "new",
 	}, 100, 0)
@@ -182,7 +182,7 @@ func TestFindingQueryListFilterByStatus(t *testing.T) {
 	assert.Equal(t, 2, total)
 	assert.Len(t, items, 2)
 
-	items, total, err = finder.List(ctx, testTenantID.String(), findinglist.Filters{
+	items, total, err = finder.List(ctx, testTenantID, findinglist.Filters{
 		CaseFileID: caseFile.ID().String(),
 		Status:     "resolved",
 	}, 100, 0)
@@ -203,7 +203,7 @@ func TestFindingQueryListFilterByFilePath(t *testing.T) {
 	require.NoError(t, caseFile.AddEvidence(ev, time.Now().UTC()))
 	require.NoError(t, cfRepo.Save(ctx, caseFile))
 
-	items, total, err := finder.List(ctx, testTenantID.String(), findinglist.Filters{
+	items, total, err := finder.List(ctx, testTenantID, findinglist.Filters{
 		CaseFileID: caseFile.ID().String(),
 		FilePath:   "src/Foo",
 	}, 100, 0)
@@ -212,7 +212,7 @@ func TestFindingQueryListFilterByFilePath(t *testing.T) {
 	require.Len(t, items, 1)
 	assert.Equal(t, "src/Foo.java", items[0].FilePath)
 
-	items, total, err = finder.List(ctx, testTenantID.String(), findinglist.Filters{
+	items, total, err = finder.List(ctx, testTenantID, findinglist.Filters{
 		CaseFileID: caseFile.ID().String(),
 		FilePath:   "src/",
 	}, 100, 0)
@@ -233,14 +233,14 @@ func TestFindingQueryListFilterByProjectID(t *testing.T) {
 	require.NoError(t, caseFile.AddEvidence(ev, time.Now().UTC()))
 	require.NoError(t, cfRepo.Save(ctx, caseFile))
 
-	items, total, err := finder.List(ctx, testTenantID.String(), findinglist.Filters{
+	items, total, err := finder.List(ctx, testTenantID, findinglist.Filters{
 		ProjectID: project.ID().String(),
 	}, 100, 0)
 	require.NoError(t, err)
 	assert.Equal(t, 2, total)
 	assert.Len(t, items, 2)
 
-	items, total, err = finder.List(ctx, testTenantID.String(), findinglist.Filters{
+	items, total, err = finder.List(ctx, testTenantID, findinglist.Filters{
 		ProjectID: mustGenerateProjectID(t).String(),
 	}, 100, 0)
 	require.NoError(t, err)
@@ -262,14 +262,14 @@ func TestFindingQueryListFilterByGavelspace(t *testing.T) {
 
 	insertGavelspaceProject(t, database, "my-gavelspace", project.ID().String())
 
-	items, total, err := finder.List(ctx, testTenantID.String(), findinglist.Filters{
+	items, total, err := finder.List(ctx, testTenantID, findinglist.Filters{
 		Gavelspace: "my-gavelspace",
 	}, 100, 0)
 	require.NoError(t, err)
 	assert.Equal(t, 2, total)
 	assert.Len(t, items, 2)
 
-	items, total, err = finder.List(ctx, testTenantID.String(), findinglist.Filters{
+	items, total, err = finder.List(ctx, testTenantID, findinglist.Filters{
 		Gavelspace: "other-gavelspace",
 	}, 100, 0)
 	require.NoError(t, err)
@@ -289,13 +289,13 @@ func TestCaseFileQueryListByProjectWithGavelspaceFilter(t *testing.T) {
 
 	insertGavelspaceProject(t, database, "my-gavelspace", project.ID().String())
 
-	items, total, err := cfFinder.ListByProject(ctx, testTenantID.String(), "", "my-gavelspace", 10, 0)
+	items, total, err := cfFinder.ListByProject(ctx, testTenantID, "", "my-gavelspace", 10, 0)
 	require.NoError(t, err)
 	assert.Equal(t, 1, total)
 	require.Len(t, items, 1)
 	assert.Equal(t, caseFile.ID().String(), items[0].ID)
 
-	items, total, err = cfFinder.ListByProject(ctx, testTenantID.String(), "", "other-gavelspace", 10, 0)
+	items, total, err = cfFinder.ListByProject(ctx, testTenantID, "", "other-gavelspace", 10, 0)
 	require.NoError(t, err)
 	assert.Equal(t, 0, total)
 	assert.Empty(t, items)
@@ -313,7 +313,7 @@ func TestCaseFileQueryGetByIDWithCoverage(t *testing.T) {
 	require.NoError(t, caseFile.AddEvidence(ev, time.Now().UTC()))
 	require.NoError(t, cfRepo.Save(ctx, caseFile))
 
-	detail, err := cfFinder.GetByID(ctx, testTenantID.String(), caseFile.ID().String())
+	detail, err := cfFinder.GetByID(ctx, testTenantID, caseFile.ID().String())
 	require.NoError(t, err)
 	require.NotNil(t, detail.CoveragePercent)
 	assert.InDelta(t, 80.0, *detail.CoveragePercent, 0.01)

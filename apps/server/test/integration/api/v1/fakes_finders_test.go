@@ -116,7 +116,7 @@ func (s *casefileStore) putFinding(f findinglist.FindingView) {
 	s.findings = append(s.findings, f)
 }
 
-func (s *casefileStore) GetByID(_ context.Context, _, id string) (*casefileget.CaseFileDetail, error) {
+func (s *casefileStore) GetByID(_ context.Context, _ tenant.TenantID, id string) (*casefileget.CaseFileDetail, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	d, ok := s.byID[id]
@@ -126,7 +126,7 @@ func (s *casefileStore) GetByID(_ context.Context, _, id string) (*casefileget.C
 	return d, nil
 }
 
-func (s *casefileStore) ListByProject(_ context.Context, _, projectID, _ string, limit, offset int) ([]casefilelist.CaseFileSummary, int, error) {
+func (s *casefileStore) ListByProject(_ context.Context, _ tenant.TenantID, projectID, _ string, limit, offset int) ([]casefilelist.CaseFileSummary, int, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	ids := s.byProject[projectID]
@@ -151,7 +151,7 @@ func (s *casefileStore) ListByProject(_ context.Context, _, projectID, _ string,
 	return out, total, nil
 }
 
-func (s *casefileStore) List(_ context.Context, _ string, filters findinglist.Filters, limit, offset int) ([]findinglist.FindingView, int, error) {
+func (s *casefileStore) List(_ context.Context, _ tenant.TenantID, filters findinglist.Filters, limit, offset int) ([]findinglist.FindingView, int, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	matches := make([]findinglist.FindingView, 0, len(s.findings))
@@ -195,7 +195,7 @@ func (s *pleadingStore) putDetail(d *pleadingget.PleadingDetail) {
 	s.byProject[d.ProjectID] = append(s.byProject[d.ProjectID], d.ID)
 }
 
-func (s *pleadingStore) GetByID(_ context.Context, _, id string) (*pleadingget.PleadingDetail, error) {
+func (s *pleadingStore) GetByID(_ context.Context, _ tenant.TenantID, id string) (*pleadingget.PleadingDetail, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	d, ok := s.byID[id]
@@ -205,7 +205,7 @@ func (s *pleadingStore) GetByID(_ context.Context, _, id string) (*pleadingget.P
 	return d, nil
 }
 
-func (s *pleadingStore) ListByProject(_ context.Context, _, projectID, status, _ string, limit, offset int) ([]pleadinglist.PleadingSummary, int, error) {
+func (s *pleadingStore) ListByProject(_ context.Context, _ tenant.TenantID, projectID, status, _ string, limit, offset int) ([]pleadinglist.PleadingSummary, int, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	ids := s.byProject[projectID]

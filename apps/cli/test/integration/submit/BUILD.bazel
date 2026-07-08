@@ -13,6 +13,7 @@ go_test(
         "//core/domain/iam/model/tenant",
         "//core/domain/project/model",
         "//core/infrastructure/casefile/postgres",
+        "//core/infrastructure/platform/database",
         "//core/infrastructure/platform/database/testkit",
         "//core/infrastructure/project/postgres",
         "@com_github_stretchr_testify//assert",

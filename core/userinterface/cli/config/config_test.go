@@ -46,7 +46,7 @@ func newGavelspace(t *testing.T, name string) gavelspacemodel.Gavelspace {
 
 func newProject(t *testing.T, name, pattern string) projectmodel.Project {
 	t.Helper()
-	p, err := projectmodel.NewProject(name+"-key", name, pattern)
+	p, err := projectmodel.NewProject(tenant.LocalTenantID, name+"-key", name, pattern)
 	require.NoError(t, err)
 	return p
 }
@@ -61,6 +61,7 @@ func newProjectWithGate(t *testing.T, name, pattern string) projectmodel.Project
 	require.NoError(t, err)
 	project, err := projectmodel.ReconstituteProject(
 		projectmodel.NewProjectID(testUUID),
+		tenant.LocalTenantID,
 		name+"-key", name, pattern, "main",
 		nil, gate, nil, nil,
 	)

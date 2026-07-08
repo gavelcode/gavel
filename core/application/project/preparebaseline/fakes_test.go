@@ -6,14 +6,19 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 
 	"github.com/usegavel/gavel/core/application/project/preparebaseline"
 	"github.com/usegavel/gavel/core/domain/casefile/model/evidence/finding"
+	"github.com/usegavel/gavel/core/domain/iam/model/tenant"
 	projectmodel "github.com/usegavel/gavel/core/domain/project/model"
 )
 
-var errNotFound = errors.New("not found")
+var (
+	errNotFound = errors.New("not found")
+	testTenant  = tenant.NewTenantID(uuid.MustParse("22222222-2222-2222-2222-222222222222"))
+)
 
 type fakeProjectRepo struct {
 	mu      sync.Mutex
@@ -38,7 +43,7 @@ func (r *fakeProjectRepo) Save(_ context.Context, project projectmodel.Project) 
 	return nil
 }
 
-func (r *fakeProjectRepo) FindByID(_ context.Context, id projectmodel.ProjectID) (projectmodel.Project, error) {
+func (r *fakeProjectRepo) FindByID(_ context.Context, _ tenant.TenantID, id projectmodel.ProjectID) (projectmodel.Project, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	project, ok := r.store[id.String()]
@@ -48,7 +53,7 @@ func (r *fakeProjectRepo) FindByID(_ context.Context, id projectmodel.ProjectID)
 	return project, nil
 }
 
-func (r *fakeProjectRepo) FindByName(_ context.Context, name string) (projectmodel.Project, error) {
+func (r *fakeProjectRepo) FindByName(_ context.Context, _ tenant.TenantID, name string) (projectmodel.Project, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	project, ok := r.store["name:"+name]
@@ -58,7 +63,7 @@ func (r *fakeProjectRepo) FindByName(_ context.Context, name string) (projectmod
 	return project, nil
 }
 
-func (r *fakeProjectRepo) FindByKey(_ context.Context, _ string) (projectmodel.Project, error) {
+func (r *fakeProjectRepo) FindByKey(_ context.Context, _ tenant.TenantID, _ string) (projectmodel.Project, error) {
 	return projectmodel.Project{}, errNotFound
 }
 
@@ -106,13 +111,13 @@ func (f *fakeFetcher) FetchBaseline(_ context.Context, projectKey, branch string
 
 func seedProject(t *testing.T, repo *fakeProjectRepo, name string) projectmodel.Project {
 	t.Helper()
-	project, err := projectmodel.NewProject(name, name, "//"+name+"/...")
+	project, err := projectmodel.NewProject(testTenant, name, name, "//"+name+"/...")
 	require.NoError(t, err)
 	require.NoError(t, repo.Save(context.Background(), project))
 	return project
 }
 
 func projectIDByName(repo *fakeProjectRepo, name string) projectmodel.ProjectID {
-	project, _ := repo.FindByName(context.Background(), name)
+	project, _ := repo.FindByName(context.Background(), testTenant, name)
 	return project.ID()
 }

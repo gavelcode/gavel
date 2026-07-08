@@ -222,7 +222,7 @@ func TestCaseFileRepoSaveWithVerdict(t *testing.T) {
 	ev := newFindingsEvidence(t)
 	require.NoError(t, caseFile.AddEvidence(ev, time.Now().UTC()))
 
-	reconstituted, err := casefile.ReconstituteCaseFile(caseFile.ID(), caseFile.ProjectID(), caseFile.CommitSHA(), caseFile.Branch(), caseFile.StartedAt(), caseFile.Evidences(), &verdict, false)
+	reconstituted, err := casefile.ReconstituteCaseFile(caseFile.ID(), testTenantID, caseFile.ProjectID(), caseFile.CommitSHA(), caseFile.Branch(), caseFile.StartedAt(), caseFile.Evidences(), &verdict, false)
 	require.NoError(t, err)
 	_ = evaluatedAt
 

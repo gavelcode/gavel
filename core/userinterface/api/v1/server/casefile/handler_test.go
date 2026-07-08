@@ -19,12 +19,14 @@ import (
 	"github.com/usegavel/gavel/core/application/project/getbaseline"
 	projectgetbykey "github.com/usegavel/gavel/core/application/project/getbykey"
 	"github.com/usegavel/gavel/core/application/project/projectview"
+	"github.com/usegavel/gavel/core/domain/iam/model/tenant"
 	"github.com/usegavel/gavel/core/domain/project/model"
 	memcf "github.com/usegavel/gavel/core/infrastructure/casefile/memory"
 	memproject "github.com/usegavel/gavel/core/infrastructure/project/memory"
 	"github.com/usegavel/gavel/core/userinterface/api/v1/gen"
 	"github.com/usegavel/gavel/core/userinterface/api/v1/server/casefile"
 	"github.com/usegavel/gavel/core/userinterface/api/v1/server/httpx"
+	auth "github.com/usegavel/gavel/core/userinterface/api/v1/server/httpx/auth"
 )
 
 func newQueryHandler(
@@ -45,6 +47,12 @@ func newMinimalHandler() *casefile.Handler {
 	return casefile.New(casefile.Deps{
 		Now: func() time.Time { return time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC) },
 	})
+}
+
+const testTenant = "22222222-2222-2222-2222-222222222222"
+
+func authContext() context.Context {
+	return auth.WithPrincipal(context.Background(), &auth.Principal{TenantID: testTenant})
 }
 
 func TestListCaseFiles_MissingProjectAndGavelspace(t *testing.T) {
@@ -240,7 +248,7 @@ func TestListProjectCaseFiles_ReturnsItems(t *testing.T) {
 		}},
 	)
 
-	resp, err := handler.ListProjectCaseFiles(context.Background(), gen.ListProjectCaseFilesRequestObject{
+	resp, err := handler.ListProjectCaseFiles(authContext(), gen.ListProjectCaseFilesRequestObject{
 		Key: "core",
 	})
 
@@ -259,7 +267,7 @@ func TestListProjectCaseFiles_ProjectNotFoundReturns404(t *testing.T) {
 		&fakeGetByKeyFinder{err: errNotFound},
 	)
 
-	resp, err := handler.ListProjectCaseFiles(context.Background(), gen.ListProjectCaseFilesRequestObject{
+	resp, err := handler.ListProjectCaseFiles(authContext(), gen.ListProjectCaseFilesRequestObject{
 		Key: "missing",
 	})
 
@@ -271,7 +279,7 @@ func TestListProjectCaseFiles_ProjectNotFoundReturns404(t *testing.T) {
 func TestCreateCaseFile_NilBodyReturns400(t *testing.T) {
 	handler := newMinimalHandler()
 
-	resp, err := handler.CreateCaseFile(context.Background(), gen.CreateCaseFileRequestObject{
+	resp, err := handler.CreateCaseFile(authContext(), gen.CreateCaseFileRequestObject{
 		Body: nil,
 	})
 
@@ -328,7 +336,9 @@ func newMutationHandler(t *testing.T) (*casefile.Handler, *memcf.CaseFileReposit
 
 func seedProject(t *testing.T, repo *memproject.ProjectRepository) model.Project {
 	t.Helper()
-	p, err := model.NewProject("core", "Core", "//core/...")
+	tid, err := tenant.ParseTenantID(testTenant)
+	require.NoError(t, err)
+	p, err := model.NewProject(tid, "core", "Core", "//core/...")
 	require.NoError(t, err)
 	require.NoError(t, repo.Save(context.Background(), p))
 	return p
@@ -338,7 +348,7 @@ func TestCreateCaseFile_Success(t *testing.T) {
 	handler, _, projRepo := newMutationHandler(t)
 	p := seedProject(t, projRepo)
 
-	resp, err := handler.CreateCaseFile(context.Background(), gen.CreateCaseFileRequestObject{
+	resp, err := handler.CreateCaseFile(authContext(), gen.CreateCaseFileRequestObject{
 		Body: &gen.CreateCaseFileRequest{
 			ProjectId: httpx.ParseUUIDOrZero(p.ID().String()),
 			CommitSha: "abc123",
@@ -355,7 +365,7 @@ func TestCreateCaseFile_Success(t *testing.T) {
 func TestCreateCaseFile_ProjectNotFoundReturns404(t *testing.T) {
 	handler, _, _ := newMutationHandler(t)
 
-	resp, err := handler.CreateCaseFile(context.Background(), gen.CreateCaseFileRequestObject{
+	resp, err := handler.CreateCaseFile(authContext(), gen.CreateCaseFileRequestObject{
 		Body: &gen.CreateCaseFileRequest{
 			ProjectId: httpx.ParseUUIDOrZero("99999999-9999-9999-9999-999999999999"),
 			CommitSha: "abc123",
@@ -371,7 +381,7 @@ func TestCreateCaseFile_ProjectNotFoundReturns404(t *testing.T) {
 func TestCreateCaseFile_InvalidBodyReturns400(t *testing.T) {
 	handler, _, _ := newMutationHandler(t)
 
-	resp, err := handler.CreateCaseFile(context.Background(), gen.CreateCaseFileRequestObject{
+	resp, err := handler.CreateCaseFile(authContext(), gen.CreateCaseFileRequestObject{
 		Body: &gen.CreateCaseFileRequest{
 			ProjectId: httpx.ParseUUIDOrZero("11111111-1111-1111-1111-111111111111"),
 			CommitSha: "",
@@ -390,7 +400,7 @@ func TestCreateCaseFile_WithStartedAtAndFreshEvaluation(t *testing.T) {
 
 	started := time.Date(2026, 6, 15, 10, 0, 0, 0, time.UTC)
 	fresh := true
-	resp, err := handler.CreateCaseFile(context.Background(), gen.CreateCaseFileRequestObject{
+	resp, err := handler.CreateCaseFile(authContext(), gen.CreateCaseFileRequestObject{
 		Body: &gen.CreateCaseFileRequest{
 			ProjectId:       httpx.ParseUUIDOrZero(project.ID().String()),
 			CommitSha:       "def456",
@@ -407,7 +417,7 @@ func TestCreateCaseFile_WithStartedAtAndFreshEvaluation(t *testing.T) {
 
 func createCaseFileViaHandler(t *testing.T, handler *casefile.Handler, projectID string) string {
 	t.Helper()
-	resp, err := handler.CreateCaseFile(context.Background(), gen.CreateCaseFileRequestObject{
+	resp, err := handler.CreateCaseFile(authContext(), gen.CreateCaseFileRequestObject{
 		Body: &gen.CreateCaseFileRequest{
 			ProjectId: httpx.ParseUUIDOrZero(projectID),
 			CommitSha: "abc123",
@@ -940,7 +950,7 @@ func TestListProjectCaseFiles_FinderErrorReturnsError(t *testing.T) {
 		&fakeGetByKeyFinder{err: errFake},
 	)
 
-	resp, err := handler.ListProjectCaseFiles(context.Background(), gen.ListProjectCaseFilesRequestObject{
+	resp, err := handler.ListProjectCaseFiles(authContext(), gen.ListProjectCaseFilesRequestObject{
 		Key: "core",
 	})
 
@@ -962,7 +972,7 @@ func TestGetProjectBaseline_Success(t *testing.T) {
 		Now:                 func() time.Time { return time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC) },
 	})
 
-	resp, err := handler.GetProjectBaseline(context.Background(), gen.GetProjectBaselineRequestObject{
+	resp, err := handler.GetProjectBaseline(authContext(), gen.GetProjectBaselineRequestObject{
 		Key: "core",
 	})
 
@@ -988,7 +998,7 @@ func TestGetProjectBaseline_WithBranchParam(t *testing.T) {
 	})
 
 	branch := "develop"
-	resp, err := handler.GetProjectBaseline(context.Background(), gen.GetProjectBaselineRequestObject{
+	resp, err := handler.GetProjectBaseline(authContext(), gen.GetProjectBaselineRequestObject{
 		Key:    "core",
 		Params: gen.GetProjectBaselineParams{Branch: &branch},
 	})
@@ -1008,7 +1018,7 @@ func TestGetProjectBaseline_ProjectNotFoundReturns404(t *testing.T) {
 		Now:                 func() time.Time { return time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC) },
 	})
 
-	resp, err := handler.GetProjectBaseline(context.Background(), gen.GetProjectBaselineRequestObject{
+	resp, err := handler.GetProjectBaseline(authContext(), gen.GetProjectBaselineRequestObject{
 		Key: "missing",
 	})
 

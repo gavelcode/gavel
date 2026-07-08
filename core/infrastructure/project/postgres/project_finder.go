@@ -8,6 +8,7 @@ import (
 	projectget "github.com/usegavel/gavel/core/application/project/get"
 	projectgetbykey "github.com/usegavel/gavel/core/application/project/getbykey"
 	projectlist "github.com/usegavel/gavel/core/application/project/list"
+	"github.com/usegavel/gavel/core/domain/iam/model/tenant"
 	"github.com/usegavel/gavel/core/infrastructure/platform/database"
 )
 
@@ -19,9 +20,9 @@ func NewProjectFinder(db *database.DB) *ProjectFinder {
 	return &ProjectFinder{db: db}
 }
 
-func (q *ProjectFinder) List(ctx context.Context, limit, offset int) ([]projectlist.ProjectSummary, int, error) {
+func (q *ProjectFinder) List(ctx context.Context, tenantID tenant.TenantID, limit, offset int) ([]projectlist.ProjectSummary, int, error) {
 	var total int
-	if err := q.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM projects").Scan(&total); err != nil {
+	if err := q.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM projects WHERE tenant_id = ?", tenantID.UUID()).Scan(&total); err != nil {
 		return nil, 0, fmt.Errorf("count projects: %w", err)
 	}
 
@@ -32,9 +33,10 @@ func (q *ProjectFinder) List(ctx context.Context, limit, offset int) ([]projectl
 		       (SELECT total_findings FROM casefiles
 		        WHERE project_id = p.id ORDER BY started_at DESC LIMIT 1) as total_findings
 		FROM projects p
+		WHERE p.tenant_id = ?
 		ORDER BY p.created_at DESC
 		LIMIT ? OFFSET ?
-	`, limit, offset)
+	`, tenantID.UUID(), limit, offset)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -61,8 +63,8 @@ func (q *ProjectFinder) List(ctx context.Context, limit, offset int) ([]projectl
 	return items, total, rows.Err()
 }
 
-func (q *ProjectFinder) GetByID(ctx context.Context, id string) (*projectget.ProjectDetail, error) {
-	raw, err := q.getProject(ctx, "SELECT p.id, p.key, p.name, p.target_pattern, p.default_branch, p.created_at FROM projects p WHERE p.id = ?", id)
+func (q *ProjectFinder) GetByID(ctx context.Context, tenantID tenant.TenantID, id string) (*projectget.ProjectDetail, error) {
+	raw, err := q.getProject(ctx, "SELECT p.id, p.key, p.name, p.target_pattern, p.default_branch, p.created_at FROM projects p WHERE p.id = ? AND p.tenant_id = ?", tenantID, id)
 	if err != nil {
 		return nil, err
 	}
@@ -81,8 +83,8 @@ func (q *ProjectFinder) GetByID(ctx context.Context, id string) (*projectget.Pro
 	}, nil
 }
 
-func (q *ProjectFinder) GetByKey(ctx context.Context, key string) (*projectgetbykey.ProjectDetail, error) {
-	raw, err := q.getProject(ctx, "SELECT p.id, p.key, p.name, p.target_pattern, p.default_branch, p.created_at FROM projects p WHERE p.key = ?", key)
+func (q *ProjectFinder) GetByKey(ctx context.Context, tenantID tenant.TenantID, key string) (*projectgetbykey.ProjectDetail, error) {
+	raw, err := q.getProject(ctx, "SELECT p.id, p.key, p.name, p.target_pattern, p.default_branch, p.created_at FROM projects p WHERE p.key = ? AND p.tenant_id = ?", tenantID, key)
 	if err != nil {
 		return nil, err
 	}
@@ -101,10 +103,10 @@ func (q *ProjectFinder) GetByKey(ctx context.Context, key string) (*projectgetby
 	}, nil
 }
 
-func (q *ProjectFinder) getProject(ctx context.Context, query, param string) (*projectDetailRow, error) {
+func (q *ProjectFinder) getProject(ctx context.Context, query string, tenantID tenant.TenantID, param string) (*projectDetailRow, error) {
 	var detail projectDetailRow
 	var createdAtStr string
-	err := q.db.QueryRowContext(ctx, query, param).Scan(
+	err := q.db.QueryRowContext(ctx, query, param, tenantID.UUID()).Scan(
 		&detail.id, &detail.key, &detail.name, &detail.targetPattern, &detail.defaultBranch, &createdAtStr)
 	if err != nil {
 		if err == sql.ErrNoRows {

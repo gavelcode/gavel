@@ -21,10 +21,13 @@ import (
 	corejudge "github.com/usegavel/gavel/core/application/casefile/judge"
 	"github.com/usegavel/gavel/core/application/casefile/submit"
 	"github.com/usegavel/gavel/core/domain/casefile/model/evidence/finding"
+	"github.com/usegavel/gavel/core/domain/iam/model/tenant"
 	projectmodel "github.com/usegavel/gavel/core/domain/project/model"
 	casefilememory "github.com/usegavel/gavel/core/infrastructure/casefile/memory"
 	projectmemory "github.com/usegavel/gavel/core/infrastructure/project/memory"
 )
+
+const localTenantID = "11111111-1111-1111-1111-111111111111"
 
 type stubFindingsParser struct {
 	results []ingestfind.Parsed
@@ -80,7 +83,7 @@ func minimalEvidence() evidencedto.Evidence {
 func TestRunLocal_PassVerdict(t *testing.T) {
 	deps, projectRepo := newTestDeps(t)
 
-	project, err := projectmodel.NewProject("backend", "backend", "//backend/...")
+	project, err := projectmodel.NewProject(tenant.LocalTenantID, "backend", "backend", "//backend/...")
 	require.NoError(t, err)
 	require.NoError(t, projectRepo.Save(context.Background(), project))
 
@@ -91,7 +94,7 @@ func TestRunLocal_PassVerdict(t *testing.T) {
 
 	result, err := RunLocal(
 		context.Background(), deps, "/workspace",
-		collected, project.ID().String(), "backend", "abc123", "main",
+		collected, localTenantID, project.ID().String(), "backend", "abc123", "main",
 		startedAt, Options{Quick: true},
 	)
 
@@ -107,7 +110,7 @@ func TestRunLocal_PassVerdict(t *testing.T) {
 func TestRunLocal_WithFindings(t *testing.T) {
 	deps, projectRepo := newTestDeps(t)
 
-	project, err := projectmodel.NewProject("backend", "backend", "//backend/...")
+	project, err := projectmodel.NewProject(tenant.LocalTenantID, "backend", "backend", "//backend/...")
 	require.NoError(t, err)
 	require.NoError(t, projectRepo.Save(context.Background(), project))
 
@@ -125,7 +128,7 @@ func TestRunLocal_WithFindings(t *testing.T) {
 
 	result, err := RunLocal(
 		context.Background(), deps, "/workspace",
-		collected, project.ID().String(), "backend", "abc123", "main",
+		collected, localTenantID, project.ID().String(), "backend", "abc123", "main",
 		time.Now(), Options{Quick: true},
 	)
 
@@ -137,7 +140,7 @@ func TestRunLocal_WithFindings(t *testing.T) {
 func TestRunLocal_WithCoverage(t *testing.T) {
 	deps, projectRepo := newTestDeps(t)
 
-	project, err := projectmodel.NewProject("backend", "backend", "//backend/...")
+	project, err := projectmodel.NewProject(tenant.LocalTenantID, "backend", "backend", "//backend/...")
 	require.NoError(t, err)
 	require.NoError(t, projectRepo.Save(context.Background(), project))
 
@@ -151,7 +154,7 @@ func TestRunLocal_WithCoverage(t *testing.T) {
 
 	result, err := RunLocal(
 		context.Background(), deps, "/workspace",
-		collected, project.ID().String(), "backend", "abc123", "main",
+		collected, localTenantID, project.ID().String(), "backend", "abc123", "main",
 		time.Now(), Options{Quick: false},
 	)
 
@@ -163,7 +166,7 @@ func TestRunLocal_WithCoverage(t *testing.T) {
 func TestRunLocal_CoverageDiffAgainstBaseline(t *testing.T) {
 	deps, projectRepo := newTestDeps(t)
 
-	project, err := projectmodel.NewProject("backend", "backend", "//backend/...")
+	project, err := projectmodel.NewProject(tenant.LocalTenantID, "backend", "backend", "//backend/...")
 	require.NoError(t, err)
 	prevPct := 80.0
 	entry, err := projectmodel.NewFileCoverageEntry("pkg/a.go", []int{1, 2}, []int{3, 4})
@@ -181,7 +184,7 @@ func TestRunLocal_CoverageDiffAgainstBaseline(t *testing.T) {
 
 	result, err := RunLocal(
 		context.Background(), deps, "/workspace",
-		collected, project.ID().String(), "backend", "abc123", "main",
+		collected, localTenantID, project.ID().String(), "backend", "abc123", "main",
 		time.Now(), Options{Quick: false},
 	)
 	require.NoError(t, err)
@@ -300,7 +303,7 @@ func TestRunLocal_SubmitNewCommandError(t *testing.T) {
 
 	_, err := RunLocal(
 		context.Background(), deps, "/workspace",
-		collected, "not-a-uuid", "backend", "abc123", "main",
+		collected, localTenantID, "not-a-uuid", "backend", "abc123", "main",
 		time.Now(), Options{Quick: true},
 	)
 
@@ -316,7 +319,7 @@ func TestRunLocal_SubmitExecuteError(t *testing.T) {
 
 	_, err := RunLocal(
 		context.Background(), deps, "/workspace",
-		collected, "550e8400-e29b-41d4-a716-446655440000", "backend", "abc123", "main",
+		collected, localTenantID, "550e8400-e29b-41d4-a716-446655440000", "backend", "abc123", "main",
 		time.Now(), Options{Quick: true},
 	)
 
@@ -326,14 +329,14 @@ func TestRunLocal_SubmitExecuteError(t *testing.T) {
 func TestRunProject_NoServerDelegatesToLocal(t *testing.T) {
 	deps, projectRepo := newTestDeps(t)
 
-	project, err := projectmodel.NewProject("backend", "backend", "//backend/...")
+	project, err := projectmodel.NewProject(tenant.LocalTenantID, "backend", "backend", "//backend/...")
 	require.NoError(t, err)
 	require.NoError(t, projectRepo.Save(context.Background(), project))
 
 	result, err := RunProject(
 		context.Background(), deps, "/workspace",
 		collectevidence.Result{Evidences: []evidencedto.Evidence{minimalEvidence()}},
-		project.ID().String(), "backend", "abc123", "main",
+		localTenantID, project.ID().String(), "backend", "abc123", "main",
 		time.Now(), Options{Quick: true},
 	)
 

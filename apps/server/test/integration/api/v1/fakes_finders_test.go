@@ -15,6 +15,7 @@ import (
 	projectgetbykey "github.com/usegavel/gavel/core/application/project/getbykey"
 	projectlist "github.com/usegavel/gavel/core/application/project/list"
 	searchquery "github.com/usegavel/gavel/core/application/supporting/search"
+	"github.com/usegavel/gavel/core/domain/iam/model/tenant"
 	pleadingmodel "github.com/usegavel/gavel/core/domain/pleading/model"
 	"github.com/usegavel/gavel/core/domain/shared/failure"
 )
@@ -46,7 +47,7 @@ func (s *projectStore) put(project *projectgetbykey.ProjectDetail) {
 	}
 }
 
-func (s *projectStore) GetByKey(_ context.Context, key string) (*projectgetbykey.ProjectDetail, error) {
+func (s *projectStore) GetByKey(_ context.Context, _ tenant.TenantID, key string) (*projectgetbykey.ProjectDetail, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	p, ok := s.byKey[key]
@@ -56,7 +57,7 @@ func (s *projectStore) GetByKey(_ context.Context, key string) (*projectgetbykey
 	return p, nil
 }
 
-func (s *projectStore) List(_ context.Context, limit, offset int) ([]projectlist.ProjectSummary, int, error) {
+func (s *projectStore) List(_ context.Context, _ tenant.TenantID, limit, offset int) ([]projectlist.ProjectSummary, int, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	keys := make([]string, 0, len(s.byKey))

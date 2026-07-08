@@ -11,10 +11,14 @@ type ProjectInput struct {
 }
 
 type Command struct {
+	tenantID string
 	projects []ProjectInput
 }
 
-func NewCommand(projects []ProjectInput) (Command, error) {
+func NewCommand(tenantID string, projects []ProjectInput) (Command, error) {
+	if strings.TrimSpace(tenantID) == "" {
+		return Command{}, fmt.Errorf("%w: tenantID must not be empty", ErrInvalidCommand)
+	}
 	if len(projects) == 0 {
 		return Command{}, fmt.Errorf("%w: at least one project is required", ErrInvalidCommand)
 	}
@@ -25,7 +29,8 @@ func NewCommand(projects []ProjectInput) (Command, error) {
 	}
 	cp := make([]ProjectInput, len(projects))
 	copy(cp, projects)
-	return Command{projects: cp}, nil
+	return Command{tenantID: tenantID, projects: cp}, nil
 }
 
+func (c Command) TenantID() string         { return c.tenantID }
 func (c Command) Projects() []ProjectInput { return c.projects }

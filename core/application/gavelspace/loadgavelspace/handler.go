@@ -74,7 +74,7 @@ func (h *Handler) Execute(ctx context.Context, query Query) (Result, error) {
 			if err := h.projectSaver.Save(ctx, project); err != nil {
 				return Result{}, fmt.Errorf("save project %s: %w", project.Name(), err)
 			}
-			saved, err := h.projectSaver.FindByKey(ctx, project.Key())
+			saved, err := h.projectSaver.FindByKey(ctx, project.TenantID(), project.Key())
 			if err == nil {
 				projects[index] = saved
 			}

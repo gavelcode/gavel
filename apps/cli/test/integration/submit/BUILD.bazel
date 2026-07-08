@@ -10,6 +10,7 @@ go_test(
         "//core/application/casefile/finalize",
         "//core/application/casefile/ingestevidence",
         "//core/application/casefile/judge",
+        "//core/domain/iam/model/tenant",
         "//core/domain/project/model",
         "//core/infrastructure/casefile/postgres",
         "//core/infrastructure/platform/database/testkit",

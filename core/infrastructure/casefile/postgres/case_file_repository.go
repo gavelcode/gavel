@@ -16,6 +16,7 @@ import (
 	"github.com/usegavel/gavel/core/domain/casefile/model/evidence/finding"
 	"github.com/usegavel/gavel/core/domain/casefile/model/evidence/toolexecution"
 	"github.com/usegavel/gavel/core/domain/casefile/model/verdict"
+	"github.com/usegavel/gavel/core/domain/iam/model/tenant"
 	projectmodel "github.com/usegavel/gavel/core/domain/project/model"
 	"github.com/usegavel/gavel/core/domain/shared/failure"
 	"github.com/usegavel/gavel/core/infrastructure/platform/database"
@@ -72,17 +73,17 @@ func (r *Repository) upsertCaseFile(ctx context.Context, transaction *database.T
 	}
 
 	_, err = transaction.ExecContext(ctx, `
-		INSERT INTO casefiles (id, project_id, commit_sha, branch, started_at,
+		INSERT INTO casefiles (id, project_id, tenant_id, commit_sha, branch, started_at,
 		                       verdict_outcome, verdict_evaluated_at,
 		                       total_findings, new_findings, existing_findings, resolved_findings,
 		                       is_fresh_evaluation)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, 0, 0, ?)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0, 0, ?)
 		ON CONFLICT(id) DO UPDATE SET
 		    verdict_outcome = excluded.verdict_outcome,
 		    verdict_evaluated_at = excluded.verdict_evaluated_at,
 		    total_findings = excluded.total_findings,
 		    is_fresh_evaluation = excluded.is_fresh_evaluation
-	`, caseFile.ID().UUID(), caseFile.ProjectID().UUID(), caseFile.CommitSHA(), caseFile.Branch(),
+	`, caseFile.ID().UUID(), caseFile.ProjectID().UUID(), caseFile.TenantID().UUID(), caseFile.CommitSHA(), caseFile.Branch(),
 		caseFile.StartedAt().UTC().Format(time.RFC3339),
 		verdictOutcome, verdictEvaluatedAt,
 		countTotalFindings(caseFile),
@@ -234,16 +235,16 @@ func (r *Repository) WriteCounters(ctx context.Context, caseFileID string, count
 }
 
 func (r *Repository) FindByID(ctx context.Context, caseFileID model.CaseFileID) (model.CaseFile, error) {
-	var cfID, projectID uuid.UUID
+	var cfID, projectID, tenantID uuid.UUID
 	var commitSHA, branch, startedAtStr string
 	var verdictOutcome, verdictEvaluatedAt sql.NullString
 	var isFreshEval bool
 
 	err := r.db.QueryRowContext(ctx, `
-		SELECT id, project_id, commit_sha, branch, started_at,
+		SELECT id, project_id, tenant_id, commit_sha, branch, started_at,
 		       verdict_outcome, verdict_evaluated_at, is_fresh_evaluation
 		FROM casefiles WHERE id = ?
-	`, caseFileID.UUID()).Scan(&cfID, &projectID, &commitSHA, &branch, &startedAtStr,
+	`, caseFileID.UUID()).Scan(&cfID, &projectID, &tenantID, &commitSHA, &branch, &startedAtStr,
 		&verdictOutcome, &verdictEvaluatedAt, &isFreshEval)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -274,7 +275,7 @@ func (r *Repository) FindByID(ctx context.Context, caseFileID model.CaseFileID) 
 	scannedCaseFileID := model.NewCaseFileID(cfID)
 	projID := projectmodel.NewProjectID(projectID)
 
-	return model.ReconstituteCaseFile(scannedCaseFileID, projID, commitSHA, branch, startedAt, evidences, verdict, isFreshEval)
+	return model.ReconstituteCaseFile(scannedCaseFileID, tenant.NewTenantID(tenantID), projID, commitSHA, branch, startedAt, evidences, verdict, isFreshEval)
 }
 
 func (r *Repository) loadEvidences(ctx context.Context, caseFileID uuid.UUID) ([]evidence.Evidence, error) {
@@ -551,7 +552,7 @@ func (r *Repository) loadVerdict(ctx context.Context, caseFileID uuid.UUID, outc
 
 func (r *Repository) FindByProject(ctx context.Context, projectID projectmodel.ProjectID) ([]model.CaseFile, error) {
 	rows, err := r.db.QueryContext(ctx, `
-		SELECT id, project_id, commit_sha, branch, started_at, is_fresh_evaluation
+		SELECT id, project_id, tenant_id, commit_sha, branch, started_at, is_fresh_evaluation
 		FROM casefiles WHERE project_id = ?
 		ORDER BY started_at DESC
 	`, projectID.UUID())
@@ -561,14 +562,14 @@ func (r *Repository) FindByProject(ctx context.Context, projectID projectmodel.P
 	defer func() { _ = rows.Close() }()
 
 	type row struct {
-		id, projectID                uuid.UUID
+		id, projectID, tenantID      uuid.UUID
 		commitSHA, branch, startedAt string
 		isFreshEval                  bool
 	}
 	var scanned []row
 	for rows.Next() {
 		var r row
-		if err := rows.Scan(&r.id, &r.projectID, &r.commitSHA, &r.branch, &r.startedAt, &r.isFreshEval); err != nil {
+		if err := rows.Scan(&r.id, &r.projectID, &r.tenantID, &r.commitSHA, &r.branch, &r.startedAt, &r.isFreshEval); err != nil {
 			return nil, err
 		}
 		scanned = append(scanned, r)
@@ -585,7 +586,7 @@ func (r *Repository) FindByProject(ctx context.Context, projectID projectmodel.P
 		}
 		caseFileID := model.NewCaseFileID(row.id)
 		projID := projectmodel.NewProjectID(row.projectID)
-		cf, err := model.ReconstituteCaseFile(caseFileID, projID, row.commitSHA, row.branch, startedAt, nil, nil, row.isFreshEval)
+		cf, err := model.ReconstituteCaseFile(caseFileID, tenant.NewTenantID(row.tenantID), projID, row.commitSHA, row.branch, startedAt, nil, nil, row.isFreshEval)
 		if err != nil {
 			return nil, err
 		}

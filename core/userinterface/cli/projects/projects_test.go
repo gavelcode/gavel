@@ -55,6 +55,7 @@ func newProjectWithGate(t *testing.T, name, pattern string) projectmodel.Project
 	require.NoError(t, err)
 	proj, err := projectmodel.ReconstituteProject(
 		projectmodel.NewProjectID(testUUID),
+		tenant.LocalTenantID,
 		name+"-key", name, pattern, "main",
 		nil, gate, nil, nil,
 	)
@@ -74,6 +75,7 @@ func newProjectWithArchPolicy(t *testing.T, name, pattern string) projectmodel.P
 	require.NoError(t, err)
 	proj, err := projectmodel.ReconstituteProject(
 		projectmodel.NewProjectID(testUUID),
+		tenant.LocalTenantID,
 		name+"-key", name, pattern, "main",
 		nil, qualitygate.Gate{}, &policy, nil,
 	)

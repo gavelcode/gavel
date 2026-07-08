@@ -22,7 +22,7 @@ func TestHandlerExecuteSuccessful(t *testing.T) {
 	_, err := handler.Execute(context.Background(), cmd)
 	require.NoError(t, err)
 
-	persisted, err := projects.FindByID(context.Background(), project.ID())
+	persisted, err := projects.FindByID(context.Background(), testTenant, project.ID())
 	require.NoError(t, err)
 	assert.Equal(t, 1, len(persisted.Gate().Rules()), "quality gate updated and saved")
 }
@@ -41,7 +41,7 @@ func TestHandlerExecuteProjectNotFound(t *testing.T) {
 	projects := newFakeProjectRepo()
 
 	handler := updatequalitygate.NewHandler(projects)
-	cmd, err := updatequalitygate.NewCommand("11111111-1111-1111-1111-111111111111", updatequalitygate.Input{})
+	cmd, err := updatequalitygate.NewCommand(testTenant.String(), "11111111-1111-1111-1111-111111111111", updatequalitygate.Input{})
 	require.NoError(t, err)
 
 	_, err = handler.Execute(context.Background(), cmd)
@@ -84,7 +84,7 @@ func TestHandlerExecuteDrainsEvent(t *testing.T) {
 	require.NotEmpty(t, result.Events, "QualityGateUpdated event drained to caller")
 	assert.Equal(t, projectmodel.EventNameQualityGateUpdated, result.Events[len(result.Events)-1].Name)
 
-	persisted, err := projects.FindByID(context.Background(), project.ID())
+	persisted, err := projects.FindByID(context.Background(), testTenant, project.ID())
 	require.NoError(t, err)
 	assert.Empty(t, persisted.Events(), "events drained before persistence; not retained")
 }
@@ -122,14 +122,14 @@ func TestNewHandlerRejectsNilRepo(t *testing.T) {
 
 func mustCommand(t *testing.T, projectID string, input updatequalitygate.Input) updatequalitygate.Command {
 	t.Helper()
-	cmd, err := updatequalitygate.NewCommand(projectID, input)
+	cmd, err := updatequalitygate.NewCommand(testTenant.String(), projectID, input)
 	require.NoError(t, err)
 	return cmd
 }
 
 func mustProject(t *testing.T) projectmodel.Project {
 	t.Helper()
-	p, err := projectmodel.NewProject("svc", "svc", "//svc/...")
+	p, err := projectmodel.NewProject(testTenant, "svc", "svc", "//svc/...")
 	require.NoError(t, err)
 	return p
 }
@@ -155,7 +155,7 @@ func TestHandlerExecuteMaxViolationsStrategy(t *testing.T) {
 	_, err := handler.Execute(context.Background(), mustCommand(t, project.ID().String(), input))
 	require.NoError(t, err)
 
-	persisted, err := projects.FindByID(context.Background(), project.ID())
+	persisted, err := projects.FindByID(context.Background(), testTenant, project.ID())
 	require.NoError(t, err)
 	assert.Equal(t, 1, len(persisted.Gate().Rules()))
 }
@@ -181,7 +181,7 @@ func TestHandlerExecuteMinNewCodeCoverageStrategy(t *testing.T) {
 	_, err := handler.Execute(context.Background(), mustCommand(t, project.ID().String(), input))
 	require.NoError(t, err)
 
-	persisted, err := projects.FindByID(context.Background(), project.ID())
+	persisted, err := projects.FindByID(context.Background(), testTenant, project.ID())
 	require.NoError(t, err)
 	assert.Equal(t, 1, len(persisted.Gate().Rules()))
 }

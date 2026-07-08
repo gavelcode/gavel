@@ -15,6 +15,7 @@ go_library(
         "//core/application/shared/event",
         "//core/domain/casefile/model",
         "//core/domain/casefile/service",
+        "//core/domain/iam/model/tenant",
         "//core/domain/project/model",
         "//core/domain/project/service",
         "//core/domain/shared/failure",
@@ -31,6 +32,7 @@ go_test(
     deps = [
         "//core/domain/casefile/model",
         "//core/domain/casefile/model/evidence/finding",
+        "//core/domain/iam/model/tenant",
         "//core/domain/project/model",
         "//core/infrastructure/casefile/memory",
         "//core/infrastructure/project/memory",

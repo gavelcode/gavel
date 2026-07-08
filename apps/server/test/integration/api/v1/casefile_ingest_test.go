@@ -11,15 +11,18 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 
+	"github.com/usegavel/gavel/core/domain/iam/model/tenant"
 	projectmodel "github.com/usegavel/gavel/core/domain/project/model"
 )
 
-func seedProjectInRepo(t *testing.T, f *testFixture) projectmodel.Project {
+func seedProjectInRepo(t *testing.T, fixture *testFixture) projectmodel.Project {
 	t.Helper()
-	p, err := projectmodel.NewProject("ingest-test", "Ingest Test", "//...")
+	tenantID, err := tenant.ParseTenantID(fixture.defTenantID)
+	require.NoError(t, err)
+	p, err := projectmodel.NewProject(tenantID, "ingest-test", "Ingest Test", "//...")
 	require.NoError(t, err)
 	p.ClearEvents()
-	require.NoError(t, f.projRepo.Save(context.Background(), p))
+	require.NoError(t, fixture.projRepo.Save(context.Background(), p))
 	return p
 }
 

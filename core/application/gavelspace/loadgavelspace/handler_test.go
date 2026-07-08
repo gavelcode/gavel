@@ -32,7 +32,7 @@ func TestExecute_ReturnsGavelspaceAndProjects(t *testing.T) {
 	require.NoError(t, err)
 	gavelspace.SetServerConfig(gavelspacemodel.NewServerConfig("https://gavel.dev", "tok"))
 
-	p, err := projectmodel.NewProject("core", "core", "//core/...")
+	p, err := projectmodel.NewProject(tenant.LocalTenantID, "core", "core", "//core/...")
 	require.NoError(t, err)
 
 	finder := &fakeFinder{gavelspace: gavelspace, projects: []projectmodel.Project{p}}
@@ -85,7 +85,7 @@ func (f *fakeProjectSaver) Save(_ context.Context, p projectmodel.Project) error
 	return nil
 }
 
-func (f *fakeProjectSaver) FindByKey(_ context.Context, key string) (projectmodel.Project, error) {
+func (f *fakeProjectSaver) FindByKey(_ context.Context, _ tenant.TenantID, key string) (projectmodel.Project, error) {
 	for _, p := range f.saved {
 		if p.Key() == key {
 			return p, nil
@@ -102,12 +102,12 @@ func (f *failingProjectSaver) Save(_ context.Context, _ projectmodel.Project) er
 	return f.err
 }
 
-func (f *failingProjectSaver) FindByKey(_ context.Context, _ string) (projectmodel.Project, error) {
+func (f *failingProjectSaver) FindByKey(_ context.Context, _ tenant.TenantID, _ string) (projectmodel.Project, error) {
 	return projectmodel.Project{}, fmt.Errorf("not found")
 }
 
 func TestExecute_AppliesArchPolicyWhenLoaderProvided(t *testing.T) {
-	project, err := projectmodel.NewProject("core", "core", "//core/...")
+	project, err := projectmodel.NewProject(tenant.LocalTenantID, "core", "core", "//core/...")
 	require.NoError(t, err)
 
 	layer, err := archpolicy.NewLayer("domain", []string{"core/domain/"})
@@ -132,7 +132,7 @@ func TestExecute_AppliesArchPolicyWhenLoaderProvided(t *testing.T) {
 }
 
 func TestExecute_SavesProjectsWhenSaverProvided(t *testing.T) {
-	project, err := projectmodel.NewProject("core", "core", "//core/...")
+	project, err := projectmodel.NewProject(tenant.LocalTenantID, "core", "core", "//core/...")
 	require.NoError(t, err)
 
 	gavelspace, err := gavelspacemodel.NewGavelspace(tenant.LocalTenantID, "test")
@@ -153,9 +153,9 @@ func TestExecute_SavesProjectsWhenSaverProvided(t *testing.T) {
 }
 
 func TestExecute_FiltersProjectByName(t *testing.T) {
-	coreProject, err := projectmodel.NewProject("core", "core", "//core/...")
+	coreProject, err := projectmodel.NewProject(tenant.LocalTenantID, "core", "core", "//core/...")
 	require.NoError(t, err)
-	webProject, err := projectmodel.NewProject("web", "web", "//web/...")
+	webProject, err := projectmodel.NewProject(tenant.LocalTenantID, "web", "web", "//web/...")
 	require.NoError(t, err)
 
 	gavelspace, err := gavelspacemodel.NewGavelspace(tenant.LocalTenantID, "test")
@@ -175,7 +175,7 @@ func TestExecute_FiltersProjectByName(t *testing.T) {
 }
 
 func TestExecute_FilterNotFoundReturnsError(t *testing.T) {
-	project, err := projectmodel.NewProject("core", "core", "//core/...")
+	project, err := projectmodel.NewProject(tenant.LocalTenantID, "core", "core", "//core/...")
 	require.NoError(t, err)
 
 	gavelspace, err := gavelspacemodel.NewGavelspace(tenant.LocalTenantID, "test")
@@ -198,7 +198,7 @@ func TestNewHandlerPanicsOnNilFinder(t *testing.T) {
 func TestExecute_WithLoggerOption(t *testing.T) {
 	gavelspace, err := gavelspacemodel.NewGavelspace(tenant.LocalTenantID, "test")
 	require.NoError(t, err)
-	p, err := projectmodel.NewProject("core", "core", "//core/...")
+	p, err := projectmodel.NewProject(tenant.LocalTenantID, "core", "core", "//core/...")
 	require.NoError(t, err)
 
 	finder := &fakeFinder{gavelspace: gavelspace, projects: []projectmodel.Project{p}}
@@ -215,7 +215,7 @@ func TestExecute_WithLoggerOption(t *testing.T) {
 func TestExecute_ProjectSaverErrorPropagated(t *testing.T) {
 	gavelspace, err := gavelspacemodel.NewGavelspace(tenant.LocalTenantID, "test")
 	require.NoError(t, err)
-	p, err := projectmodel.NewProject("core", "core", "//core/...")
+	p, err := projectmodel.NewProject(tenant.LocalTenantID, "core", "core", "//core/...")
 	require.NoError(t, err)
 
 	finder := &fakeFinder{gavelspace: gavelspace, projects: []projectmodel.Project{p}}
@@ -232,7 +232,7 @@ func TestExecute_ProjectSaverErrorPropagated(t *testing.T) {
 }
 
 func TestExecute_ArchLoaderErrorSkipped(t *testing.T) {
-	p, err := projectmodel.NewProject("core", "core", "//core/...")
+	p, err := projectmodel.NewProject(tenant.LocalTenantID, "core", "core", "//core/...")
 	require.NoError(t, err)
 
 	gavelspace, err := gavelspacemodel.NewGavelspace(tenant.LocalTenantID, "test")

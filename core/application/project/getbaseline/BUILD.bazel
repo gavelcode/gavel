@@ -12,6 +12,7 @@ go_library(
     visibility = ["//visibility:public"],
     deps = [
         "//core/application/project/getbykey",
+        "//core/domain/iam/model/tenant",
         "//core/domain/project/model",
         "//core/domain/project/service",
         "//core/domain/shared/failure",
@@ -27,8 +28,10 @@ go_test(
     deps = [
         ":getbaseline",
         "//core/application/project/projectview",
+        "//core/domain/iam/model/tenant",
         "//core/domain/project/model",
         "//core/domain/shared/failure",
+        "@com_github_google_uuid//:uuid",
         "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//require",
     ],

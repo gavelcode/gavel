@@ -20,7 +20,7 @@ func mustCreateAndFindProject(t *testing.T, repo *memproject.ProjectRepository, 
 	ctx := context.Background()
 
 	handler := projectcreate.NewHandler(repo)
-	cmd, err := projectcreate.NewCommand(key, key+"-name", "//"+key+"/...")
+	cmd, err := projectcreate.NewCommand(testTenant, key, key+"-name", "//"+key+"/...")
 	require.NoError(t, err)
 
 	result, err := handler.Execute(ctx, cmd)
@@ -30,7 +30,7 @@ func mustCreateAndFindProject(t *testing.T, repo *memproject.ProjectRepository, 
 	projectID, err := projectmodel.ParseProjectID(result.ProjectID)
 	require.NoError(t, err)
 
-	project, err := repo.FindByID(ctx, projectID)
+	project, err := repo.FindByID(ctx, testTenantID, projectID)
 	require.NoError(t, err)
 
 	return project
@@ -41,14 +41,14 @@ func TestProjectLifecycle_CreateAndRetrieve(t *testing.T) {
 	repo := memproject.NewProjectRepository()
 
 	handler := projectcreate.NewHandler(repo)
-	cmd, err := projectcreate.NewCommand("mylib", "My Library", "//mylib/...")
+	cmd, err := projectcreate.NewCommand(testTenant, "mylib", "My Library", "//mylib/...")
 	require.NoError(t, err)
 
 	result, err := handler.Execute(ctx, cmd)
 	require.NoError(t, err)
 	require.NotEmpty(t, result.ProjectID)
 
-	found, err := repo.FindByKey(ctx, "mylib")
+	found, err := repo.FindByKey(ctx, testTenantID, "mylib")
 	require.NoError(t, err)
 
 	assert.Equal(t, result.ProjectID, found.ID().String())
@@ -75,14 +75,14 @@ func TestProjectLifecycle_UpdateQualityGate(t *testing.T) {
 			},
 		},
 	}
-	cmd, err := updatequalitygate.NewCommand(project.ID().String(), input)
+	cmd, err := updatequalitygate.NewCommand(testTenant, project.ID().String(), input)
 	require.NoError(t, err)
 
 	result, err := handler.Execute(ctx, cmd)
 	require.NoError(t, err)
 	assert.True(t, result.Changed)
 
-	updated, err := repo.FindByID(ctx, project.ID())
+	updated, err := repo.FindByID(ctx, testTenantID, project.ID())
 	require.NoError(t, err)
 
 	rules := updated.Gate().Rules()
@@ -97,13 +97,13 @@ func TestProjectLifecycle_UpdateLanguages(t *testing.T) {
 	project := mustCreateAndFindProject(t, repo, "lang-proj")
 
 	handler := updatelanguages.NewHandler(repo)
-	cmd, err := updatelanguages.NewCommand(project.ID().String(), []string{"go", "java"})
+	cmd, err := updatelanguages.NewCommand(testTenant, project.ID().String(), []string{"go", "java"})
 	require.NoError(t, err)
 
 	_, err = handler.Execute(ctx, cmd)
 	require.NoError(t, err)
 
-	updated, err := repo.FindByID(ctx, project.ID())
+	updated, err := repo.FindByID(ctx, testTenantID, project.ID())
 	require.NoError(t, err)
 
 	languages := updated.Languages()
@@ -119,13 +119,13 @@ func TestProjectLifecycle_UpdateTargetPattern(t *testing.T) {
 	project := mustCreateAndFindProject(t, repo, "target-proj")
 
 	handler := updatetargetpattern.NewHandler(repo)
-	cmd, err := updatetargetpattern.NewCommand(project.ID().String(), "//newpkg/...")
+	cmd, err := updatetargetpattern.NewCommand(testTenant, project.ID().String(), "//newpkg/...")
 	require.NoError(t, err)
 
 	_, err = handler.Execute(ctx, cmd)
 	require.NoError(t, err)
 
-	updated, err := repo.FindByID(ctx, project.ID())
+	updated, err := repo.FindByID(ctx, testTenantID, project.ID())
 	require.NoError(t, err)
 
 	assert.Equal(t, "//newpkg/...", updated.TargetPattern())
@@ -157,24 +157,24 @@ func TestProjectLifecycle_FullConfiguration(t *testing.T) {
 			},
 		},
 	}
-	gateCmd, err := updatequalitygate.NewCommand(projectID, gateInput)
+	gateCmd, err := updatequalitygate.NewCommand(testTenant, projectID, gateInput)
 	require.NoError(t, err)
 	_, err = gateHandler.Execute(ctx, gateCmd)
 	require.NoError(t, err)
 
 	langHandler := updatelanguages.NewHandler(repo)
-	langCmd, err := updatelanguages.NewCommand(projectID, []string{"go", "typescript"})
+	langCmd, err := updatelanguages.NewCommand(testTenant, projectID, []string{"go", "typescript"})
 	require.NoError(t, err)
 	_, err = langHandler.Execute(ctx, langCmd)
 	require.NoError(t, err)
 
 	targetHandler := updatetargetpattern.NewHandler(repo)
-	targetCmd, err := updatetargetpattern.NewCommand(projectID, "//services/...")
+	targetCmd, err := updatetargetpattern.NewCommand(testTenant, projectID, "//services/...")
 	require.NoError(t, err)
 	_, err = targetHandler.Execute(ctx, targetCmd)
 	require.NoError(t, err)
 
-	final, err := repo.FindByID(ctx, project.ID())
+	final, err := repo.FindByID(ctx, testTenantID, project.ID())
 	require.NoError(t, err)
 
 	assert.Equal(t, "full-proj", final.Key())

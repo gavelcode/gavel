@@ -26,7 +26,7 @@ func TestNewQuery(t *testing.T) {
 	}
 	for _, testCase := range tests {
 		t.Run(testCase.name, func(t *testing.T) {
-			query, err := getbaseline.NewQuery(testCase.key, testCase.branch)
+			query, err := getbaseline.NewQuery(testTenant.String(), testCase.key, testCase.branch)
 			if testCase.wantErr {
 				assert.Error(t, err)
 				assert.ErrorIs(t, err, getbaseline.ErrInvalidQuery)
@@ -55,7 +55,7 @@ func TestExecuteReturnsBaseline(t *testing.T) {
 	repo := &fakeProjectRepo{project: proj}
 	h := getbaseline.NewHandler(finder, repo)
 
-	query, err := getbaseline.NewQuery("core", "main")
+	query, err := getbaseline.NewQuery(testTenant.String(), "core", "main")
 	require.NoError(t, err)
 
 	res, err := h.Execute(context.Background(), query)
@@ -70,7 +70,7 @@ func TestExecuteProjectNotFoundByKey(t *testing.T) {
 	repo := &fakeProjectRepo{}
 	h := getbaseline.NewHandler(finder, repo)
 
-	query, err := getbaseline.NewQuery("missing", "main")
+	query, err := getbaseline.NewQuery(testTenant.String(), "missing", "main")
 	require.NoError(t, err)
 
 	_, err = h.Execute(context.Background(), query)
@@ -83,7 +83,7 @@ func TestExecuteEmptyBaselineReturnsEmptyResult(t *testing.T) {
 	repo := &fakeProjectRepo{project: proj}
 	h := getbaseline.NewHandler(finder, repo)
 
-	query, err := getbaseline.NewQuery("core", "main")
+	query, err := getbaseline.NewQuery(testTenant.String(), "core", "main")
 	require.NoError(t, err)
 
 	res, err := h.Execute(context.Background(), query)
@@ -102,7 +102,7 @@ func TestExecuteInvalidProjectIDFromFinder(t *testing.T) {
 	repo := &fakeProjectRepo{}
 	h := getbaseline.NewHandler(finder, repo)
 
-	query, err := getbaseline.NewQuery("core", "main")
+	query, err := getbaseline.NewQuery(testTenant.String(), "core", "main")
 	require.NoError(t, err)
 
 	_, err = h.Execute(context.Background(), query)
@@ -115,7 +115,7 @@ func TestExecuteProjectNotFoundByID(t *testing.T) {
 	repo := &fakeProjectRepo{err: failure.New("not found", failure.NotFound)}
 	h := getbaseline.NewHandler(finder, repo)
 
-	query, err := getbaseline.NewQuery("core", "main")
+	query, err := getbaseline.NewQuery(testTenant.String(), "core", "main")
 	require.NoError(t, err)
 
 	_, err = h.Execute(context.Background(), query)
@@ -128,7 +128,7 @@ func TestExecuteUsesDefaultBranchWhenQueryBranchEmpty(t *testing.T) {
 	repo := &fakeProjectRepo{project: proj}
 	h := getbaseline.NewHandler(finder, repo)
 
-	query, err := getbaseline.NewQuery("core", "")
+	query, err := getbaseline.NewQuery(testTenant.String(), "core", "")
 	require.NoError(t, err)
 
 	res, err := h.Execute(context.Background(), query)

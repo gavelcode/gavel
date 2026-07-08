@@ -9,9 +9,13 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/google/uuid"
+	"github.com/usegavel/gavel/core/domain/iam/model/tenant"
 	"github.com/usegavel/gavel/core/domain/project/model"
 	"github.com/usegavel/gavel/core/infrastructure/project/memory"
 )
+
+var testTenantID = tenant.NewTenantID(uuid.MustParse("22222222-2222-2222-2222-222222222222"))
 
 func TestBaselineStore_SaveAndLoad(t *testing.T) {
 	workspace := t.TempDir()
@@ -304,7 +308,7 @@ func TestProjectRepo_WithBaseline_PersistsAcrossInstances(t *testing.T) {
 	workspace := t.TempDir()
 	store := memory.NewBaselineStore(workspace)
 
-	project, err := model.NewProject("backend", "backend", "//server/...")
+	project, err := model.NewProject(testTenantID, "backend", "backend", "//server/...")
 	require.NoError(t, err)
 	project.UpdateBaseline("main", []string{"fp1", "fp2"}, []string{"arch1"}, nil, nil)
 
@@ -316,11 +320,11 @@ func TestProjectRepo_WithBaseline_PersistsAcrossInstances(t *testing.T) {
 	assert.Contains(t, string(data), "fp1")
 
 	repo2 := memory.NewProjectRepositoryWithBaseline(store)
-	project2, err := model.NewProject("backend", "backend", "//server/...")
+	project2, err := model.NewProject(testTenantID, "backend", "backend", "//server/...")
 	require.NoError(t, err)
 	require.NoError(t, repo2.Save(context.Background(), project2))
 
-	loaded, err := repo2.FindByID(context.Background(), project2.ID())
+	loaded, err := repo2.FindByID(context.Background(), testTenantID, project2.ID())
 	require.NoError(t, err)
 	bl := loaded.Baseline("main")
 	assert.True(t, bl.HasPrevious())

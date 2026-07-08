@@ -76,7 +76,7 @@ func TestCrossBC_ProjectGateControlsVerdict(t *testing.T) {
 	ctx := context.Background()
 	crossFixture := newCrossBCFixture(t)
 
-	createCmd, err := projectcreate.NewCommand("gate-test", "Gate Test", "//gate/...")
+	createCmd, err := projectcreate.NewCommand(testTenant, "gate-test", "Gate Test", "//gate/...")
 	require.NoError(t, err)
 	createRes, err := crossFixture.createProject.Execute(ctx, createCmd)
 	require.NoError(t, err)
@@ -92,7 +92,7 @@ func TestCrossBC_ProjectGateControlsVerdict(t *testing.T) {
 			},
 		},
 	}
-	gateCmd, err := updatequalitygate.NewCommand(projectID, gateInput)
+	gateCmd, err := updatequalitygate.NewCommand(testTenant, projectID, gateInput)
 	require.NoError(t, err)
 	gateRes, err := crossFixture.updateGate.Execute(ctx, gateCmd)
 	require.NoError(t, err)
@@ -102,7 +102,7 @@ func TestCrossBC_ProjectGateControlsVerdict(t *testing.T) {
 		buildFindingEvidence("fp-gate-1"),
 	}
 	submitCmd, err := submit.NewCommand(
-		projectID, "abc123", "main",
+		testTenant, projectID, "abc123", "main",
 		evidences, []string{"fp-gate-1"}, nil,
 		finalize.ArchDeltaInput{}, nil, false, false,
 		time.Now().UTC(),
@@ -126,7 +126,7 @@ func TestCrossBC_ProjectGateControlsVerdict(t *testing.T) {
 		},
 	}
 	passCmd, err := submit.NewCommand(
-		projectID, "def456", "main",
+		testTenant, projectID, "def456", "main",
 		emptyEvidences, nil, nil,
 		finalize.ArchDeltaInput{}, nil, false, false,
 		time.Now().UTC(),
@@ -143,7 +143,7 @@ func TestCrossBC_GavelspaceProjectRegistration(t *testing.T) {
 	ctx := context.Background()
 	fixture := newCrossBCFixture(t)
 
-	createCmd, err := projectcreate.NewCommand("gs-proj", "GS Project", "//gs/...")
+	createCmd, err := projectcreate.NewCommand(testTenant, "gs-proj", "GS Project", "//gs/...")
 	require.NoError(t, err)
 	createRes, err := fixture.createProject.Execute(ctx, createCmd)
 	require.NoError(t, err)
@@ -175,7 +175,7 @@ func TestCrossBC_GavelspaceProjectRegistration(t *testing.T) {
 		buildCoverageEvidence(200, 180),
 	}
 	submitCmd, err := submit.NewCommand(
-		projectID, "aaa111", "main",
+		testTenant, projectID, "aaa111", "main",
 		evidences, []string{"fp-gs-1"}, nil,
 		finalize.ArchDeltaInput{}, nil, false, false,
 		time.Now().UTC(),

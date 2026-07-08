@@ -49,7 +49,7 @@ func TestCaseFileQueryGetByID(t *testing.T) {
 
 	var err error
 	verdict := newTestVerdict(t)
-	caseFile, err = casefile.ReconstituteCaseFile(caseFile.ID(), caseFile.ProjectID(), caseFile.CommitSHA(), caseFile.Branch(), caseFile.StartedAt(), caseFile.Evidences(), &verdict, false)
+	caseFile, err = casefile.ReconstituteCaseFile(caseFile.ID(), testTenantID, caseFile.ProjectID(), caseFile.CommitSHA(), caseFile.Branch(), caseFile.StartedAt(), caseFile.Evidences(), &verdict, false)
 	require.NoError(t, err)
 	require.NoError(t, cfRepo.Save(ctx, caseFile))
 

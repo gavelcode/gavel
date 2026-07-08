@@ -85,7 +85,7 @@ func (h *Handler) Execute(ctx context.Context, cmd Command) (Result, error) {
 		return Result{}, fmt.Errorf("load case file: %w", err)
 	}
 
-	project, err := h.projects.FindByID(ctx, caseFile.ProjectID())
+	project, err := h.projects.FindByID(ctx, caseFile.TenantID(), caseFile.ProjectID())
 	if err != nil {
 		return Result{}, fmt.Errorf("load project: %w", err)
 	}

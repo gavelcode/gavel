@@ -14,7 +14,7 @@ func TestHandlerExecuteSuccessful(t *testing.T) {
 	projects := newFakeProjectRepo()
 	handler := create.NewHandler(projects)
 
-	cmd, err := create.NewCommand("backend", "Backend Service", "//backend/...")
+	cmd, err := create.NewCommand(testTenant.String(), "backend", "Backend Service", "//backend/...")
 	require.NoError(t, err)
 
 	result, err := handler.Execute(context.Background(), cmd)
@@ -25,13 +25,13 @@ func TestHandlerExecuteSuccessful(t *testing.T) {
 }
 
 func TestNewCommandRejectsEmptyTargetPattern(t *testing.T) {
-	_, err := create.NewCommand("backend", "Backend Service", "")
+	_, err := create.NewCommand(testTenant.String(), "backend", "Backend Service", "")
 	require.Error(t, err)
 	assert.ErrorIs(t, err, create.ErrInvalidCommand)
 }
 
 func TestNewCommandRejectsWhitespaceTargetPattern(t *testing.T) {
-	_, err := create.NewCommand("backend", "Backend Service", "   ")
+	_, err := create.NewCommand(testTenant.String(), "backend", "Backend Service", "   ")
 	require.Error(t, err)
 	assert.ErrorIs(t, err, create.ErrInvalidCommand)
 }
@@ -41,7 +41,7 @@ func TestHandlerExecuteSaveError(t *testing.T) {
 	projects.saveErr = errors.New("disk full")
 	handler := create.NewHandler(projects)
 
-	cmd, err := create.NewCommand("backend", "Backend Service", "//backend/...")
+	cmd, err := create.NewCommand(testTenant.String(), "backend", "Backend Service", "//backend/...")
 	require.NoError(t, err)
 
 	_, err = handler.Execute(context.Background(), cmd)
@@ -52,7 +52,7 @@ func TestHandlerExecuteNewProjectValidationError(t *testing.T) {
 	projects := newFakeProjectRepo()
 	handler := create.NewHandler(projects)
 
-	cmd, err := create.NewCommand("UPPER_CASE", "Backend", "//backend/...")
+	cmd, err := create.NewCommand(testTenant.String(), "UPPER_CASE", "Backend", "//backend/...")
 	require.NoError(t, err)
 
 	_, err = handler.Execute(context.Background(), cmd)

@@ -9,14 +9,14 @@ import (
 
 // Options holds the parsed flag values for the watch command.
 type Options struct {
-	Debounce time.Duration
+	Debounce  time.Duration
 	Languages []string
 	Workspace string
 }
 
 // RegisterFlags binds all watch flags to the given Options struct.
 func RegisterFlags(cmd *cobra.Command, opts *Options) {
-	cmd.Flags().DurationVar(&opts.Debounce, "debounce", 500 * time.Millisecond, "File change debounce duration.")
+	cmd.Flags().DurationVar(&opts.Debounce, "debounce", 500*time.Millisecond, "File change debounce duration.")
 	cmd.Flags().StringSliceVar(&opts.Languages, "languages", []string{"go"}, "Languages whose lint aspects to run.")
 	cmd.Flags().StringVar(&opts.Workspace, "workspace", "", "Workspace path. Auto-detected via \"bazel info workspace\" if not set.")
 }

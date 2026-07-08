@@ -19,6 +19,7 @@ import (
 	ingestcov "github.com/usegavel/gavel/core/application/casefile/ingestcoverage"
 	ingestfind "github.com/usegavel/gavel/core/application/casefile/ingestfindings"
 	corejudge "github.com/usegavel/gavel/core/application/casefile/judge"
+	"github.com/usegavel/gavel/core/domain/iam/model/tenant"
 	projectmodel "github.com/usegavel/gavel/core/domain/project/model"
 	projectmemory "github.com/usegavel/gavel/core/infrastructure/project/memory"
 	apiclient "github.com/usegavel/gavel/core/userinterface/api/v1/client"
@@ -124,7 +125,7 @@ func TestRunServer_SubmitsToServer(t *testing.T) {
 	result, err := RunServer(
 		context.Background(), deps, "/workspace",
 		collectevidence.Result{Evidences: []evidencedto.Evidence{minimalEvidence()}},
-		project.ID().String(), "backend", "abc123", "main",
+		localTenantID, project.ID().String(), "backend", "abc123", "main",
 		time.Now(), Options{Quick: true},
 	)
 
@@ -148,7 +149,7 @@ func TestRunServer_ServerFailureNonRequired(t *testing.T) {
 	result, err := RunServer(
 		context.Background(), deps, "/workspace",
 		collectevidence.Result{Evidences: []evidencedto.Evidence{minimalEvidence()}},
-		project.ID().String(), "backend", "abc123", "main",
+		localTenantID, project.ID().String(), "backend", "abc123", "main",
 		time.Now(), Options{Quick: true, RequireSubmit: false},
 	)
 
@@ -171,7 +172,7 @@ func TestRunServer_ServerFailureRequired(t *testing.T) {
 	_, err = RunServer(
 		context.Background(), deps, "/workspace",
 		collectevidence.Result{Evidences: []evidencedto.Evidence{minimalEvidence()}},
-		project.ID().String(), "backend", "abc123", "main",
+		localTenantID, project.ID().String(), "backend", "abc123", "main",
 		time.Now(), Options{Quick: true, RequireSubmit: true},
 	)
 
@@ -225,7 +226,7 @@ func TestRunServer_FilesPleading(t *testing.T) {
 	_, err = RunServer(
 		context.Background(), deps, "/workspace",
 		collectevidence.Result{Evidences: []evidencedto.Evidence{minimalEvidence()}},
-		project.ID().String(), "backend", "abc123", "main",
+		localTenantID, project.ID().String(), "backend", "abc123", "main",
 		time.Now(), Options{Quick: true, PRNumber: 42, PRTitle: "fix", PRAuthor: "user", PRBranch: "feat/fix"},
 	)
 
@@ -248,7 +249,7 @@ func TestRunProject_WithServerDelegatesToServer(t *testing.T) {
 	result, err := RunProject(
 		context.Background(), deps, "/workspace",
 		collectevidence.Result{Evidences: []evidencedto.Evidence{minimalEvidence()}},
-		project.ID().String(), "backend", "abc123", "main",
+		localTenantID, project.ID().String(), "backend", "abc123", "main",
 		time.Now(), Options{Quick: true},
 	)
 
@@ -448,7 +449,7 @@ func TestRunServer_RunLocalError(t *testing.T) {
 	_, err = RunServer(
 		context.Background(), deps, "/workspace",
 		collectevidence.Result{Evidences: []evidencedto.Evidence{minimalEvidence()}},
-		"not-a-uuid", "backend", "abc123", "main",
+		localTenantID, "not-a-uuid", "backend", "abc123", "main",
 		time.Now(), Options{Quick: true},
 	)
 
@@ -498,7 +499,7 @@ func TestRunServer_FilePleadingWarning(t *testing.T) {
 	result, err := RunServer(
 		context.Background(), deps, "/workspace",
 		collectevidence.Result{Evidences: []evidencedto.Evidence{minimalEvidence()}},
-		project.ID().String(), "backend", "abc123", "main",
+		localTenantID, project.ID().String(), "backend", "abc123", "main",
 		time.Now(), Options{Quick: true, PRNumber: 42, PRTitle: "fix", PRAuthor: "user", PRBranch: "feat/fix"},
 	)
 
@@ -737,7 +738,7 @@ func TestParseEvidence_LCOVExecuteError(t *testing.T) {
 
 func newTestProject(t *testing.T, repo *projectmemory.ProjectRepository) (projectmodel.Project, error) {
 	t.Helper()
-	project, err := projectmodel.NewProject("backend", "backend", "//backend/...")
+	project, err := projectmodel.NewProject(tenant.LocalTenantID, "backend", "backend", "//backend/...")
 	if err != nil {
 		return projectmodel.Project{}, fmt.Errorf("new project: %w", err)
 	}

@@ -97,7 +97,7 @@ func mapToDomain(dto configDTO) (WorkspaceConfig, error) {
 
 func buildProject(dto projectDTO, now time.Time) (projectmodel.Project, error) {
 	key := slugify(dto.Name)
-	project, err := projectmodel.NewProject(key, dto.Name, dto.Pattern)
+	project, err := projectmodel.NewProject(tenant.LocalTenantID, key, dto.Name, dto.Pattern)
 	if err != nil {
 		return projectmodel.Project{}, err
 	}

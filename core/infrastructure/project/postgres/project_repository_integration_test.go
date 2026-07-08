@@ -20,11 +20,11 @@ func TestCoreProjectRepoSaveAndFindByID(t *testing.T) {
 	repo := projectpostgres.NewRepository(testDB)
 	ctx := context.Background()
 
-	project, err := projectmodel.NewProject("backend", "Backend Service", "//backend/...")
+	project, err := projectmodel.NewProject(testTenantID, "backend", "Backend Service", "//backend/...")
 	require.NoError(t, err)
 	require.NoError(t, repo.Save(ctx, project))
 
-	found, err := repo.FindByID(ctx, project.ID())
+	found, err := repo.FindByID(ctx, testTenantID, project.ID())
 	require.NoError(t, err)
 	assert.Equal(t, project.ID(), found.ID())
 	assert.Equal(t, "backend", found.Key())
@@ -38,11 +38,11 @@ func TestCoreProjectRepoFindByKey(t *testing.T) {
 	repo := projectpostgres.NewRepository(testDB)
 	ctx := context.Background()
 
-	project, err := projectmodel.NewProject("frontend", "Frontend App", "//web/...")
+	project, err := projectmodel.NewProject(testTenantID, "frontend", "Frontend App", "//web/...")
 	require.NoError(t, err)
 	require.NoError(t, repo.Save(ctx, project))
 
-	found, err := repo.FindByKey(ctx, "frontend")
+	found, err := repo.FindByKey(ctx, testTenantID, "frontend")
 	require.NoError(t, err)
 	assert.Equal(t, project.ID(), found.ID())
 }
@@ -52,11 +52,11 @@ func TestCoreProjectRepoFindByName(t *testing.T) {
 	repo := projectpostgres.NewRepository(testDB)
 	ctx := context.Background()
 
-	project, err := projectmodel.NewProject("api", "API Gateway", "//api/...")
+	project, err := projectmodel.NewProject(testTenantID, "api", "API Gateway", "//api/...")
 	require.NoError(t, err)
 	require.NoError(t, repo.Save(ctx, project))
 
-	found, err := repo.FindByName(ctx, "API Gateway")
+	found, err := repo.FindByName(ctx, testTenantID, "API Gateway")
 	require.NoError(t, err)
 	assert.Equal(t, project.ID(), found.ID())
 }
@@ -65,7 +65,7 @@ func TestCoreProjectRepoFindByIDNotFound(t *testing.T) {
 	testDB := setupDB(t)
 	repo := projectpostgres.NewRepository(testDB)
 
-	_, err := repo.FindByID(context.Background(), mustGenerateProjectID(t))
+	_, err := repo.FindByID(context.Background(), testTenantID, mustGenerateProjectID(t))
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "not found")
 }
@@ -74,7 +74,7 @@ func TestCoreProjectRepoFindByKeyNotFound(t *testing.T) {
 	testDB := setupDB(t)
 	repo := projectpostgres.NewRepository(testDB)
 
-	_, err := repo.FindByKey(context.Background(), "nonexistent")
+	_, err := repo.FindByKey(context.Background(), testTenantID, "nonexistent")
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "not found")
 }
@@ -84,7 +84,7 @@ func TestCoreProjectRepoSaveWithLanguages(t *testing.T) {
 	repo := projectpostgres.NewRepository(testDB)
 	ctx := context.Background()
 
-	project, err := projectmodel.NewProject("polyglot", "Polyglot", "//...")
+	project, err := projectmodel.NewProject(testTenantID, "polyglot", "Polyglot", "//...")
 	require.NoError(t, err)
 
 	java, err := coverage.NewLanguage("java")
@@ -92,7 +92,7 @@ func TestCoreProjectRepoSaveWithLanguages(t *testing.T) {
 	golang, err := coverage.NewLanguage("go")
 	require.NoError(t, err)
 	project, err = projectmodel.ReconstituteProject(
-		project.ID(), project.Key(), project.Name(), project.TargetPattern(),
+		project.ID(), testTenantID, project.Key(), project.Name(), project.TargetPattern(),
 		project.DefaultBranch(), []coverage.Language{java, golang},
 		project.Gate(), nil, nil,
 	)
@@ -100,7 +100,7 @@ func TestCoreProjectRepoSaveWithLanguages(t *testing.T) {
 
 	require.NoError(t, repo.Save(ctx, project))
 
-	found, err := repo.FindByID(ctx, project.ID())
+	found, err := repo.FindByID(ctx, testTenantID, project.ID())
 	require.NoError(t, err)
 	require.Len(t, found.Languages(), 2)
 
@@ -145,17 +145,17 @@ func TestCoreProjectRepoSaveWithQualityGate(t *testing.T) {
 	qualityGate, err := qualitygate.NewGate([]qualitygate.Rule{ruleCodeQuality, ruleSAST, ruleCoverage, ruleLicense, ruleArchitecture, ruleNewCodeCoverage})
 	require.NoError(t, err)
 
-	project, err := projectmodel.NewProject("gated", "Gated Project", "//gated/...")
+	project, err := projectmodel.NewProject(testTenantID, "gated", "Gated Project", "//gated/...")
 	require.NoError(t, err)
 	project, err = projectmodel.ReconstituteProject(
-		project.ID(), project.Key(), project.Name(), project.TargetPattern(),
+		project.ID(), testTenantID, project.Key(), project.Name(), project.TargetPattern(),
 		project.DefaultBranch(), nil, qualityGate, nil, nil,
 	)
 	require.NoError(t, err)
 
 	require.NoError(t, repo.Save(ctx, project))
 
-	found, err := repo.FindByID(ctx, project.ID())
+	found, err := repo.FindByID(ctx, testTenantID, project.ID())
 	require.NoError(t, err)
 
 	rules := found.Gate().Rules()
@@ -198,18 +198,18 @@ func TestCoreProjectRepoSaveOverwritesExisting(t *testing.T) {
 	repo := projectpostgres.NewRepository(testDB)
 	ctx := context.Background()
 
-	project, err := projectmodel.NewProject("svc", "Service V1", "//svc/...")
+	project, err := projectmodel.NewProject(testTenantID, "svc", "Service V1", "//svc/...")
 	require.NoError(t, err)
 	require.NoError(t, repo.Save(ctx, project))
 
 	updated, err := projectmodel.ReconstituteProject(
-		project.ID(), project.Key(), "Service V2", "//svc/v2/...",
+		project.ID(), testTenantID, project.Key(), "Service V2", "//svc/v2/...",
 		project.DefaultBranch(), nil, project.Gate(), nil, nil,
 	)
 	require.NoError(t, err)
 	require.NoError(t, repo.Save(ctx, updated))
 
-	found, err := repo.FindByID(ctx, project.ID())
+	found, err := repo.FindByID(ctx, testTenantID, project.ID())
 	require.NoError(t, err)
 	assert.Equal(t, "Service V2", found.Name())
 	assert.Equal(t, "//svc/v2/...", found.TargetPattern())
@@ -220,11 +220,11 @@ func TestCoreProjectRepoDuplicateKeyConflict(t *testing.T) {
 	repo := projectpostgres.NewRepository(testDB)
 	ctx := context.Background()
 
-	p1, err := projectmodel.NewProject("shared-key", "Project One", "//one/...")
+	p1, err := projectmodel.NewProject(testTenantID, "shared-key", "Project One", "//one/...")
 	require.NoError(t, err)
 	require.NoError(t, repo.Save(ctx, p1))
 
-	p2, err := projectmodel.NewProject("shared-key", "Project Two", "//two/...")
+	p2, err := projectmodel.NewProject(testTenantID, "shared-key", "Project Two", "//two/...")
 	require.NoError(t, err)
 
 	err = repo.Save(ctx, p2)
@@ -236,7 +236,7 @@ func TestCoreProjectRepoBaselineRoundTrip(t *testing.T) {
 	repo := projectpostgres.NewRepository(testDB)
 	ctx := context.Background()
 
-	project, err := projectmodel.NewProject("bl-test", "Baseline Test", "//bl/...")
+	project, err := projectmodel.NewProject(testTenantID, "bl-test", "Baseline Test", "//bl/...")
 	require.NoError(t, err)
 
 	cov := 85.5
@@ -245,7 +245,7 @@ func TestCoreProjectRepoBaselineRoundTrip(t *testing.T) {
 
 	require.NoError(t, repo.Save(ctx, project))
 
-	found, err := repo.FindByID(ctx, project.ID())
+	found, err := repo.FindByID(ctx, testTenantID, project.ID())
 	require.NoError(t, err)
 
 	mainBL := found.Baseline("main")
@@ -269,21 +269,21 @@ func TestCoreProjectRepoBaselineUpdateReplacesExisting(t *testing.T) {
 	repo := projectpostgres.NewRepository(testDB)
 	ctx := context.Background()
 
-	project, err := projectmodel.NewProject("bl-update", "BL Update", "//bl/...")
+	project, err := projectmodel.NewProject(testTenantID, "bl-update", "BL Update", "//bl/...")
 	require.NoError(t, err)
 
 	cov1 := 70.0
 	project.UpdateBaseline("main", []string{"fp-old"}, nil, &cov1, nil)
 	require.NoError(t, repo.Save(ctx, project))
 
-	loaded, err := repo.FindByID(ctx, project.ID())
+	loaded, err := repo.FindByID(ctx, testTenantID, project.ID())
 	require.NoError(t, err)
 
 	cov2 := 90.0
 	loaded.UpdateBaseline("main", []string{"fp-new-1", "fp-new-2"}, []string{"arch-1"}, &cov2, nil)
 	require.NoError(t, repo.Save(ctx, loaded))
 
-	reloaded, err := repo.FindByID(ctx, project.ID())
+	reloaded, err := repo.FindByID(ctx, testTenantID, project.ID())
 	require.NoError(t, err)
 
 	mainBL := reloaded.Baseline("main")
@@ -297,7 +297,7 @@ func TestCoreProjectRepoSaveReturnsErrorOnCancelledContext(t *testing.T) {
 	testDB := setupDB(t)
 	repo := projectpostgres.NewRepository(testDB)
 
-	project, err := projectmodel.NewProject("ctx-cancel", "Ctx Cancel", "//ctx/...")
+	project, err := projectmodel.NewProject(testTenantID, "ctx-cancel", "Ctx Cancel", "//ctx/...")
 	require.NoError(t, err)
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -313,14 +313,14 @@ func TestCoreProjectRepoFindByIDReturnsErrorOnCancelledContext(t *testing.T) {
 	repo := projectpostgres.NewRepository(testDB)
 	ctx := context.Background()
 
-	project, err := projectmodel.NewProject("ctx-find", "Ctx Find", "//ctx/...")
+	project, err := projectmodel.NewProject(testTenantID, "ctx-find", "Ctx Find", "//ctx/...")
 	require.NoError(t, err)
 	require.NoError(t, repo.Save(ctx, project))
 
 	cancelledCtx, cancel := context.WithCancel(context.Background())
 	cancel()
 
-	_, err = repo.FindByID(cancelledCtx, project.ID())
+	_, err = repo.FindByID(cancelledCtx, testTenantID, project.ID())
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "query project")
 }
@@ -330,14 +330,14 @@ func TestCoreProjectRepoFindByKeyReturnsErrorOnCancelledContext(t *testing.T) {
 	repo := projectpostgres.NewRepository(testDB)
 	ctx := context.Background()
 
-	project, err := projectmodel.NewProject("ctx-key", "Ctx Key", "//ctx/...")
+	project, err := projectmodel.NewProject(testTenantID, "ctx-key", "Ctx Key", "//ctx/...")
 	require.NoError(t, err)
 	require.NoError(t, repo.Save(ctx, project))
 
 	cancelledCtx, cancel := context.WithCancel(context.Background())
 	cancel()
 
-	_, err = repo.FindByKey(cancelledCtx, "ctx-key")
+	_, err = repo.FindByKey(cancelledCtx, testTenantID, "ctx-key")
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "query project")
 }
@@ -347,14 +347,14 @@ func TestCoreProjectRepoFindByNameReturnsErrorOnCancelledContext(t *testing.T) {
 	repo := projectpostgres.NewRepository(testDB)
 	ctx := context.Background()
 
-	project, err := projectmodel.NewProject("ctx-name", "Ctx Name", "//ctx/...")
+	project, err := projectmodel.NewProject(testTenantID, "ctx-name", "Ctx Name", "//ctx/...")
 	require.NoError(t, err)
 	require.NoError(t, repo.Save(ctx, project))
 
 	cancelledCtx, cancel := context.WithCancel(context.Background())
 	cancel()
 
-	_, err = repo.FindByName(cancelledCtx, "Ctx Name")
+	_, err = repo.FindByName(cancelledCtx, testTenantID, "Ctx Name")
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "query project")
 }
@@ -363,7 +363,7 @@ func TestCoreProjectRepoFindByNameNotFound(t *testing.T) {
 	testDB := setupDB(t)
 	repo := projectpostgres.NewRepository(testDB)
 
-	_, err := repo.FindByName(context.Background(), "nonexistent-name")
+	_, err := repo.FindByName(context.Background(), testTenantID, "nonexistent-name")
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "not found")
 }
@@ -379,10 +379,10 @@ func TestCoreProjectRepoFindReturnsErrorOnCorruptedStrategyType(t *testing.T) {
 	qualityGate, err := qualitygate.NewGate([]qualitygate.Rule{rule})
 	require.NoError(t, err)
 
-	project, err := projectmodel.NewProject("corrupt-strat", "Corrupt Strategy", "//corrupt/...")
+	project, err := projectmodel.NewProject(testTenantID, "corrupt-strat", "Corrupt Strategy", "//corrupt/...")
 	require.NoError(t, err)
 	project, err = projectmodel.ReconstituteProject(
-		project.ID(), project.Key(), project.Name(), project.TargetPattern(),
+		project.ID(), testTenantID, project.Key(), project.Name(), project.TargetPattern(),
 		project.DefaultBranch(), nil, qualityGate, nil, nil,
 	)
 	require.NoError(t, err)
@@ -393,7 +393,7 @@ func TestCoreProjectRepoFindReturnsErrorOnCorruptedStrategyType(t *testing.T) {
 		project.ID().UUID())
 	require.NoError(t, err)
 
-	_, err = repo.FindByID(ctx, project.ID())
+	_, err = repo.FindByID(ctx, testTenantID, project.ID())
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "load quality gate")
 }
@@ -424,10 +424,10 @@ func TestCoreProjectRepoFindReturnsErrorOnCorruptedStrategyParams(t *testing.T) 
 			qualityGate, err := qualitygate.NewGate([]qualitygate.Rule{rule})
 			require.NoError(t, err)
 
-			project, err := projectmodel.NewProject(key, "Bad Params", "//bad/...")
+			project, err := projectmodel.NewProject(testTenantID, key, "Bad Params", "//bad/...")
 			require.NoError(t, err)
 			project, err = projectmodel.ReconstituteProject(
-				project.ID(), project.Key(), project.Name(), project.TargetPattern(),
+				project.ID(), testTenantID, project.Key(), project.Name(), project.TargetPattern(),
 				project.DefaultBranch(), nil, qualityGate, nil, nil,
 			)
 			require.NoError(t, err)
@@ -438,7 +438,7 @@ func TestCoreProjectRepoFindReturnsErrorOnCorruptedStrategyParams(t *testing.T) 
 				project.ID().UUID())
 			require.NoError(t, err)
 
-			_, err = repo.FindByID(ctx, project.ID())
+			_, err = repo.FindByID(ctx, testTenantID, project.ID())
 			assert.Error(t, err)
 			assert.Contains(t, err.Error(), "load quality gate")
 		})
@@ -456,10 +456,10 @@ func TestCoreProjectRepoFindReturnsErrorOnCorruptedSubtype(t *testing.T) {
 	qualityGate, err := qualitygate.NewGate([]qualitygate.Rule{rule})
 	require.NoError(t, err)
 
-	project, err := projectmodel.NewProject("bad-subtype", "Bad Subtype", "//bad/...")
+	project, err := projectmodel.NewProject(testTenantID, "bad-subtype", "Bad Subtype", "//bad/...")
 	require.NoError(t, err)
 	project, err = projectmodel.ReconstituteProject(
-		project.ID(), project.Key(), project.Name(), project.TargetPattern(),
+		project.ID(), testTenantID, project.Key(), project.Name(), project.TargetPattern(),
 		project.DefaultBranch(), nil, qualityGate, nil, nil,
 	)
 	require.NoError(t, err)
@@ -470,7 +470,7 @@ func TestCoreProjectRepoFindReturnsErrorOnCorruptedSubtype(t *testing.T) {
 		project.ID().UUID())
 	require.NoError(t, err)
 
-	_, err = repo.FindByID(ctx, project.ID())
+	_, err = repo.FindByID(ctx, testTenantID, project.ID())
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "load quality gate")
 }
@@ -483,10 +483,10 @@ func TestCoreProjectRepoFindReturnsErrorOnCorruptedLanguage(t *testing.T) {
 	java, err := coverage.NewLanguage("java")
 	require.NoError(t, err)
 
-	project, err := projectmodel.NewProject("bad-lang", "Bad Lang", "//bad/...")
+	project, err := projectmodel.NewProject(testTenantID, "bad-lang", "Bad Lang", "//bad/...")
 	require.NoError(t, err)
 	project, err = projectmodel.ReconstituteProject(
-		project.ID(), project.Key(), project.Name(), project.TargetPattern(),
+		project.ID(), testTenantID, project.Key(), project.Name(), project.TargetPattern(),
 		project.DefaultBranch(), []coverage.Language{java}, project.Gate(), nil, nil,
 	)
 	require.NoError(t, err)
@@ -497,7 +497,7 @@ func TestCoreProjectRepoFindReturnsErrorOnCorruptedLanguage(t *testing.T) {
 		project.ID().UUID())
 	require.NoError(t, err)
 
-	_, err = repo.FindByID(ctx, project.ID())
+	_, err = repo.FindByID(ctx, testTenantID, project.ID())
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "load languages")
 }
@@ -507,7 +507,7 @@ func TestCoreProjectRepoFindReturnsErrorOnCorruptedBaselineFingerprints(t *testi
 	repo := projectpostgres.NewRepository(testDB)
 	ctx := context.Background()
 
-	project, err := projectmodel.NewProject("bad-bl-fp", "Bad BL FP", "//bad/...")
+	project, err := projectmodel.NewProject(testTenantID, "bad-bl-fp", "Bad BL FP", "//bad/...")
 	require.NoError(t, err)
 	project.UpdateBaseline("main", []string{"fp-1"}, nil, nil, nil)
 	require.NoError(t, repo.Save(ctx, project))
@@ -517,7 +517,7 @@ func TestCoreProjectRepoFindReturnsErrorOnCorruptedBaselineFingerprints(t *testi
 		project.ID().UUID())
 	require.NoError(t, err)
 
-	_, err = repo.FindByID(ctx, project.ID())
+	_, err = repo.FindByID(ctx, testTenantID, project.ID())
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "unmarshal fingerprints")
 }
@@ -527,7 +527,7 @@ func TestCoreProjectRepoFindReturnsErrorOnCorruptedBaselineArchIDs(t *testing.T)
 	repo := projectpostgres.NewRepository(testDB)
 	ctx := context.Background()
 
-	project, err := projectmodel.NewProject("bad-bl-arch", "Bad BL Arch", "//bad/...")
+	project, err := projectmodel.NewProject(testTenantID, "bad-bl-arch", "Bad BL Arch", "//bad/...")
 	require.NoError(t, err)
 	project.UpdateBaseline("main", []string{"fp-1"}, []string{"arch-1"}, nil, nil)
 	require.NoError(t, repo.Save(ctx, project))
@@ -537,7 +537,7 @@ func TestCoreProjectRepoFindReturnsErrorOnCorruptedBaselineArchIDs(t *testing.T)
 		project.ID().UUID())
 	require.NoError(t, err)
 
-	_, err = repo.FindByID(ctx, project.ID())
+	_, err = repo.FindByID(ctx, testTenantID, project.ID())
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "unmarshal arch ids")
 }
@@ -550,10 +550,10 @@ func TestCoreProjectRepoFindReturnsErrorOnCancelledContextForLanguages(t *testin
 	java, err := coverage.NewLanguage("java")
 	require.NoError(t, err)
 
-	project, err := projectmodel.NewProject("ctx-lang", "Ctx Lang", "//ctx/...")
+	project, err := projectmodel.NewProject(testTenantID, "ctx-lang", "Ctx Lang", "//ctx/...")
 	require.NoError(t, err)
 	project, err = projectmodel.ReconstituteProject(
-		project.ID(), project.Key(), project.Name(), project.TargetPattern(),
+		project.ID(), testTenantID, project.Key(), project.Name(), project.TargetPattern(),
 		project.DefaultBranch(), []coverage.Language{java}, project.Gate(), nil, nil,
 	)
 	require.NoError(t, err)
@@ -562,7 +562,7 @@ func TestCoreProjectRepoFindReturnsErrorOnCancelledContextForLanguages(t *testin
 	cancelledCtx, cancel := context.WithCancel(context.Background())
 	cancel()
 
-	_, err = repo.FindByID(cancelledCtx, project.ID())
+	_, err = repo.FindByID(cancelledCtx, testTenantID, project.ID())
 	assert.Error(t, err)
 }
 
@@ -571,12 +571,12 @@ func TestCoreProjectRepoBaselineNilCoverageRoundTrip(t *testing.T) {
 	repo := projectpostgres.NewRepository(testDB)
 	ctx := context.Background()
 
-	project, err := projectmodel.NewProject("nil-cov", "Nil Cov", "//nil/...")
+	project, err := projectmodel.NewProject(testTenantID, "nil-cov", "Nil Cov", "//nil/...")
 	require.NoError(t, err)
 	project.UpdateBaseline("main", []string{"fp-1"}, []string{"arch-1"}, nil, nil)
 	require.NoError(t, repo.Save(ctx, project))
 
-	found, err := repo.FindByID(ctx, project.ID())
+	found, err := repo.FindByID(ctx, testTenantID, project.ID())
 	require.NoError(t, err)
 
 	mainBL := found.Baseline("main")
@@ -590,7 +590,7 @@ func TestCoreProjectRepoBaselineFileCoverageRoundTrip(t *testing.T) {
 	repo := projectpostgres.NewRepository(testDB)
 	ctx := context.Background()
 
-	project, err := projectmodel.NewProject("fc-test", "FC Test", "//fc/...")
+	project, err := projectmodel.NewProject(testTenantID, "fc-test", "FC Test", "//fc/...")
 	require.NoError(t, err)
 
 	entry1, err := projectmodel.NewFileCoverageEntry("pkg/a.go", []int{1, 2, 3}, []int{4, 5})
@@ -602,7 +602,7 @@ func TestCoreProjectRepoBaselineFileCoverageRoundTrip(t *testing.T) {
 	project.UpdateBaseline("main", []string{"fp-1"}, nil, &cov, []projectmodel.FileCoverageEntry{entry1, entry2})
 	require.NoError(t, repo.Save(ctx, project))
 
-	found, err := repo.FindByID(ctx, project.ID())
+	found, err := repo.FindByID(ctx, testTenantID, project.ID())
 	require.NoError(t, err)
 
 	mainBL := found.Baseline("main")
@@ -624,14 +624,14 @@ func TestCoreProjectRepoBaselineNilFileCoverageRoundTrip(t *testing.T) {
 	repo := projectpostgres.NewRepository(testDB)
 	ctx := context.Background()
 
-	project, err := projectmodel.NewProject("no-fc", "No FC", "//no/...")
+	project, err := projectmodel.NewProject(testTenantID, "no-fc", "No FC", "//no/...")
 	require.NoError(t, err)
 
 	cov := 50.0
 	project.UpdateBaseline("main", []string{"fp-1"}, nil, &cov, nil)
 	require.NoError(t, repo.Save(ctx, project))
 
-	found, err := repo.FindByID(ctx, project.ID())
+	found, err := repo.FindByID(ctx, testTenantID, project.ID())
 	require.NoError(t, err)
 
 	mainBL := found.Baseline("main")
@@ -650,17 +650,17 @@ func TestCoreProjectRepoLanguageReplacement(t *testing.T) {
 	golang, err := coverage.NewLanguage("go")
 	require.NoError(t, err)
 
-	project, err := projectmodel.NewProject("lang-replace", "Lang Replace", "//lang/...")
+	project, err := projectmodel.NewProject(testTenantID, "lang-replace", "Lang Replace", "//lang/...")
 	require.NoError(t, err)
 	project, err = projectmodel.ReconstituteProject(
-		project.ID(), project.Key(), project.Name(), project.TargetPattern(),
+		project.ID(), testTenantID, project.Key(), project.Name(), project.TargetPattern(),
 		project.DefaultBranch(), []coverage.Language{java, golang},
 		project.Gate(), nil, nil,
 	)
 	require.NoError(t, err)
 	require.NoError(t, repo.Save(ctx, project))
 
-	found, err := repo.FindByID(ctx, project.ID())
+	found, err := repo.FindByID(ctx, testTenantID, project.ID())
 	require.NoError(t, err)
 	require.Len(t, found.Languages(), 2)
 
@@ -672,14 +672,14 @@ func TestCoreProjectRepoLanguageReplacement(t *testing.T) {
 	require.NoError(t, err)
 
 	updated, err := projectmodel.ReconstituteProject(
-		found.ID(), found.Key(), found.Name(), found.TargetPattern(),
+		found.ID(), testTenantID, found.Key(), found.Name(), found.TargetPattern(),
 		found.DefaultBranch(), []coverage.Language{python, typescript, rust},
 		found.Gate(), nil, found.Baselines(),
 	)
 	require.NoError(t, err)
 	require.NoError(t, repo.Save(ctx, updated))
 
-	reloaded, err := repo.FindByID(ctx, project.ID())
+	reloaded, err := repo.FindByID(ctx, testTenantID, project.ID())
 	require.NoError(t, err)
 	require.Len(t, reloaded.Languages(), 3)
 
@@ -702,10 +702,10 @@ func TestCoreProjectRepoLanguageClearedOnUpdate(t *testing.T) {
 	java, err := coverage.NewLanguage("java")
 	require.NoError(t, err)
 
-	project, err := projectmodel.NewProject("lang-clear", "Lang Clear", "//lang/...")
+	project, err := projectmodel.NewProject(testTenantID, "lang-clear", "Lang Clear", "//lang/...")
 	require.NoError(t, err)
 	project, err = projectmodel.ReconstituteProject(
-		project.ID(), project.Key(), project.Name(), project.TargetPattern(),
+		project.ID(), testTenantID, project.Key(), project.Name(), project.TargetPattern(),
 		project.DefaultBranch(), []coverage.Language{java},
 		project.Gate(), nil, nil,
 	)
@@ -713,14 +713,14 @@ func TestCoreProjectRepoLanguageClearedOnUpdate(t *testing.T) {
 	require.NoError(t, repo.Save(ctx, project))
 
 	cleared, err := projectmodel.ReconstituteProject(
-		project.ID(), project.Key(), project.Name(), project.TargetPattern(),
+		project.ID(), testTenantID, project.Key(), project.Name(), project.TargetPattern(),
 		project.DefaultBranch(), nil,
 		project.Gate(), nil, nil,
 	)
 	require.NoError(t, err)
 	require.NoError(t, repo.Save(ctx, cleared))
 
-	found, err := repo.FindByID(ctx, project.ID())
+	found, err := repo.FindByID(ctx, testTenantID, project.ID())
 	require.NoError(t, err)
 	assert.Empty(t, found.Languages())
 }
@@ -736,10 +736,10 @@ func TestCoreProjectRepoQualityGateReplacement(t *testing.T) {
 	gate1, err := qualitygate.NewGate([]qualitygate.Rule{rule1})
 	require.NoError(t, err)
 
-	project, err := projectmodel.NewProject("qg-replace", "QG Replace", "//qg/...")
+	project, err := projectmodel.NewProject(testTenantID, "qg-replace", "QG Replace", "//qg/...")
 	require.NoError(t, err)
 	project, err = projectmodel.ReconstituteProject(
-		project.ID(), project.Key(), project.Name(), project.TargetPattern(),
+		project.ID(), testTenantID, project.Key(), project.Name(), project.TargetPattern(),
 		project.DefaultBranch(), nil, gate1, nil, nil,
 	)
 	require.NoError(t, err)
@@ -757,13 +757,13 @@ func TestCoreProjectRepoQualityGateReplacement(t *testing.T) {
 	require.NoError(t, err)
 
 	updated, err := projectmodel.ReconstituteProject(
-		project.ID(), project.Key(), project.Name(), project.TargetPattern(),
+		project.ID(), testTenantID, project.Key(), project.Name(), project.TargetPattern(),
 		project.DefaultBranch(), nil, gate2, nil, nil,
 	)
 	require.NoError(t, err)
 	require.NoError(t, repo.Save(ctx, updated))
 
-	found, err := repo.FindByID(ctx, project.ID())
+	found, err := repo.FindByID(ctx, testTenantID, project.ID())
 	require.NoError(t, err)
 
 	rules := found.Gate().Rules()
@@ -787,12 +787,12 @@ func TestCoreProjectRepoBaselineEmptyArchIDs(t *testing.T) {
 	repo := projectpostgres.NewRepository(testDB)
 	ctx := context.Background()
 
-	project, err := projectmodel.NewProject("bl-no-arch", "BL No Arch", "//bl/...")
+	project, err := projectmodel.NewProject(testTenantID, "bl-no-arch", "BL No Arch", "//bl/...")
 	require.NoError(t, err)
 	project.UpdateBaseline("main", []string{"fp-1", "fp-2"}, nil, nil, nil)
 	require.NoError(t, repo.Save(ctx, project))
 
-	found, err := repo.FindByID(ctx, project.ID())
+	found, err := repo.FindByID(ctx, testTenantID, project.ID())
 	require.NoError(t, err)
 
 	mainBL := found.Baseline("main")
@@ -807,7 +807,7 @@ func TestCoreProjectRepoBaselineMultipleBranches(t *testing.T) {
 	repo := projectpostgres.NewRepository(testDB)
 	ctx := context.Background()
 
-	project, err := projectmodel.NewProject("bl-multi", "BL Multi", "//bl/...")
+	project, err := projectmodel.NewProject(testTenantID, "bl-multi", "BL Multi", "//bl/...")
 	require.NoError(t, err)
 
 	cov1 := 80.0
@@ -818,7 +818,7 @@ func TestCoreProjectRepoBaselineMultipleBranches(t *testing.T) {
 
 	require.NoError(t, repo.Save(ctx, project))
 
-	found, err := repo.FindByID(ctx, project.ID())
+	found, err := repo.FindByID(ctx, testTenantID, project.ID())
 	require.NoError(t, err)
 
 	mainBL := found.Baseline("main")
@@ -881,7 +881,7 @@ func TestCoreProjectRepoSaveReturnsErrorOnLanguageInsertFailure(t *testing.T) {
 
 	lang, err := coverage.NewLanguage("go")
 	require.NoError(t, err)
-	project, err := projectmodel.NewProject("lang-fail", "Lang Fail", "//lang/...")
+	project, err := projectmodel.NewProject(testTenantID, "lang-fail", "Lang Fail", "//lang/...")
 	require.NoError(t, err)
 	now := time.Now().UTC()
 	project.UpdateLanguages([]coverage.Language{lang}, now)
@@ -904,7 +904,7 @@ func TestCoreProjectRepoSaveReturnsErrorOnQualityGateInsertFailure(t *testing.T)
 	repo := projectpostgres.NewRepository(testDB)
 	ctx := context.Background()
 
-	project, err := projectmodel.NewProject("qg-fail", "QG Fail", "//qg/...")
+	project, err := projectmodel.NewProject(testTenantID, "qg-fail", "QG Fail", "//qg/...")
 	require.NoError(t, err)
 	zt := qualitygate.NewZeroTolerance()
 	rule, err := qualitygate.NewRule(evidence.SubtypeCodeQuality, zt)
@@ -931,7 +931,7 @@ func TestCoreProjectRepoSaveReturnsErrorOnBaselineInsertFailure(t *testing.T) {
 	repo := projectpostgres.NewRepository(testDB)
 	ctx := context.Background()
 
-	project, err := projectmodel.NewProject("bl-fail", "BL Fail", "//bl/...")
+	project, err := projectmodel.NewProject(testTenantID, "bl-fail", "BL Fail", "//bl/...")
 	require.NoError(t, err)
 	project.UpdateBaseline("main", []string{"fp-1"}, nil, nil, nil)
 
@@ -953,7 +953,7 @@ func TestCoreProjectRepoFindReturnsErrorOnLanguagesQueryFailure(t *testing.T) {
 	repo := projectpostgres.NewRepository(testDB)
 	ctx := context.Background()
 
-	project, err := projectmodel.NewProject("lang-query", "Lang Query", "//lang/...")
+	project, err := projectmodel.NewProject(testTenantID, "lang-query", "Lang Query", "//lang/...")
 	require.NoError(t, err)
 	require.NoError(t, repo.Save(ctx, project))
 
@@ -965,7 +965,7 @@ func TestCoreProjectRepoFindReturnsErrorOnLanguagesQueryFailure(t *testing.T) {
 			"ALTER TABLE project_languages_corrupted RENAME TO project_languages")
 	})
 
-	_, err = repo.FindByID(ctx, project.ID())
+	_, err = repo.FindByID(ctx, testTenantID, project.ID())
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "load languages")
 }
@@ -975,7 +975,7 @@ func TestCoreProjectRepoFindReturnsErrorOnQualityGateQueryFailure(t *testing.T) 
 	repo := projectpostgres.NewRepository(testDB)
 	ctx := context.Background()
 
-	project, err := projectmodel.NewProject("qg-query", "QG Query", "//qg/...")
+	project, err := projectmodel.NewProject(testTenantID, "qg-query", "QG Query", "//qg/...")
 	require.NoError(t, err)
 	require.NoError(t, repo.Save(ctx, project))
 
@@ -987,7 +987,7 @@ func TestCoreProjectRepoFindReturnsErrorOnQualityGateQueryFailure(t *testing.T) 
 			"ALTER TABLE project_quality_gate_rules_corrupted RENAME TO project_quality_gate_rules")
 	})
 
-	_, err = repo.FindByID(ctx, project.ID())
+	_, err = repo.FindByID(ctx, testTenantID, project.ID())
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "load quality gate")
 }
@@ -997,7 +997,7 @@ func TestCoreProjectRepoFindReturnsErrorOnBaselinesQueryFailure(t *testing.T) {
 	repo := projectpostgres.NewRepository(testDB)
 	ctx := context.Background()
 
-	project, err := projectmodel.NewProject("bl-query", "BL Query", "//bl/...")
+	project, err := projectmodel.NewProject(testTenantID, "bl-query", "BL Query", "//bl/...")
 	require.NoError(t, err)
 	require.NoError(t, repo.Save(ctx, project))
 
@@ -1009,7 +1009,7 @@ func TestCoreProjectRepoFindReturnsErrorOnBaselinesQueryFailure(t *testing.T) {
 			"ALTER TABLE project_baselines_corrupted RENAME TO project_baselines")
 	})
 
-	_, err = repo.FindByID(ctx, project.ID())
+	_, err = repo.FindByID(ctx, testTenantID, project.ID())
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "load baselines")
 }
@@ -1019,7 +1019,7 @@ func TestCoreProjectRepoFindReturnsErrorOnCoverageByFile(t *testing.T) {
 	repo := projectpostgres.NewRepository(database)
 	ctx := context.Background()
 
-	project, err := projectmodel.NewProject("bad-fc", "Bad FC", "//bad/...")
+	project, err := projectmodel.NewProject(testTenantID, "bad-fc", "Bad FC", "//bad/...")
 	require.NoError(t, err)
 	entry, err := projectmodel.NewFileCoverageEntry("pkg/a.go", []int{1}, nil)
 	require.NoError(t, err)
@@ -1032,7 +1032,7 @@ func TestCoreProjectRepoFindReturnsErrorOnCoverageByFile(t *testing.T) {
 		project.ID().UUID())
 	require.NoError(t, err)
 
-	_, err = repo.FindByID(ctx, project.ID())
+	_, err = repo.FindByID(ctx, testTenantID, project.ID())
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "file coverage")
 }
@@ -1042,7 +1042,7 @@ func TestCoreProjectRepoFindReturnsErrorOnInvalidFileCoverageEntry(t *testing.T)
 	repo := projectpostgres.NewRepository(database)
 	ctx := context.Background()
 
-	project, err := projectmodel.NewProject("empty-fp", "Empty FP", "//empty/...")
+	project, err := projectmodel.NewProject(testTenantID, "empty-fp", "Empty FP", "//empty/...")
 	require.NoError(t, err)
 	entry, err := projectmodel.NewFileCoverageEntry("pkg/a.go", []int{1}, nil)
 	require.NoError(t, err)
@@ -1055,7 +1055,7 @@ func TestCoreProjectRepoFindReturnsErrorOnInvalidFileCoverageEntry(t *testing.T)
 		project.ID().UUID())
 	require.NoError(t, err)
 
-	_, err = repo.FindByID(ctx, project.ID())
+	_, err = repo.FindByID(ctx, testTenantID, project.ID())
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "file coverage")
 }

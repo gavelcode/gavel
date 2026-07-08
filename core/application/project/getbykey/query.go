@@ -6,14 +6,19 @@ import (
 )
 
 type Query struct {
-	key string
+	tenantID string
+	key      string
 }
 
-func NewQuery(key string) (Query, error) {
+func NewQuery(tenantID, key string) (Query, error) {
+	if strings.TrimSpace(tenantID) == "" {
+		return Query{}, fmt.Errorf("%w: tenantID must not be empty", ErrInvalidQuery)
+	}
 	if strings.TrimSpace(key) == "" {
 		return Query{}, fmt.Errorf("%w: key must not be empty", ErrInvalidQuery)
 	}
-	return Query{key: key}, nil
+	return Query{tenantID: tenantID, key: key}, nil
 }
 
-func (q Query) Key() string { return q.key }
+func (q Query) TenantID() string { return q.tenantID }
+func (q Query) Key() string      { return q.key }

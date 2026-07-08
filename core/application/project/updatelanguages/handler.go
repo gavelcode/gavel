@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/usegavel/gavel/core/application/shared/event"
+	"github.com/usegavel/gavel/core/domain/iam/model/tenant"
 	projectmodel "github.com/usegavel/gavel/core/domain/project/model"
 	projectservice "github.com/usegavel/gavel/core/domain/project/service"
 )
@@ -22,12 +23,17 @@ func NewHandler(projects projectservice.ProjectRepository) *Handler {
 }
 
 func (h *Handler) Execute(ctx context.Context, cmd Command) (Result, error) {
+	tenantID, err := tenant.ParseTenantID(cmd.TenantID())
+	if err != nil {
+		return Result{}, fmt.Errorf("tenant id: %w", err)
+	}
+
 	projectID, err := projectmodel.ParseProjectID(cmd.ProjectID())
 	if err != nil {
 		return Result{}, fmt.Errorf("project id: %w", err)
 	}
 
-	project, err := h.projects.FindByID(ctx, projectID)
+	project, err := h.projects.FindByID(ctx, tenantID, projectID)
 	if err != nil {
 		return Result{}, fmt.Errorf("load project: %w", err)
 	}

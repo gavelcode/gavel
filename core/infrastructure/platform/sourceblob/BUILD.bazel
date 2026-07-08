@@ -21,10 +21,12 @@ go_test(
     ],
     deps = [
         ":sourceblob",
+        "//core/domain/iam/model/tenant",
         "//core/domain/project/model",
         "//core/infrastructure/platform/database",
         "//core/infrastructure/platform/database/testkit",
         "//core/infrastructure/project/postgres",
+        "@com_github_google_uuid//:uuid",
         "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//require",
     ],

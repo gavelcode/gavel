@@ -3,6 +3,7 @@ package testkit
 import (
 	"context"
 	"crypto/rand"
+	"errors"
 	"fmt"
 	"os"
 	"sync"
@@ -34,6 +35,23 @@ var (
 	initErr       error
 	seedTime      = time.Date(2026, time.January, 1, 0, 0, 0, 0, time.UTC)
 )
+
+// errRuntimeUnavailable marks the one init failure that is legitimately a skip:
+// no container runtime (Podman/Docker) is reachable, so a developer without one
+// can still run non-integration tests. Every other init failure — a broken
+// migration, a bad DSN, a seed error — is a real defect and must fail loudly
+// instead of silently dropping the whole suite (and its coverage) to a skip.
+var errRuntimeUnavailable = errors.New("container runtime unavailable")
+
+// skipOrFail turns a stored init error into the right test outcome: skip only
+// when the runtime is genuinely absent, otherwise fail.
+func skipOrFail(t *testing.T) {
+	t.Helper()
+	if errors.Is(initErr, errRuntimeUnavailable) {
+		t.Skip("database: " + initErr.Error())
+	}
+	t.Fatal("database: " + initErr.Error())
+}
 
 const (
 	pgReadyLogOccurrences = 2
@@ -72,7 +90,7 @@ func TestDB(t *testing.T) *database.DB {
 	t.Helper()
 	once.Do(initialize)
 	if initErr != nil {
-		t.Skip("database: " + initErr.Error())
+		skipOrFail(t)
 	}
 	ctx := context.Background()
 	conn, err := sharedDB.Conn(ctx)
@@ -100,7 +118,7 @@ func TestDSN(t *testing.T) string {
 	t.Helper()
 	once.Do(initialize)
 	if initErr != nil {
-		t.Skip("database: " + initErr.Error())
+		skipOrFail(t)
 	}
 	return sharedDSN
 }
@@ -120,7 +138,7 @@ func startPostgresContainer(ctx context.Context) (*database.DB, string, error) {
 		tcpg.WithDatabase("gaveltest"),
 		tcpg.WithUsername("gavel"),
 		tcpg.WithPassword("gavel"),
-		testcontainers.WithReuseByName("gavel-database-test-v5"),
+		testcontainers.WithReuseByName("gavel-database-test-"+database.MigrationsFingerprint()),
 		testcontainers.WithWaitStrategy(
 			wait.ForLog("database system is ready to accept connections").
 				WithOccurrence(pgReadyLogOccurrences).
@@ -128,7 +146,7 @@ func startPostgresContainer(ctx context.Context) (*database.DB, string, error) {
 		),
 	)
 	if err != nil {
-		return nil, "", fmt.Errorf("container runtime unavailable: %w", err)
+		return nil, "", fmt.Errorf("%w: %w", errRuntimeUnavailable, err)
 	}
 	dsn, err := container.ConnectionString(ctx, "sslmode=disable")
 	if err != nil {

@@ -2,11 +2,14 @@ package database
 
 import (
 	"context"
+	"crypto/sha256"
 	"database/sql"
 	"embed"
+	"encoding/hex"
 	"fmt"
 	"io/fs"
 	"log/slog"
+	"sort"
 	"strings"
 	"time"
 
@@ -25,8 +28,37 @@ const (
 	connMaxIdleTime = 5 * time.Minute
 	pingTimeout     = 5 * time.Second
 
-	migrationsDir = "migrations"
+	migrationsDir  = "migrations"
+	fingerprintLen = 12
 )
+
+// MigrationsFingerprint returns a short, deterministic hash of the embedded
+// migration set. It changes whenever any migration file is added or edited, so
+// a test harness can key an ephemeral database's identity to the schema it
+// expects: a schema change yields a new fingerprint (and thus a fresh database)
+// instead of reusing one whose accumulated state predates the new migrations.
+func MigrationsFingerprint() string {
+	entries, err := fs.ReadDir(migrationsFS, migrationsDir)
+	if err != nil {
+		return "unknown"
+	}
+	fileNames := make([]string, 0, len(entries))
+	for _, entry := range entries {
+		fileNames = append(fileNames, entry.Name())
+	}
+	sort.Strings(fileNames)
+
+	hasher := sha256.New()
+	for _, fileName := range fileNames {
+		content, readErr := migrationsFS.ReadFile(migrationsDir + "/" + fileName)
+		if readErr != nil {
+			return "unknown"
+		}
+		_, _ = hasher.Write([]byte(fileName))
+		_, _ = hasher.Write(content)
+	}
+	return hex.EncodeToString(hasher.Sum(nil))[:fingerprintLen]
+}
 
 func Open(ctx context.Context, dsn string) (*DB, error) {
 	sqlDB, err := sql.Open("pgx", dsn)

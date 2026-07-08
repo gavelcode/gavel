@@ -27,7 +27,7 @@ func (q *GavelspaceFinder) List(ctx context.Context, tenantID tenant.TenantID, l
 
 	rows, err := q.db.QueryContext(ctx, `
 		SELECT g.name,
-		       (SELECT COUNT(*) FROM gavelspace_projects WHERE gavelspace_name = g.name) AS project_count,
+		       (SELECT COUNT(*) FROM gavelspace_projects WHERE gavelspace_name = g.name AND tenant_id = g.tenant_id) AS project_count,
 		       g.created_at
 		FROM gavelspaces g
 		WHERE g.tenant_id = ?
@@ -72,7 +72,7 @@ func (q *GavelspaceFinder) GetByName(ctx context.Context, tenantID tenant.Tenant
 		return nil, fmt.Errorf("gavelspace %s created_at: %w", detail.Name, err)
 	}
 
-	projects, err := q.loadProjectRefViews(ctx, name)
+	projects, err := q.loadProjectRefViews(ctx, tenantID, name)
 	if err != nil {
 		return nil, err
 	}
@@ -95,7 +95,7 @@ func (q *GavelspaceFinder) FindGavelspaceNameByProjectID(ctx context.Context, pr
 	return name, true, nil
 }
 
-func (q *GavelspaceFinder) loadProjectRefViews(ctx context.Context, gavelspaceName string) ([]gsget.ProjectRefView, error) {
+func (q *GavelspaceFinder) loadProjectRefViews(ctx context.Context, tenantID tenant.TenantID, gavelspaceName string) ([]gsget.ProjectRefView, error) {
 	rows, err := q.db.QueryContext(ctx, `
 		SELECT gp.project_id, p.key, p.name,
 		       (SELECT verdict_outcome FROM casefiles
@@ -103,9 +103,9 @@ func (q *GavelspaceFinder) loadProjectRefViews(ctx context.Context, gavelspaceNa
 		        ORDER BY started_at DESC LIMIT 1) AS latest_verdict
 		FROM gavelspace_projects gp
 		JOIN projects p ON p.id = gp.project_id
-		WHERE gp.gavelspace_name = ?
+		WHERE gp.gavelspace_name = ? AND gp.tenant_id = ?
 		ORDER BY p.name
-	`, gavelspaceName)
+	`, gavelspaceName, tenantID.UUID())
 	if err != nil {
 		return nil, fmt.Errorf("load project refs: %w", err)
 	}

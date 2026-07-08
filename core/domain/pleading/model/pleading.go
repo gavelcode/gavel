@@ -32,6 +32,9 @@ func FilePleading(
 	number int,
 	title, petitioner, sourceBranch, targetBranch, commitSHA string,
 ) (Pleading, error) {
+	if tenantID.IsZero() {
+		return Pleading{}, fmt.Errorf("%w: tenantID must not be zero", ErrInvalidPleading)
+	}
 	if err := validatePleadingFields(projectID, number, title, sourceBranch, targetBranch, commitSHA); err != nil {
 		return Pleading{}, err
 	}

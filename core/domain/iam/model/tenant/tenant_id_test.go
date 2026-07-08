@@ -38,3 +38,10 @@ func TestParseTenantIDRejectsNonUUID(t *testing.T) {
 		assert.ErrorIs(t, err, tenant.ErrInvalidTenant)
 	}
 }
+
+func TestTenantIDIsZero(t *testing.T) {
+	assert.True(t, tenant.TenantID{}.IsZero(), "zero-value TenantID is zero")
+	assert.True(t, tenant.NewTenantID(uuid.Nil).IsZero(), "nil UUID is zero")
+	assert.False(t, tenant.NewTenantID(uuid.New()).IsZero(), "a real UUID is not zero")
+	assert.False(t, tenant.LocalTenantID.IsZero(), "the local sentinel is not zero")
+}

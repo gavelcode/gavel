@@ -336,3 +336,9 @@ func TestReconstitutePleading(t *testing.T) {
 		})
 	}
 }
+
+func TestFilePleadingRejectsZeroTenant(t *testing.T) {
+	_, err := model.FilePleading(tenant.TenantID{}, validProjectID(t), 1, "t", "alice", "src", "dst", "sha")
+	require.Error(t, err)
+	assert.ErrorIs(t, err, model.ErrInvalidPleading)
+}

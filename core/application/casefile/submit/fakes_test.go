@@ -30,7 +30,7 @@ func (r *fakeCaseFileRepo) Save(_ context.Context, cf casefile.CaseFile) error {
 	return nil
 }
 
-func (r *fakeCaseFileRepo) FindByID(_ context.Context, id casefile.CaseFileID) (casefile.CaseFile, error) {
+func (r *fakeCaseFileRepo) FindByID(_ context.Context, _ tenant.TenantID, id casefile.CaseFileID) (casefile.CaseFile, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	cf, ok := r.store[id.String()]

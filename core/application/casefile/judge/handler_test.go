@@ -51,7 +51,7 @@ func TestHandlerExecuteDrainsEventsAndPersists(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.NotEmpty(t, result.Events, "events returned to caller")
-	persisted, err := caseFiles.FindByID(context.Background(), caseFile.ID())
+	persisted, err := caseFiles.FindByID(context.Background(), testTenant, caseFile.ID())
 	require.NoError(t, err)
 	assert.True(t, persisted.IsJudged(), "persisted case file carries verdict")
 }
@@ -168,7 +168,7 @@ func TestHandlerExecuteTrackingConversionError(t *testing.T) {
 	}
 
 	handler := judge.NewHandler(caseFiles, projects)
-	cmd, err := judge.NewCommand(caseFile.ID().String(), tracking)
+	cmd, err := judge.NewCommand(testTenant.String(), caseFile.ID().String(), tracking)
 	require.NoError(t, err)
 
 	_, err = handler.Execute(context.Background(), cmd)
@@ -178,7 +178,7 @@ func TestHandlerExecuteTrackingConversionError(t *testing.T) {
 
 func mustCommand(t *testing.T, id string, tracking *evidencedto.Tracking) judge.Command {
 	t.Helper()
-	cmd, err := judge.NewCommand(id, tracking)
+	cmd, err := judge.NewCommand(testTenant.String(), id, tracking)
 	require.NoError(t, err)
 	return cmd
 }

@@ -29,7 +29,7 @@ func TestCaseFileRepoSaveAndFindByID(t *testing.T) {
 	caseFile := newCaseFileAt(t, project.ID(), "abc123", "main", startedAt)
 	require.NoError(t, repo.Save(ctx, caseFile))
 
-	found, err := repo.FindByID(ctx, caseFile.ID())
+	found, err := repo.FindByID(ctx, testTenantID, caseFile.ID())
 	require.NoError(t, err)
 	assert.Equal(t, caseFile.ID(), found.ID())
 	assert.Equal(t, project.ID(), found.ProjectID())
@@ -48,14 +48,14 @@ func TestCaseFileRepoRoundTripPreservesFreshEvaluation(t *testing.T) {
 	caseFile.MarkFreshEvaluation()
 	require.NoError(t, repo.Save(ctx, caseFile))
 
-	found, err := repo.FindByID(ctx, caseFile.ID())
+	found, err := repo.FindByID(ctx, testTenantID, caseFile.ID())
 	require.NoError(t, err)
 	assert.True(t, found.IsFreshEvaluation())
 
 	cf2 := newCaseFileAt(t, project.ID(), "normal456", "main", time.Date(2024, 6, 15, 11, 30, 0, 0, time.UTC))
 	require.NoError(t, repo.Save(ctx, cf2))
 
-	found2, err := repo.FindByID(ctx, cf2.ID())
+	found2, err := repo.FindByID(ctx, testTenantID, cf2.ID())
 	require.NoError(t, err)
 	assert.False(t, found2.IsFreshEvaluation())
 }
@@ -66,7 +66,7 @@ func TestCaseFileRepoFindByIDNotFound(t *testing.T) {
 
 	id := casefile.NewCaseFileID(uuid.New())
 
-	_, err := repo.FindByID(context.Background(), id)
+	_, err := repo.FindByID(context.Background(), testTenantID, id)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "not found")
 }
@@ -82,7 +82,7 @@ func TestCaseFileRepoSaveWithFindingsEvidence(t *testing.T) {
 	require.NoError(t, caseFile.AddEvidence(ev, time.Now().UTC()))
 	require.NoError(t, repo.Save(ctx, caseFile))
 
-	found, err := repo.FindByID(ctx, caseFile.ID())
+	found, err := repo.FindByID(ctx, testTenantID, caseFile.ID())
 	require.NoError(t, err)
 	require.Len(t, found.Evidences(), 1)
 
@@ -111,7 +111,7 @@ func TestCaseFileRepoSaveWithCoverageEvidence(t *testing.T) {
 	require.NoError(t, caseFile.AddEvidence(ev, time.Now().UTC()))
 	require.NoError(t, repo.Save(ctx, caseFile))
 
-	found, err := repo.FindByID(ctx, caseFile.ID())
+	found, err := repo.FindByID(ctx, testTenantID, caseFile.ID())
 	require.NoError(t, err)
 	require.Len(t, found.Evidences(), 1)
 
@@ -139,7 +139,7 @@ func TestCaseFileRepoSaveWithArchitectureEvidence(t *testing.T) {
 	require.NoError(t, caseFile.AddEvidence(ev, time.Now().UTC()))
 	require.NoError(t, repo.Save(ctx, caseFile))
 
-	found, err := repo.FindByID(ctx, caseFile.ID())
+	found, err := repo.FindByID(ctx, testTenantID, caseFile.ID())
 	require.NoError(t, err)
 	require.Len(t, found.Evidences(), 1)
 
@@ -165,7 +165,7 @@ func TestCaseFileRepoSaveWithToolExecutionEvidence(t *testing.T) {
 	require.NoError(t, caseFile.AddEvidence(ev, time.Now().UTC()))
 	require.NoError(t, repo.Save(ctx, caseFile))
 
-	found, err := repo.FindByID(ctx, caseFile.ID())
+	found, err := repo.FindByID(ctx, testTenantID, caseFile.ID())
 	require.NoError(t, err)
 	require.Len(t, found.Evidences(), 1)
 
@@ -195,7 +195,7 @@ func TestCaseFileRepoSaveWithNewCodeCoverageEvidence(t *testing.T) {
 	require.NoError(t, caseFile.AddEvidence(ev, time.Now().UTC()))
 	require.NoError(t, repo.Save(ctx, caseFile))
 
-	found, err := repo.FindByID(ctx, caseFile.ID())
+	found, err := repo.FindByID(ctx, testTenantID, caseFile.ID())
 	require.NoError(t, err)
 	require.Len(t, found.Evidences(), 1)
 
@@ -228,7 +228,7 @@ func TestCaseFileRepoSaveWithVerdict(t *testing.T) {
 
 	require.NoError(t, repo.Save(ctx, reconstituted))
 
-	found, err := repo.FindByID(ctx, reconstituted.ID())
+	found, err := repo.FindByID(ctx, testTenantID, reconstituted.ID())
 	require.NoError(t, err)
 
 	loadedVerdict, ok := found.Verdict()
@@ -254,7 +254,7 @@ func TestCaseFileRepoSaveUpdatesExisting(t *testing.T) {
 	require.NoError(t, caseFile.AddEvidence(ev, time.Now().UTC()))
 	require.NoError(t, repo.Save(ctx, caseFile))
 
-	found, err := repo.FindByID(ctx, caseFile.ID())
+	found, err := repo.FindByID(ctx, testTenantID, caseFile.ID())
 	require.NoError(t, err)
 	assert.Len(t, found.Evidences(), 1)
 }
@@ -335,7 +335,7 @@ func TestCaseFileRepoSaveIsIdempotentForFindings(t *testing.T) {
 
 	require.NoError(t, repo.Save(ctx, caseFile))
 
-	found, err := repo.FindByID(ctx, caseFile.ID())
+	found, err := repo.FindByID(ctx, testTenantID, caseFile.ID())
 	require.NoError(t, err)
 	require.Len(t, found.Evidences(), 1)
 	fc, matched := found.Evidences()[0].Content().(finding.Content)
@@ -344,7 +344,7 @@ func TestCaseFileRepoSaveIsIdempotentForFindings(t *testing.T) {
 
 	require.NoError(t, repo.Save(ctx, found))
 
-	reloaded, err := repo.FindByID(ctx, caseFile.ID())
+	reloaded, err := repo.FindByID(ctx, testTenantID, caseFile.ID())
 	require.NoError(t, err)
 	require.Len(t, reloaded.Evidences(), 1)
 	fc2, ok := reloaded.Evidences()[0].Content().(finding.Content)
@@ -363,12 +363,12 @@ func TestCaseFileRepoSaveIsIdempotentForArchViolations(t *testing.T) {
 	require.NoError(t, caseFile.AddEvidence(ev, time.Now().UTC()))
 
 	require.NoError(t, repo.Save(ctx, caseFile))
-	found, err := repo.FindByID(ctx, caseFile.ID())
+	found, err := repo.FindByID(ctx, testTenantID, caseFile.ID())
 	require.NoError(t, err)
 
 	require.NoError(t, repo.Save(ctx, found))
 
-	reloaded, err := repo.FindByID(ctx, caseFile.ID())
+	reloaded, err := repo.FindByID(ctx, testTenantID, caseFile.ID())
 	require.NoError(t, err)
 	require.Len(t, reloaded.Evidences(), 1)
 	ac, ok := reloaded.Evidences()[0].Content().(architecture.Content)
@@ -387,12 +387,12 @@ func TestCaseFileRepoSaveIsIdempotentForCoverageByLanguage(t *testing.T) {
 	require.NoError(t, caseFile.AddEvidence(ev, time.Now().UTC()))
 
 	require.NoError(t, repo.Save(ctx, caseFile))
-	found, err := repo.FindByID(ctx, caseFile.ID())
+	found, err := repo.FindByID(ctx, testTenantID, caseFile.ID())
 	require.NoError(t, err)
 
 	require.NoError(t, repo.Save(ctx, found))
 
-	reloaded, err := repo.FindByID(ctx, caseFile.ID())
+	reloaded, err := repo.FindByID(ctx, testTenantID, caseFile.ID())
 	require.NoError(t, err)
 	require.Len(t, reloaded.Evidences(), 1)
 	cc, ok := reloaded.Evidences()[0].Content().(coverage.Content)
@@ -411,13 +411,13 @@ func TestCaseFileRepoSaveWithNewEvidencePreservesExistingFindings(t *testing.T) 
 	require.NoError(t, caseFile.AddEvidence(ev, time.Now().UTC()))
 	require.NoError(t, repo.Save(ctx, caseFile))
 
-	loaded, err := repo.FindByID(ctx, caseFile.ID())
+	loaded, err := repo.FindByID(ctx, testTenantID, caseFile.ID())
 	require.NoError(t, err)
 	covEv := newCoverageEvidence(t)
 	require.NoError(t, loaded.AddEvidence(covEv, time.Now().UTC()))
 	require.NoError(t, repo.Save(ctx, loaded))
 
-	reloaded, err := repo.FindByID(ctx, caseFile.ID())
+	reloaded, err := repo.FindByID(ctx, testTenantID, caseFile.ID())
 	require.NoError(t, err)
 	require.Len(t, reloaded.Evidences(), 2)
 
@@ -441,10 +441,10 @@ func TestCaseFileRepoSaveReplacesExistingForSameCommit(t *testing.T) {
 	require.NotEqual(t, first.ID(), second.ID(), "precondition: different UUIDs")
 	require.NoError(t, repo.Save(ctx, second), "saving a new casefile for the same project+commit must not fail")
 
-	_, err := repo.FindByID(ctx, first.ID())
+	_, err := repo.FindByID(ctx, testTenantID, first.ID())
 	assert.Error(t, err, "old casefile should no longer exist")
 
-	found, err := repo.FindByID(ctx, second.ID())
+	found, err := repo.FindByID(ctx, testTenantID, second.ID())
 	require.NoError(t, err)
 	assert.Equal(t, "same-commit", found.CommitSHA())
 }
@@ -463,7 +463,7 @@ func TestCaseFileRepoSaveReplacesExistingWithFindings(t *testing.T) {
 	second := newTestCaseFile(t, project.ID(), "same-commit", "main")
 	require.NoError(t, repo.Save(ctx, second), "replacing a casefile that has findings must not fail")
 
-	found, err := repo.FindByID(ctx, second.ID())
+	found, err := repo.FindByID(ctx, testTenantID, second.ID())
 	require.NoError(t, err)
 	assert.Equal(t, "same-commit", found.CommitSHA())
 }
@@ -494,7 +494,7 @@ func TestCaseFileRepoWriteCounters(t *testing.T) {
 	}
 	require.NoError(t, repo.WriteCounters(ctx, caseFile.ID().String(), counters))
 
-	detail, err := cfFinder.GetByID(ctx, caseFile.ID().String())
+	detail, err := cfFinder.GetByID(ctx, testTenantID.String(), caseFile.ID().String())
 	require.NoError(t, err)
 	assert.Equal(t, 5, detail.NewFindings)
 	assert.Equal(t, 3, detail.ExistingFindings)

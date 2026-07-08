@@ -29,7 +29,7 @@ func TestCaseFileRepositorySaveAndFindByID(t *testing.T) {
 	cf := newTestCaseFile(t, "abc123", "main")
 	require.NoError(t, repo.Save(ctx, cf))
 
-	found, err := repo.FindByID(ctx, cf.ID())
+	found, err := repo.FindByID(ctx, testTenantID, cf.ID())
 	require.NoError(t, err)
 	assert.Equal(t, cf.ID(), found.ID())
 }
@@ -40,7 +40,7 @@ func TestCaseFileRepositoryFindByIDNotFound(t *testing.T) {
 
 	id := casefile.NewCaseFileID(uuid.New())
 
-	_, err := repo.FindByID(ctx, id)
+	_, err := repo.FindByID(ctx, testTenantID, id)
 	assert.ErrorIs(t, err, memory.ErrCaseFileNotFound)
 }
 
@@ -103,7 +103,7 @@ func TestCaseFileRepositorySaveUpdatesExisting(t *testing.T) {
 	require.NoError(t, caseFile.AddEvidence(ev, time.Now().UTC()))
 	require.NoError(t, repo.Save(ctx, caseFile))
 
-	found, err := repo.FindByID(ctx, caseFile.ID())
+	found, err := repo.FindByID(ctx, testTenantID, caseFile.ID())
 	require.NoError(t, err)
 	assert.Len(t, found.Evidences(), 1)
 }

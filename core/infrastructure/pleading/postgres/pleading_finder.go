@@ -42,12 +42,13 @@ func (q *PleadingFinder) ListByProject(ctx context.Context, tenantID, projectID,
 		LEFT JOIN (
 			SELECT commit_sha, verdict_outcome,
 			       ROW_NUMBER() OVER (PARTITION BY commit_sha ORDER BY created_at DESC) AS rn
-			FROM casefiles
+			FROM casefiles WHERE tenant_id = ?
 		) c ON c.commit_sha = pr.commit_sha AND c.rn = 1` +
 		where + ` ORDER BY pr.created_at DESC LIMIT ? OFFSET ?`
-	args = append(args, limit, offset)
+	dataArgs := append([]any{tenantID}, args...)
+	dataArgs = append(dataArgs, limit, offset)
 
-	rows, err := q.db.QueryContext(ctx, dataSQL, args...)
+	rows, err := q.db.QueryContext(ctx, dataSQL, dataArgs...)
 	if err != nil {
 		return nil, 0, fmt.Errorf("list pull requests: %w", err)
 	}
@@ -74,10 +75,10 @@ func (q *PleadingFinder) GetByID(ctx context.Context, tenantID, pleadingID strin
 		LEFT JOIN (
 			SELECT id, commit_sha, verdict_outcome,
 			       ROW_NUMBER() OVER (PARTITION BY commit_sha ORDER BY created_at DESC) AS rn
-			FROM casefiles
+			FROM casefiles WHERE tenant_id = ?
 		) c ON c.commit_sha = pr.commit_sha AND c.rn = 1
 		WHERE pr.id = ? AND pr.tenant_id = ?
-	`, pleadingID, tenantID)
+	`, tenantID, pleadingID, tenantID)
 
 	var detail prget.PleadingDetail
 	var createdAtStr, updatedAtStr string

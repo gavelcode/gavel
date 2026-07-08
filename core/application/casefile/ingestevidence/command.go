@@ -8,11 +8,15 @@ import (
 )
 
 type Command struct {
+	tenantID   string
 	caseFileID string
 	evidences  []evidencedto.Evidence
 }
 
-func NewCommand(caseFileID string, evidences []evidencedto.Evidence) (Command, error) {
+func NewCommand(tenantID, caseFileID string, evidences []evidencedto.Evidence) (Command, error) {
+	if strings.TrimSpace(tenantID) == "" {
+		return Command{}, fmt.Errorf("%w: tenantID must not be empty", ErrInvalidCommand)
+	}
 	if strings.TrimSpace(caseFileID) == "" {
 		return Command{}, fmt.Errorf("%w: caseFileID must not be empty", ErrInvalidCommand)
 	}
@@ -21,9 +25,10 @@ func NewCommand(caseFileID string, evidences []evidencedto.Evidence) (Command, e
 	}
 	copied := make([]evidencedto.Evidence, len(evidences))
 	copy(copied, evidences)
-	return Command{caseFileID: caseFileID, evidences: copied}, nil
+	return Command{tenantID: tenantID, caseFileID: caseFileID, evidences: copied}, nil
 }
 
+func (c Command) TenantID() string   { return c.tenantID }
 func (c Command) CaseFileID() string { return c.caseFileID }
 
 func (c Command) Evidences() []evidencedto.Evidence {

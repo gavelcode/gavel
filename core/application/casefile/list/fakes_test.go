@@ -14,7 +14,7 @@ type fakeCaseFileLister struct {
 	err   error
 }
 
-func (f *fakeCaseFileLister) ListByProject(_ context.Context, _, _ string, _, _ int) ([]list.CaseFileSummary, int, error) {
+func (f *fakeCaseFileLister) ListByProject(_ context.Context, _, _, _ string, _, _ int) ([]list.CaseFileSummary, int, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	if f.err != nil {

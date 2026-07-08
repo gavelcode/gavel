@@ -234,7 +234,7 @@ func (r *Repository) WriteCounters(ctx context.Context, caseFileID string, count
 	return err
 }
 
-func (r *Repository) FindByID(ctx context.Context, caseFileID model.CaseFileID) (model.CaseFile, error) {
+func (r *Repository) FindByID(ctx context.Context, tenantScope tenant.TenantID, caseFileID model.CaseFileID) (model.CaseFile, error) {
 	var cfID, projectID, tenantID uuid.UUID
 	var commitSHA, branch, startedAtStr string
 	var verdictOutcome, verdictEvaluatedAt sql.NullString
@@ -243,8 +243,8 @@ func (r *Repository) FindByID(ctx context.Context, caseFileID model.CaseFileID) 
 	err := r.db.QueryRowContext(ctx, `
 		SELECT id, project_id, tenant_id, commit_sha, branch, started_at,
 		       verdict_outcome, verdict_evaluated_at, is_fresh_evaluation
-		FROM casefiles WHERE id = ?
-	`, caseFileID.UUID()).Scan(&cfID, &projectID, &tenantID, &commitSHA, &branch, &startedAtStr,
+		FROM casefiles WHERE id = ? AND tenant_id = ?
+	`, caseFileID.UUID(), tenantScope.UUID()).Scan(&cfID, &projectID, &tenantID, &commitSHA, &branch, &startedAtStr,
 		&verdictOutcome, &verdictEvaluatedAt, &isFreshEval)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -596,12 +596,12 @@ func (r *Repository) FindByProject(ctx context.Context, projectID projectmodel.P
 }
 
 func (r *Repository) FindLatestByBranch(ctx context.Context, projectID projectmodel.ProjectID, branch string) (model.CaseFile, error) {
-	var cfID uuid.UUID
+	var cfID, tenantID uuid.UUID
 	err := r.db.QueryRowContext(ctx, `
-		SELECT id FROM casefiles
+		SELECT id, tenant_id FROM casefiles
 		WHERE project_id = ? AND branch = ?
 		ORDER BY started_at DESC LIMIT 1
-	`, projectID.UUID(), branch).Scan(&cfID)
+	`, projectID.UUID(), branch).Scan(&cfID, &tenantID)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return model.CaseFile{}, fmt.Errorf("%w: project %s branch %s", errCaseFileNotFound, projectID, branch)
@@ -610,7 +610,7 @@ func (r *Repository) FindLatestByBranch(ctx context.Context, projectID projectmo
 	}
 
 	id := model.NewCaseFileID(cfID)
-	return r.FindByID(ctx, id)
+	return r.FindByID(ctx, tenant.NewTenantID(tenantID), id)
 }
 
 func (r *Repository) FindFingerprintIDsByBranch(ctx context.Context, projectID projectmodel.ProjectID, branch string) ([]finding.FingerprintID, error) {

@@ -9,6 +9,7 @@ import (
 	"github.com/usegavel/gavel/core/application/shared/event"
 	casefilemodel "github.com/usegavel/gavel/core/domain/casefile/model"
 	caseservice "github.com/usegavel/gavel/core/domain/casefile/service"
+	"github.com/usegavel/gavel/core/domain/iam/model/tenant"
 )
 
 type Handler struct {
@@ -23,11 +24,15 @@ func NewHandler(caseFiles caseservice.CaseFileRepository) *Handler {
 }
 
 func (h *Handler) Execute(ctx context.Context, cmd Command) (Result, error) {
+	tenantID, err := tenant.ParseTenantID(cmd.TenantID())
+	if err != nil {
+		return Result{}, fmt.Errorf("tenant id: %w", err)
+	}
 	id, err := casefilemodel.ParseCaseFileID(cmd.CaseFileID())
 	if err != nil {
 		return Result{}, fmt.Errorf("case file id: %w", err)
 	}
-	caseFile, err := h.caseFiles.FindByID(ctx, id)
+	caseFile, err := h.caseFiles.FindByID(ctx, tenantID, id)
 	if err != nil {
 		return Result{}, fmt.Errorf("load case file: %w", err)
 	}

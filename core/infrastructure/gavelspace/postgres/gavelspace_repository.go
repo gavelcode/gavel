@@ -34,7 +34,7 @@ func (r *Repository) Save(ctx context.Context, gavelspace gsmodel.Gavelspace) er
 	_, err = transaction.ExecContext(ctx, `
 		INSERT INTO gavelspaces (name, tenant_id)
 		VALUES (?, ?)
-		ON CONFLICT(name) DO UPDATE SET
+		ON CONFLICT(tenant_id, name) DO UPDATE SET
 		    updated_at = ?
 	`, gavelspace.ID().String(), gavelspace.TenantID().UUID(), database.Now())
 	if err != nil {
@@ -50,17 +50,17 @@ func (r *Repository) Save(ctx context.Context, gavelspace gsmodel.Gavelspace) er
 
 func (r *Repository) replaceProjectRefs(ctx context.Context, transaction *database.Tx, gavelspace gsmodel.Gavelspace) error {
 	_, err := transaction.ExecContext(ctx,
-		"DELETE FROM gavelspace_projects WHERE gavelspace_name = ?",
-		gavelspace.ID().String())
+		"DELETE FROM gavelspace_projects WHERE gavelspace_name = ? AND tenant_id = ?",
+		gavelspace.ID().String(), gavelspace.TenantID().UUID())
 	if err != nil {
 		return err
 	}
 
 	for _, ref := range gavelspace.Projects() {
 		_, err = transaction.ExecContext(ctx, `
-			INSERT INTO gavelspace_projects (gavelspace_name, project_id, target_pattern)
-			VALUES (?, ?, ?)
-		`, gavelspace.ID().String(), ref.ID().UUID(), ref.TargetPattern())
+			INSERT INTO gavelspace_projects (gavelspace_name, tenant_id, project_id, target_pattern)
+			VALUES (?, ?, ?, ?)
+		`, gavelspace.ID().String(), gavelspace.TenantID().UUID(), ref.ID().UUID(), ref.TargetPattern())
 		if err != nil {
 			return err
 		}
@@ -81,7 +81,7 @@ func (r *Repository) FindByName(ctx context.Context, tenantID tenant.TenantID, n
 		return gsmodel.Gavelspace{}, fmt.Errorf("query gavelspace: %w", err)
 	}
 
-	refs, err := r.loadProjectRefs(ctx, nameStr)
+	refs, err := r.loadProjectRefs(ctx, tenantID, nameStr)
 	if err != nil {
 		return gsmodel.Gavelspace{}, fmt.Errorf("load project refs: %w", err)
 	}
@@ -89,11 +89,11 @@ func (r *Repository) FindByName(ctx context.Context, tenantID tenant.TenantID, n
 	return gsmodel.ReconstituteGavelspace(name, tenant.NewTenantID(tenantIDVal), refs)
 }
 
-func (r *Repository) loadProjectRefs(ctx context.Context, gavelspaceName string) ([]gsmodel.ProjectRef, error) {
+func (r *Repository) loadProjectRefs(ctx context.Context, tenantID tenant.TenantID, gavelspaceName string) ([]gsmodel.ProjectRef, error) {
 	rows, err := r.db.QueryContext(ctx, `
 		SELECT project_id, target_pattern
-		FROM gavelspace_projects WHERE gavelspace_name = ?
-	`, gavelspaceName)
+		FROM gavelspace_projects WHERE gavelspace_name = ? AND tenant_id = ?
+	`, gavelspaceName, tenantID.UUID())
 	if err != nil {
 		return nil, err
 	}

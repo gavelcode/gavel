@@ -63,7 +63,7 @@ func TestListCaseFiles_MissingProjectAndGavelspace(t *testing.T) {
 		&fakeGetByKeyFinder{},
 	)
 
-	resp, err := handler.ListCaseFiles(context.Background(), gen.ListCaseFilesRequestObject{})
+	resp, err := handler.ListCaseFiles(authContext(), gen.ListCaseFilesRequestObject{})
 
 	require.NoError(t, err)
 	_, ok := resp.(gen.ListCaseFiles400JSONResponse)
@@ -80,7 +80,7 @@ func TestListCaseFiles_WithProjectID(t *testing.T) {
 	)
 
 	projectUUID := httpx.ParseUUIDOrZero("11111111-1111-1111-1111-111111111111")
-	resp, err := handler.ListCaseFiles(context.Background(), gen.ListCaseFilesRequestObject{
+	resp, err := handler.ListCaseFiles(authContext(), gen.ListCaseFilesRequestObject{
 		Params: gen.ListCaseFilesParams{ProjectId: &projectUUID},
 	})
 
@@ -108,7 +108,7 @@ func TestListCaseFiles_EmptyList(t *testing.T) {
 	)
 
 	projectUUID := httpx.ParseUUIDOrZero("11111111-1111-1111-1111-111111111111")
-	resp, err := handler.ListCaseFiles(context.Background(), gen.ListCaseFilesRequestObject{
+	resp, err := handler.ListCaseFiles(authContext(), gen.ListCaseFilesRequestObject{
 		Params: gen.ListCaseFilesParams{ProjectId: &projectUUID},
 	})
 
@@ -128,7 +128,7 @@ func TestListCaseFiles_FinderError(t *testing.T) {
 	)
 
 	projectUUID := httpx.ParseUUIDOrZero("11111111-1111-1111-1111-111111111111")
-	resp, err := handler.ListCaseFiles(context.Background(), gen.ListCaseFilesRequestObject{
+	resp, err := handler.ListCaseFiles(authContext(), gen.ListCaseFilesRequestObject{
 		Params: gen.ListCaseFilesParams{ProjectId: &projectUUID},
 	})
 
@@ -145,7 +145,7 @@ func TestGetCaseFile_ReturnsDetail(t *testing.T) {
 		&fakeGetByKeyFinder{},
 	)
 
-	resp, err := handler.GetCaseFile(context.Background(), gen.GetCaseFileRequestObject{
+	resp, err := handler.GetCaseFile(authContext(), gen.GetCaseFileRequestObject{
 		Id: httpx.ParseUUIDOrZero("22222222-2222-2222-2222-222222222222"),
 	})
 
@@ -178,7 +178,7 @@ func TestGetCaseFile_NotFoundReturns404(t *testing.T) {
 		&fakeGetByKeyFinder{},
 	)
 
-	resp, err := handler.GetCaseFile(context.Background(), gen.GetCaseFileRequestObject{
+	resp, err := handler.GetCaseFile(authContext(), gen.GetCaseFileRequestObject{
 		Id: httpx.ParseUUIDOrZero("22222222-2222-2222-2222-222222222222"),
 	})
 
@@ -197,7 +197,7 @@ func TestListFindings_ReturnsItems(t *testing.T) {
 	)
 
 	cfID := httpx.ParseUUIDOrZero("22222222-2222-2222-2222-222222222222")
-	resp, err := handler.ListFindings(context.Background(), gen.ListFindingsRequestObject{
+	resp, err := handler.ListFindings(authContext(), gen.ListFindingsRequestObject{
 		Params: gen.ListFindingsParams{CasefileId: &cfID},
 	})
 
@@ -225,7 +225,7 @@ func TestListFindings_EmptyResults(t *testing.T) {
 	)
 
 	cfID := httpx.ParseUUIDOrZero("22222222-2222-2222-2222-222222222222")
-	resp, err := handler.ListFindings(context.Background(), gen.ListFindingsRequestObject{
+	resp, err := handler.ListFindings(authContext(), gen.ListFindingsRequestObject{
 		Params: gen.ListFindingsParams{CasefileId: &cfID},
 	})
 
@@ -291,7 +291,7 @@ func TestCreateCaseFile_NilBodyReturns400(t *testing.T) {
 func TestIngestCaseFileEvidence_NilBodyReturns400(t *testing.T) {
 	handler := newMinimalHandler()
 
-	resp, err := handler.IngestCaseFileEvidence(context.Background(), gen.IngestCaseFileEvidenceRequestObject{
+	resp, err := handler.IngestCaseFileEvidence(authContext(), gen.IngestCaseFileEvidenceRequestObject{
 		Id:   httpx.ParseUUIDOrZero("22222222-2222-2222-2222-222222222222"),
 		Body: nil,
 	})
@@ -304,7 +304,7 @@ func TestIngestCaseFileEvidence_NilBodyReturns400(t *testing.T) {
 func TestFinalizeCaseFile_NilBodyReturns400(t *testing.T) {
 	handler := newMinimalHandler()
 
-	resp, err := handler.FinalizeCaseFile(context.Background(), gen.FinalizeCaseFileRequestObject{
+	resp, err := handler.FinalizeCaseFile(authContext(), gen.FinalizeCaseFileRequestObject{
 		Id:   httpx.ParseUUIDOrZero("22222222-2222-2222-2222-222222222222"),
 		Body: nil,
 	})
@@ -446,7 +446,7 @@ func TestIngestCaseFileEvidence_FindingsSuccess(t *testing.T) {
 			Fingerprint: "fp-001",
 		},
 	}
-	resp, err := handler.IngestCaseFileEvidence(context.Background(), gen.IngestCaseFileEvidenceRequestObject{
+	resp, err := handler.IngestCaseFileEvidence(authContext(), gen.IngestCaseFileEvidenceRequestObject{
 		Id: httpx.ParseUUIDOrZero(cfID),
 		Body: &gen.IngestEvidenceRequest{
 			Subtype:     gen.CodeQuality,
@@ -473,7 +473,7 @@ func TestIngestCaseFileEvidence_CoverageWithByFileAndByLanguage(t *testing.T) {
 	byFile := []gen.IngestFileCoverage{
 		{FilePath: "main.go", CoveredLines: []int32{1, 2, 3}, UncoveredLines: []int32{4, 5}},
 	}
-	resp, err := handler.IngestCaseFileEvidence(context.Background(), gen.IngestCaseFileEvidenceRequestObject{
+	resp, err := handler.IngestCaseFileEvidence(authContext(), gen.IngestCaseFileEvidenceRequestObject{
 		Id: httpx.ParseUUIDOrZero(cfID),
 		Body: &gen.IngestEvidenceRequest{
 			Subtype:     gen.Coverage,
@@ -498,7 +498,7 @@ func TestIngestCaseFileEvidence_ArchitectureViolations(t *testing.T) {
 	p := seedProject(t, projRepo)
 	cfID := createCaseFileViaHandler(t, handler, p.ID().String())
 
-	resp, err := handler.IngestCaseFileEvidence(context.Background(), gen.IngestCaseFileEvidenceRequestObject{
+	resp, err := handler.IngestCaseFileEvidence(authContext(), gen.IngestCaseFileEvidenceRequestObject{
 		Id: httpx.ParseUUIDOrZero(cfID),
 		Body: &gen.IngestEvidenceRequest{
 			Subtype:     gen.Architecture,
@@ -522,7 +522,7 @@ func TestIngestCaseFileEvidence_LicenseDependencies(t *testing.T) {
 	p := seedProject(t, projRepo)
 	cfID := createCaseFileViaHandler(t, handler, p.ID().String())
 
-	resp, err := handler.IngestCaseFileEvidence(context.Background(), gen.IngestCaseFileEvidenceRequestObject{
+	resp, err := handler.IngestCaseFileEvidence(authContext(), gen.IngestCaseFileEvidenceRequestObject{
 		Id: httpx.ParseUUIDOrZero(cfID),
 		Body: &gen.IngestEvidenceRequest{
 			Subtype:     gen.License,
@@ -547,7 +547,7 @@ func TestIngestCaseFileEvidence_NewCodeCoverage(t *testing.T) {
 	p := seedProject(t, projRepo)
 	cfID := createCaseFileViaHandler(t, handler, p.ID().String())
 
-	resp, err := handler.IngestCaseFileEvidence(context.Background(), gen.IngestCaseFileEvidenceRequestObject{
+	resp, err := handler.IngestCaseFileEvidence(authContext(), gen.IngestCaseFileEvidenceRequestObject{
 		Id: httpx.ParseUUIDOrZero(cfID),
 		Body: &gen.IngestEvidenceRequest{
 			Subtype:     gen.NewCodeCoverage,
@@ -570,7 +570,7 @@ func TestIngestCaseFileEvidence_EmptyContentReturns400(t *testing.T) {
 	p := seedProject(t, projRepo)
 	cfID := createCaseFileViaHandler(t, handler, p.ID().String())
 
-	resp, err := handler.IngestCaseFileEvidence(context.Background(), gen.IngestCaseFileEvidenceRequestObject{
+	resp, err := handler.IngestCaseFileEvidence(authContext(), gen.IngestCaseFileEvidenceRequestObject{
 		Id: httpx.ParseUUIDOrZero(cfID),
 		Body: &gen.IngestEvidenceRequest{
 			Subtype:     gen.CodeQuality,
@@ -590,7 +590,7 @@ func TestIngestCaseFileEvidence_CaseFileNotFoundReturns404(t *testing.T) {
 	findings := []gen.IngestFinding{
 		{Tool: "lint", RuleId: "r1", Severity: "error", FilePath: "a.go", Line: 1, Message: "msg", Fingerprint: "fp1"},
 	}
-	resp, err := handler.IngestCaseFileEvidence(context.Background(), gen.IngestCaseFileEvidenceRequestObject{
+	resp, err := handler.IngestCaseFileEvidence(authContext(), gen.IngestCaseFileEvidenceRequestObject{
 		Id: httpx.ParseUUIDOrZero("99999999-9999-9999-9999-999999999999"),
 		Body: &gen.IngestEvidenceRequest{
 			Subtype:     gen.CodeQuality,
@@ -614,7 +614,7 @@ func TestFinalizeCaseFile_PrecomputedVerdictSuccess(t *testing.T) {
 	rulings := []gen.Ruling{
 		{Subtype: "code_quality", Passed: true, Detail: "0 findings"},
 	}
-	resp, err := handler.FinalizeCaseFile(context.Background(), gen.FinalizeCaseFileRequestObject{
+	resp, err := handler.FinalizeCaseFile(authContext(), gen.FinalizeCaseFileRequestObject{
 		Id: httpx.ParseUUIDOrZero(cfID),
 		Body: &gen.FinalizeCaseFileRequest{
 			Verdict: gen.Verdict{
@@ -639,7 +639,7 @@ func TestFinalizeCaseFile_PrecomputedVerdictSuccess(t *testing.T) {
 func TestFinalizeCaseFile_EmptyOutcomeReturns400(t *testing.T) {
 	handler, _, _ := newMutationHandler(t)
 
-	resp, err := handler.FinalizeCaseFile(context.Background(), gen.FinalizeCaseFileRequestObject{
+	resp, err := handler.FinalizeCaseFile(authContext(), gen.FinalizeCaseFileRequestObject{
 		Id: httpx.ParseUUIDOrZero("22222222-2222-2222-2222-222222222222"),
 		Body: &gen.FinalizeCaseFileRequest{
 			Verdict: gen.Verdict{Outcome: ""},
@@ -655,7 +655,7 @@ func TestFinalizeCaseFile_CaseFileNotFoundReturns404(t *testing.T) {
 	handler, _, _ := newMutationHandler(t)
 
 	evaluatedAt := time.Date(2026, 1, 1, 12, 0, 0, 0, time.UTC)
-	resp, err := handler.FinalizeCaseFile(context.Background(), gen.FinalizeCaseFileRequestObject{
+	resp, err := handler.FinalizeCaseFile(authContext(), gen.FinalizeCaseFileRequestObject{
 		Id: httpx.ParseUUIDOrZero("99999999-9999-9999-9999-999999999999"),
 		Body: &gen.FinalizeCaseFileRequest{
 			Verdict: gen.Verdict{
@@ -683,14 +683,14 @@ func TestFinalizeCaseFile_AlreadyJudgedReturns409(t *testing.T) {
 		},
 	}
 
-	resp, err := handler.FinalizeCaseFile(context.Background(), gen.FinalizeCaseFileRequestObject{
+	resp, err := handler.FinalizeCaseFile(authContext(), gen.FinalizeCaseFileRequestObject{
 		Id: httpx.ParseUUIDOrZero(cfID), Body: body,
 	})
 	require.NoError(t, err)
 	_, found := resp.(gen.FinalizeCaseFile200JSONResponse)
 	require.True(t, found, "first finalize should succeed, got %T", resp)
 
-	resp, err = handler.FinalizeCaseFile(context.Background(), gen.FinalizeCaseFileRequestObject{
+	resp, err = handler.FinalizeCaseFile(authContext(), gen.FinalizeCaseFileRequestObject{
 		Id: httpx.ParseUUIDOrZero(cfID), Body: body,
 	})
 	require.NoError(t, err)
@@ -702,7 +702,7 @@ func TestMapFinalizeError_NotFound(t *testing.T) {
 	handler, _, _ := newMutationHandler(t)
 
 	evaluatedAt := time.Date(2026, 1, 1, 12, 0, 0, 0, time.UTC)
-	resp, err := handler.FinalizeCaseFile(context.Background(), gen.FinalizeCaseFileRequestObject{
+	resp, err := handler.FinalizeCaseFile(authContext(), gen.FinalizeCaseFileRequestObject{
 		Id: httpx.ParseUUIDOrZero("99999999-9999-9999-9999-999999999999"),
 		Body: &gen.FinalizeCaseFileRequest{
 			Verdict: gen.Verdict{Outcome: gen.Pass, EvaluatedAt: evaluatedAt},
@@ -719,7 +719,7 @@ func TestMapFinalizeError_Validation(t *testing.T) {
 	p := seedProject(t, projRepo)
 	cfID := createCaseFileViaHandler(t, handler, p.ID().String())
 
-	resp, err := handler.FinalizeCaseFile(context.Background(), gen.FinalizeCaseFileRequestObject{
+	resp, err := handler.FinalizeCaseFile(authContext(), gen.FinalizeCaseFileRequestObject{
 		Id: httpx.ParseUUIDOrZero(cfID),
 		Body: &gen.FinalizeCaseFileRequest{
 			Verdict: gen.Verdict{
@@ -744,7 +744,7 @@ func TestIngestCaseFileEvidence_WithClientSuppliedID(t *testing.T) {
 	findings := []gen.IngestFinding{
 		{Tool: "lint", RuleId: "r1", Severity: "error", FilePath: "a.go", Line: 1, Message: "msg", Fingerprint: "fp1"},
 	}
-	resp, err := handler.IngestCaseFileEvidence(context.Background(), gen.IngestCaseFileEvidenceRequestObject{
+	resp, err := handler.IngestCaseFileEvidence(authContext(), gen.IngestCaseFileEvidenceRequestObject{
 		Id: httpx.ParseUUIDOrZero(cfID),
 		Body: &gen.IngestEvidenceRequest{
 			Subtype:     gen.CodeQuality,
@@ -782,7 +782,7 @@ func TestIngestCaseFileEvidence_FileCoverageSaverCalled(t *testing.T) {
 	byFile := []gen.IngestFileCoverage{
 		{FilePath: "main.go", CoveredLines: []int32{1, 2}, UncoveredLines: []int32{3}},
 	}
-	resp, err := handler.IngestCaseFileEvidence(context.Background(), gen.IngestCaseFileEvidenceRequestObject{
+	resp, err := handler.IngestCaseFileEvidence(authContext(), gen.IngestCaseFileEvidenceRequestObject{
 		Id: httpx.ParseUUIDOrZero(cfID),
 		Body: &gen.IngestEvidenceRequest{
 			Subtype:     gen.Coverage,
@@ -814,7 +814,7 @@ func TestFinalizeCaseFile_CountersPopulated(t *testing.T) {
 		{Subtype: "code_quality", Passed: true, Detail: "0 findings"},
 		{Subtype: "coverage", Passed: true, Detail: "90%"},
 	}
-	resp, err := handler.FinalizeCaseFile(context.Background(), gen.FinalizeCaseFileRequestObject{
+	resp, err := handler.FinalizeCaseFile(authContext(), gen.FinalizeCaseFileRequestObject{
 		Id: httpx.ParseUUIDOrZero(cfID),
 		Body: &gen.FinalizeCaseFileRequest{
 			Verdict: gen.Verdict{
@@ -839,7 +839,7 @@ func TestFinalizeCaseFile_NoRulingsOmitsRulings(t *testing.T) {
 	cfID := createCaseFileViaHandler(t, handler, p.ID().String())
 
 	evaluatedAt := time.Date(2026, 1, 1, 12, 0, 0, 0, time.UTC)
-	resp, err := handler.FinalizeCaseFile(context.Background(), gen.FinalizeCaseFileRequestObject{
+	resp, err := handler.FinalizeCaseFile(authContext(), gen.FinalizeCaseFileRequestObject{
 		Id: httpx.ParseUUIDOrZero(cfID),
 		Body: &gen.FinalizeCaseFileRequest{
 			Verdict: gen.Verdict{
@@ -865,7 +865,7 @@ func TestListCaseFiles_WithGavelspaceParam(t *testing.T) {
 	)
 
 	gavelspace := "gavel"
-	resp, err := handler.ListCaseFiles(context.Background(), gen.ListCaseFilesRequestObject{
+	resp, err := handler.ListCaseFiles(authContext(), gen.ListCaseFilesRequestObject{
 		Params: gen.ListCaseFilesParams{Gavelspace: &gavelspace},
 	})
 
@@ -883,7 +883,7 @@ func TestGetCaseFile_FinderErrorReturnsError(t *testing.T) {
 		&fakeGetByKeyFinder{},
 	)
 
-	resp, err := handler.GetCaseFile(context.Background(), gen.GetCaseFileRequestObject{
+	resp, err := handler.GetCaseFile(authContext(), gen.GetCaseFileRequestObject{
 		Id: httpx.ParseUUIDOrZero("22222222-2222-2222-2222-222222222222"),
 	})
 
@@ -907,7 +907,7 @@ func TestListFindings_WithAllFilterParams(t *testing.T) {
 	status := "new"
 	filePath := "main.go"
 	gavelspace := "gavel"
-	resp, err := handler.ListFindings(context.Background(), gen.ListFindingsRequestObject{
+	resp, err := handler.ListFindings(authContext(), gen.ListFindingsRequestObject{
 		Params: gen.ListFindingsParams{
 			ProjectId:  &projectUUID,
 			CasefileId: &cfUUID,
@@ -934,7 +934,7 @@ func TestListFindings_FinderErrorReturnsError(t *testing.T) {
 	)
 
 	cfUUID := httpx.ParseUUIDOrZero("22222222-2222-2222-2222-222222222222")
-	resp, err := handler.ListFindings(context.Background(), gen.ListFindingsRequestObject{
+	resp, err := handler.ListFindings(authContext(), gen.ListFindingsRequestObject{
 		Params: gen.ListFindingsParams{CasefileId: &cfUUID},
 	})
 

@@ -48,7 +48,7 @@ func TestExecuteDeltaComputedAgainstBaseline(t *testing.T) {
 
 	handler := newHandler(cfRepo, projRepo)
 
-	cmd, err := finalize.NewCommand(caseF.ID().String(),
+	cmd, err := finalize.NewCommand(testTenant.String(), caseF.ID().String(),
 		finalize.WithFingerprints([]string{"fp-new", "fp-existing"}),
 	)
 	require.NoError(t, err)
@@ -78,7 +78,7 @@ func TestExecuteSurfacesPreviousCoverageFromBaseline(t *testing.T) {
 	require.NoError(t, cfRepo.Save(context.Background(), caseF))
 
 	handler := newHandler(cfRepo, projRepo)
-	cmd, err := finalize.NewCommand(caseF.ID().String(),
+	cmd, err := finalize.NewCommand(testTenant.String(), caseF.ID().String(),
 		finalize.WithFingerprints([]string{"fp-1"}),
 	)
 	require.NoError(t, err)
@@ -106,7 +106,7 @@ func TestExecuteDeltaEmptyWhenNoBaseline(t *testing.T) {
 
 	handler := newHandler(cfRepo, projRepo)
 
-	cmd, err := finalize.NewCommand(caseF.ID().String(),
+	cmd, err := finalize.NewCommand(testTenant.String(), caseF.ID().String(),
 		finalize.WithFingerprints([]string{"fp-1"}),
 	)
 	require.NoError(t, err)
@@ -132,7 +132,7 @@ func TestExecuteUpdatesBaselineWhenVerdictPasses(t *testing.T) {
 
 	handler := newHandler(cfRepo, projRepo)
 
-	cmd, err := finalize.NewCommand(caseF.ID().String(),
+	cmd, err := finalize.NewCommand(testTenant.String(), caseF.ID().String(),
 		finalize.WithFingerprints([]string{"fp-1"}),
 		finalize.WithArchIDs([]string{"arch-1"}),
 	)
@@ -165,7 +165,7 @@ func TestExecuteSeedsBaselineOnFirstFailure(t *testing.T) {
 
 	handler := newHandler(cfRepo, projRepo)
 
-	cmd, err := finalize.NewCommand(caseF.ID().String(),
+	cmd, err := finalize.NewCommand(testTenant.String(), caseF.ID().String(),
 		finalize.WithFingerprints([]string{"fp-1", "fp-2"}),
 		finalize.WithArchIDs([]string{"arch-1"}),
 	)
@@ -200,7 +200,7 @@ func TestExecuteRatchetsBaselineWhenVerdictFails(t *testing.T) {
 
 	handler := newHandler(cfRepo, projRepo)
 
-	cmd, err := finalize.NewCommand(caseF.ID().String(),
+	cmd, err := finalize.NewCommand(testTenant.String(), caseF.ID().String(),
 		finalize.WithFingerprints([]string{"fp-existing", "fp-new"}),
 		finalize.WithArchIDs([]string{"a1", "a-new"}),
 	)
@@ -230,7 +230,7 @@ func TestExecuteArchDeltaIncludedInResult(t *testing.T) {
 
 	handler := newHandler(cfRepo, projRepo)
 
-	cmd, err := finalize.NewCommand(caseF.ID().String(),
+	cmd, err := finalize.NewCommand(testTenant.String(), caseF.ID().String(),
 		finalize.WithArchDelta(finalize.ArchDeltaInput{
 			NewCount:   2,
 			FixedCount: 1,
@@ -260,7 +260,7 @@ func TestExecuteQuickSkipsArchBaseline(t *testing.T) {
 
 	handler := newHandler(cfRepo, projRepo)
 
-	cmd, err := finalize.NewCommand(caseF.ID().String(),
+	cmd, err := finalize.NewCommand(testTenant.String(), caseF.ID().String(),
 		finalize.WithFingerprints([]string{"fp-1"}),
 		finalize.WithArchIDs([]string{"new-arch"}),
 		finalize.WithQuick(true),
@@ -292,7 +292,7 @@ func TestExecuteAbsoluteSkipsDeltaAndBaseline(t *testing.T) {
 
 	handler := newHandler(cfRepo, projRepo)
 
-	cmd, err := finalize.NewCommand(caseF.ID().String(),
+	cmd, err := finalize.NewCommand(testTenant.String(), caseF.ID().String(),
 		finalize.WithFingerprints([]string{"fp-existing"}),
 		finalize.WithAbsolute(true),
 	)
@@ -318,7 +318,7 @@ func TestExecuteAbsoluteDoesNotUpdateBaseline(t *testing.T) {
 
 	handler := newHandler(cfRepo, projRepo)
 
-	cmd, err := finalize.NewCommand(caseF.ID().String(),
+	cmd, err := finalize.NewCommand(testTenant.String(), caseF.ID().String(),
 		finalize.WithFingerprints([]string{"fp-1"}),
 		finalize.WithAbsolute(true),
 	)
@@ -417,7 +417,7 @@ func TestExecuteMinResolvedFailsWhenBelowThreshold(t *testing.T) {
 	require.NoError(t, cfRepo.Save(context.Background(), caseF))
 
 	handler := newHandler(cfRepo, projRepo)
-	cmd, err := finalize.NewCommand(caseF.ID().String(),
+	cmd, err := finalize.NewCommand(testTenant.String(), caseF.ID().String(),
 		finalize.WithFingerprints([]string{"fp-existing"}),
 	)
 	require.NoError(t, err)
@@ -452,7 +452,7 @@ func TestExecuteMinResolvedPassesWhenAboveThreshold(t *testing.T) {
 	require.NoError(t, cfRepo.Save(context.Background(), caseF))
 
 	handler := newHandler(cfRepo, projRepo)
-	cmd, err := finalize.NewCommand(caseF.ID().String(),
+	cmd, err := finalize.NewCommand(testTenant.String(), caseF.ID().String(),
 		finalize.WithFingerprints([]string{"fp-existing"}),
 	)
 	require.NoError(t, err)
@@ -487,7 +487,7 @@ func TestExecuteCoverageMinDeltaFailsWhenCoverageDrops(t *testing.T) {
 	require.NoError(t, cfRepo.Save(context.Background(), caseF))
 
 	handler := newHandler(cfRepo, projRepo)
-	cmd, err := finalize.NewCommand(caseF.ID().String())
+	cmd, err := finalize.NewCommand(testTenant.String(), caseF.ID().String())
 	require.NoError(t, err)
 
 	result, err := handler.Execute(context.Background(), cmd)
@@ -522,7 +522,7 @@ func TestExecuteCoverageMinDeltaPassesWhenCoverageSame(t *testing.T) {
 	require.NoError(t, cfRepo.Save(context.Background(), caseF))
 
 	handler := newHandler(cfRepo, projRepo)
-	cmd, err := finalize.NewCommand(caseF.ID().String())
+	cmd, err := finalize.NewCommand(testTenant.String(), caseF.ID().String())
 	require.NoError(t, err)
 
 	result, err := handler.Execute(context.Background(), cmd)
@@ -543,7 +543,7 @@ func TestExecuteDerivesFingerprointsFromEvidenceWhenNotProvided(t *testing.T) {
 
 	handler := newHandler(cfRepo, projRepo)
 
-	cmd, err := finalize.NewCommand(caseF.ID().String())
+	cmd, err := finalize.NewCommand(testTenant.String(), caseF.ID().String())
 	require.NoError(t, err)
 
 	result, err := handler.Execute(context.Background(), cmd)
@@ -574,7 +574,7 @@ func TestExecuteWritesCountersAfterEvaluation(t *testing.T) {
 
 	handler := newHandlerWithCounterWriter(cfRepo, projRepo, counterWr)
 
-	cmd, err := finalize.NewCommand(caseF.ID().String(),
+	cmd, err := finalize.NewCommand(testTenant.String(), caseF.ID().String(),
 		finalize.WithFingerprints([]string{"fp-new", "fp-existing"}),
 	)
 	require.NoError(t, err)
@@ -602,7 +602,7 @@ func TestExecuteSeedsDefaultBranchBaselineWhenAbsent(t *testing.T) {
 
 	handler := newHandler(cfRepo, projRepo)
 
-	cmd, err := finalize.NewCommand(caseF.ID().String(),
+	cmd, err := finalize.NewCommand(testTenant.String(), caseF.ID().String(),
 		finalize.WithFingerprints([]string{"fp-1", "fp-2"}),
 		finalize.WithArchIDs([]string{"arch-1"}),
 	)
@@ -639,7 +639,7 @@ func TestExecuteDoesNotSeedDefaultBranchWhenAlreadyPresent(t *testing.T) {
 
 	handler := newHandler(cfRepo, projRepo)
 
-	cmd, err := finalize.NewCommand(caseF.ID().String(),
+	cmd, err := finalize.NewCommand(testTenant.String(), caseF.ID().String(),
 		finalize.WithFingerprints([]string{"fp-new"}),
 		finalize.WithArchIDs([]string{"arch-new"}),
 	)
@@ -667,7 +667,7 @@ func TestExecuteWithPrecomputedVerdictUsesProvidedOutcome(t *testing.T) {
 
 	handler := newHandler(cfRepo, projRepo)
 
-	cmd, err := finalize.NewCommand(caseF.ID().String(),
+	cmd, err := finalize.NewCommand(testTenant.String(), caseF.ID().String(),
 		finalize.WithPrecomputedVerdict(finalize.PrecomputedVerdict{
 			Outcome:     "fail",
 			EvaluatedAt: time.Now().UTC(),
@@ -693,7 +693,7 @@ func TestExecuteWithPrecomputedVerdictComputesDelta(t *testing.T) {
 
 	handler := newHandler(cfRepo, projRepo)
 
-	cmd, err := finalize.NewCommand(caseF.ID().String(),
+	cmd, err := finalize.NewCommand(testTenant.String(), caseF.ID().String(),
 		finalize.WithPrecomputedVerdict(finalize.PrecomputedVerdict{
 			Outcome:     "fail",
 			EvaluatedAt: time.Now().UTC(),
@@ -722,7 +722,7 @@ func TestExecuteWithPrecomputedVerdictSeedsBaseline(t *testing.T) {
 
 	handler := newHandler(cfRepo, projRepo)
 
-	cmd, err := finalize.NewCommand(caseF.ID().String(),
+	cmd, err := finalize.NewCommand(testTenant.String(), caseF.ID().String(),
 		finalize.WithPrecomputedVerdict(finalize.PrecomputedVerdict{
 			Outcome:     "fail",
 			EvaluatedAt: time.Now().UTC(),
@@ -754,7 +754,7 @@ func TestExecuteWithPrecomputedVerdictRatchetsBaseline(t *testing.T) {
 
 	handler := newHandler(cfRepo, projRepo)
 
-	cmd, err := finalize.NewCommand(caseF.ID().String(),
+	cmd, err := finalize.NewCommand(testTenant.String(), caseF.ID().String(),
 		finalize.WithFingerprints([]string{"fp-existing", "fp-new"}),
 		finalize.WithPrecomputedVerdict(finalize.PrecomputedVerdict{
 			Outcome:     "fail",
@@ -785,7 +785,7 @@ func TestExecuteWithPrecomputedVerdictWritesCounters(t *testing.T) {
 
 	handler := newHandlerWithCounterWriter(cfRepo, projRepo, counterWr)
 
-	cmd, err := finalize.NewCommand(caseF.ID().String(),
+	cmd, err := finalize.NewCommand(testTenant.String(), caseF.ID().String(),
 		finalize.WithPrecomputedVerdict(finalize.PrecomputedVerdict{
 			Outcome:     "pass",
 			EvaluatedAt: time.Now().UTC(),
@@ -802,7 +802,7 @@ func TestExecuteWithPrecomputedVerdictWritesCounters(t *testing.T) {
 }
 
 func TestNewCommandRejectsEmptyPrecomputedOutcome(t *testing.T) {
-	_, err := finalize.NewCommand("some-id",
+	_, err := finalize.NewCommand(testTenant.String(), "some-id",
 		finalize.WithPrecomputedVerdict(finalize.PrecomputedVerdict{
 			Outcome:     "",
 			EvaluatedAt: time.Now().UTC(),
@@ -828,7 +828,7 @@ func TestExecuteDeduplicatesFingerprintsAcrossEvidence(t *testing.T) {
 
 	handler := newHandlerWithCounterWriter(cfRepo, projRepo, counterWr)
 
-	cmd, err := finalize.NewCommand(caseFile.ID().String())
+	cmd, err := finalize.NewCommand(testTenant.String(), caseFile.ID().String())
 	require.NoError(t, err)
 
 	result, err := handler.Execute(context.Background(), cmd)
@@ -901,7 +901,7 @@ func TestNewHandlerWithLoggerOption(t *testing.T) {
 	require.NoError(t, cfRepo.Save(context.Background(), caseF))
 
 	handler := finalize.NewHandler(cfRepo, projRepo, classifyH, judgeH, nil, finalize.WithLogger(logger))
-	cmd, err := finalize.NewCommand(caseF.ID().String())
+	cmd, err := finalize.NewCommand(testTenant.String(), caseF.ID().String())
 	require.NoError(t, err)
 
 	_, err = handler.Execute(context.Background(), cmd)
@@ -910,7 +910,7 @@ func TestNewHandlerWithLoggerOption(t *testing.T) {
 
 func TestExecuteInvalidCaseFileID(t *testing.T) {
 	handler := newHandler(newFakeCaseFileRepo(), newFakeProjectRepo())
-	cmd, err := finalize.NewCommand("not-a-uuid")
+	cmd, err := finalize.NewCommand(testTenant.String(), "not-a-uuid")
 	require.NoError(t, err)
 
 	_, err = handler.Execute(context.Background(), cmd)
@@ -923,7 +923,7 @@ func TestExecuteCaseFileNotFound(t *testing.T) {
 	cfRepo.findErr = errors.New("db error")
 	handler := newHandler(cfRepo, newFakeProjectRepo())
 
-	cmd, err := finalize.NewCommand("00000000-0000-0000-0000-000000000001")
+	cmd, err := finalize.NewCommand(testTenant.String(), "00000000-0000-0000-0000-000000000001")
 	require.NoError(t, err)
 
 	_, err = handler.Execute(context.Background(), cmd)
@@ -944,7 +944,7 @@ func TestExecuteProjectNotFound(t *testing.T) {
 	projRepo.store = make(map[string]projectmodel.Project)
 
 	handler := newHandler(cfRepo, projRepo)
-	cmd, err := finalize.NewCommand(caseF.ID().String())
+	cmd, err := finalize.NewCommand(testTenant.String(), caseF.ID().String())
 	require.NoError(t, err)
 
 	_, err = handler.Execute(context.Background(), cmd)
@@ -966,7 +966,7 @@ func TestExecuteClassifyError(t *testing.T) {
 	cfRepo.fpErr = errors.New("db timeout")
 
 	handler := newHandler(cfRepo, projRepo)
-	cmd, err := finalize.NewCommand(caseF.ID().String())
+	cmd, err := finalize.NewCommand(testTenant.String(), caseF.ID().String())
 	require.NoError(t, err)
 
 	_, err = handler.Execute(context.Background(), cmd)
@@ -986,7 +986,7 @@ func TestExecuteCounterWriterError(t *testing.T) {
 	require.NoError(t, cfRepo.Save(context.Background(), caseF))
 
 	handler := newHandlerWithCounterWriter(cfRepo, projRepo, counterWr)
-	cmd, err := finalize.NewCommand(caseF.ID().String())
+	cmd, err := finalize.NewCommand(testTenant.String(), caseF.ID().String())
 	require.NoError(t, err)
 
 	result, err := handler.Execute(context.Background(), cmd)
@@ -1007,7 +1007,7 @@ func TestExecuteBaselineSaveError(t *testing.T) {
 	projRepo.saveErr = errors.New("disk full")
 
 	handler := newHandler(cfRepo, projRepo)
-	cmd, err := finalize.NewCommand(caseF.ID().String(),
+	cmd, err := finalize.NewCommand(testTenant.String(), caseF.ID().String(),
 		finalize.WithFingerprints([]string{"fp-1"}),
 	)
 	require.NoError(t, err)
@@ -1031,7 +1031,7 @@ func TestExecuteBaselineSaveErrorOnUpdate(t *testing.T) {
 	projRepo.saveErr = errors.New("disk full")
 
 	handler := newHandler(cfRepo, projRepo)
-	cmd, err := finalize.NewCommand(caseF.ID().String(),
+	cmd, err := finalize.NewCommand(testTenant.String(), caseF.ID().String(),
 		finalize.WithFingerprints([]string{"fp-1"}),
 	)
 	require.NoError(t, err)
@@ -1052,7 +1052,7 @@ func TestExecutePrecomputedVerdictInvalidSubtype(t *testing.T) {
 	require.NoError(t, cfRepo.Save(context.Background(), caseF))
 
 	handler := newHandler(cfRepo, projRepo)
-	cmd, err := finalize.NewCommand(caseF.ID().String(),
+	cmd, err := finalize.NewCommand(testTenant.String(), caseF.ID().String(),
 		finalize.WithPrecomputedVerdict(finalize.PrecomputedVerdict{
 			Outcome:     "pass",
 			EvaluatedAt: time.Now().UTC(),
@@ -1079,7 +1079,7 @@ func TestExecutePrecomputedVerdictSaveError(t *testing.T) {
 	cfRepo.saveErr = errors.New("disk full")
 
 	handler := newHandler(cfRepo, projRepo)
-	cmd, err := finalize.NewCommand(caseF.ID().String(),
+	cmd, err := finalize.NewCommand(testTenant.String(), caseF.ID().String(),
 		finalize.WithPrecomputedVerdict(finalize.PrecomputedVerdict{
 			Outcome:     "pass",
 			EvaluatedAt: time.Now().UTC(),
@@ -1113,7 +1113,7 @@ func TestExecuteExtractsArchIDsFromEvidence(t *testing.T) {
 	require.NoError(t, cfRepo.Save(context.Background(), caseF))
 
 	handler := newHandler(cfRepo, projRepo)
-	cmd, err := finalize.NewCommand(caseF.ID().String())
+	cmd, err := finalize.NewCommand(testTenant.String(), caseF.ID().String())
 	require.NoError(t, err)
 
 	result, err := handler.Execute(context.Background(), cmd)

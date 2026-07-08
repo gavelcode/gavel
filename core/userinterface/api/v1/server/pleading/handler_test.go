@@ -125,7 +125,7 @@ func TestListProjectPleadings_ReturnsItems(t *testing.T) {
 	getByKeyFinder := &fakeGetByKeyFinder{detail: testProjectDetail()}
 	handler := newTestHandler(listFinder, &fakeGetFinder{}, getByKeyFinder)
 
-	resp, err := handler.ListProjectPleadings(context.Background(), gen.ListProjectPleadingsRequestObject{Key: "core"})
+	resp, err := handler.ListProjectPleadings(authContext(), gen.ListProjectPleadingsRequestObject{Key: "core"})
 
 	require.NoError(t, err)
 	jsonResp, ok := resp.(gen.ListProjectPleadings200JSONResponse)
@@ -139,7 +139,7 @@ func TestListProjectPleadings_ProjectNotFoundReturns404(t *testing.T) {
 	getByKeyFinder := &fakeGetByKeyFinder{err: errNotFound}
 	handler := newTestHandler(&fakeListFinder{}, &fakeGetFinder{}, getByKeyFinder)
 
-	resp, err := handler.ListProjectPleadings(context.Background(), gen.ListProjectPleadingsRequestObject{Key: "missing"})
+	resp, err := handler.ListProjectPleadings(authContext(), gen.ListProjectPleadingsRequestObject{Key: "missing"})
 
 	require.NoError(t, err)
 	_, ok := resp.(gen.ListProjectPleadings404JSONResponse)
@@ -149,7 +149,7 @@ func TestListProjectPleadings_ProjectNotFoundReturns404(t *testing.T) {
 func TestFileProjectPleading_NilBodyReturns400(t *testing.T) {
 	handler := newTestHandler(&fakeListFinder{}, &fakeGetFinder{}, &fakeGetByKeyFinder{})
 
-	resp, err := handler.FileProjectPleading(context.Background(), gen.FileProjectPleadingRequestObject{
+	resp, err := handler.FileProjectPleading(authContext(), gen.FileProjectPleadingRequestObject{
 		Key:  "core",
 		Body: nil,
 	})
@@ -171,7 +171,7 @@ func TestFileProjectPleading_ProjectNotFoundReturns404(t *testing.T) {
 		TargetBranch: "main",
 		CommitSha:    "abc123",
 	}
-	resp, err := handler.FileProjectPleading(context.Background(), gen.FileProjectPleadingRequestObject{
+	resp, err := handler.FileProjectPleading(authContext(), gen.FileProjectPleadingRequestObject{
 		Key:  "missing",
 		Body: &body,
 	})
@@ -223,7 +223,7 @@ func TestResolvePleading_SuccessReturns204(t *testing.T) {
 		Number: 42, Title: "PR Title", Petitioner: "dev@example.com",
 		SourceBranch: "feat/test", TargetBranch: "main", CommitSha: "abc123",
 	}
-	fileResp, err := handler.FileProjectPleading(context.Background(), gen.FileProjectPleadingRequestObject{
+	fileResp, err := handler.FileProjectPleading(authContext(), gen.FileProjectPleadingRequestObject{
 		Key: "core", Body: &body,
 	})
 	require.NoError(t, err)
@@ -277,7 +277,7 @@ func TestFileProjectPleading_SuccessReturns201(t *testing.T) {
 		Number: 1, Title: "First PR", Petitioner: "alice@example.com",
 		SourceBranch: "feat/one", TargetBranch: "main", CommitSha: "def456",
 	}
-	resp, err := handler.FileProjectPleading(context.Background(), gen.FileProjectPleadingRequestObject{
+	resp, err := handler.FileProjectPleading(authContext(), gen.FileProjectPleadingRequestObject{
 		Key: "core", Body: &body,
 	})
 
@@ -295,7 +295,7 @@ func TestFileProjectPleading_InvalidCommandReturns400(t *testing.T) {
 		Number: 0, Title: "", Petitioner: "",
 		SourceBranch: "", TargetBranch: "", CommitSha: "",
 	}
-	resp, err := handler.FileProjectPleading(context.Background(), gen.FileProjectPleadingRequestObject{
+	resp, err := handler.FileProjectPleading(authContext(), gen.FileProjectPleadingRequestObject{
 		Key: "core", Body: &body,
 	})
 
@@ -311,7 +311,7 @@ func TestListProjectPleadings_WithStatusParam(t *testing.T) {
 	handler := newTestHandler(listFinder, &fakeGetFinder{}, getByKeyFinder)
 
 	status := gen.ListProjectPleadingsParamsStatus("open")
-	resp, err := handler.ListProjectPleadings(context.Background(), gen.ListProjectPleadingsRequestObject{
+	resp, err := handler.ListProjectPleadings(authContext(), gen.ListProjectPleadingsRequestObject{
 		Key:    "core",
 		Params: gen.ListProjectPleadingsParams{Status: &status},
 	})
@@ -327,7 +327,7 @@ func TestListProjectPleadings_FinderErrorReturnsError(t *testing.T) {
 	getByKeyFinder := &fakeGetByKeyFinder{detail: testProjectDetail()}
 	handler := newTestHandler(listFinder, &fakeGetFinder{}, getByKeyFinder)
 
-	resp, err := handler.ListProjectPleadings(context.Background(), gen.ListProjectPleadingsRequestObject{Key: "core"})
+	resp, err := handler.ListProjectPleadings(authContext(), gen.ListProjectPleadingsRequestObject{Key: "core"})
 
 	require.Error(t, err)
 	assert.Nil(t, resp)

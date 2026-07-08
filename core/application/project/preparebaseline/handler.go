@@ -2,10 +2,12 @@ package preparebaseline
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"log/slog"
 
 	"github.com/usegavel/gavel/core/domain/casefile/model/evidence/finding"
+	"github.com/usegavel/gavel/core/domain/iam/model/tenant"
 )
 
 type Handler struct {
@@ -40,31 +42,36 @@ func WithBaselineLogger(log *slog.Logger) HandlerOption {
 }
 
 func (h *Handler) Execute(ctx context.Context, cmd Command) (Result, error) {
+	tenantID, err := tenant.ParseTenantID(cmd.TenantID())
+	if err != nil {
+		return Result{}, fmt.Errorf("tenant id: %w", err)
+	}
+
 	var baselines []ProjectBaseline
 
 	for _, input := range cmd.Projects() {
-		bl := h.prepareProject(ctx, input)
+		bl := h.prepareProject(ctx, tenantID, input)
 		baselines = append(baselines, bl)
 	}
 
 	return Result{Baselines: baselines}, nil
 }
 
-func (h *Handler) prepareProject(ctx context.Context, input ProjectInput) ProjectBaseline {
+func (h *Handler) prepareProject(ctx context.Context, tenantID tenant.TenantID, input ProjectInput) ProjectBaseline {
 	if h.fetcher != nil {
 		remote, err := h.fetcher.FetchBaseline(ctx, input.Name, input.DefaultBranch)
 		if err != nil {
 			h.log.Warn("server baseline unavailable", "project", input.Name, "error", err)
 		} else if remote != nil && remote.HasPrevious {
-			return h.applyRemoteBaseline(ctx, input, remote)
+			return h.applyRemoteBaseline(ctx, tenantID, input, remote)
 		}
 	}
 
-	return h.applyLocalBaseline(ctx, input)
+	return h.applyLocalBaseline(ctx, tenantID, input)
 }
 
-func (h *Handler) applyRemoteBaseline(ctx context.Context, input ProjectInput, remote *RemoteBaseline) ProjectBaseline {
-	project, err := h.projects.FindByName(ctx, input.Name)
+func (h *Handler) applyRemoteBaseline(ctx context.Context, tenantID tenant.TenantID, input ProjectInput, remote *RemoteBaseline) ProjectBaseline {
+	project, err := h.projects.FindByName(ctx, tenantID, input.Name)
 	if err != nil {
 		h.log.Warn("project not found for baseline", "project", input.Name, "error", err)
 		return ProjectBaseline{ProjectName: input.Name}
@@ -89,8 +96,8 @@ func (h *Handler) applyRemoteBaseline(ctx context.Context, input ProjectInput, r
 	}
 }
 
-func (h *Handler) applyLocalBaseline(ctx context.Context, input ProjectInput) ProjectBaseline {
-	project, err := h.projects.FindByName(ctx, input.Name)
+func (h *Handler) applyLocalBaseline(ctx context.Context, tenantID tenant.TenantID, input ProjectInput) ProjectBaseline {
+	project, err := h.projects.FindByName(ctx, tenantID, input.Name)
 	if err != nil {
 		h.log.Debug("project not found for baseline", "project", input.Name)
 		return ProjectBaseline{ProjectName: input.Name}

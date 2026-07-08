@@ -12,10 +12,13 @@ import (
 	"github.com/usegavel/gavel/core/application/casefile/createcasefile"
 	"github.com/usegavel/gavel/core/application/casefile/evidencedto"
 	"github.com/usegavel/gavel/core/application/casefile/ingestevidence"
+	"github.com/usegavel/gavel/core/domain/iam/model/tenant"
 	projectmodel "github.com/usegavel/gavel/core/domain/project/model"
 	casefilememory "github.com/usegavel/gavel/core/infrastructure/casefile/memory"
 	projectmemory "github.com/usegavel/gavel/core/infrastructure/project/memory"
 )
+
+var testTenantExternal = tenant.NewTenantID(uuid.MustParse("22222222-2222-2222-2222-222222222222"))
 
 var testTime = time.Date(2026, time.June, 10, 12, 0, 0, 0, time.UTC)
 
@@ -55,13 +58,13 @@ func TestNewCommandRejectsInvalidInputs(t *testing.T) {
 
 func seedCaseFile(t *testing.T, caseFiles *casefilememory.CaseFileRepository, projects *projectmemory.ProjectRepository) string {
 	t.Helper()
-	project, err := projectmodel.NewProject("p", "P", "//...")
+	project, err := projectmodel.NewProject(testTenantExternal, "p", "P", "//...")
 	require.NoError(t, err)
 	project.ClearEvents()
 	require.NoError(t, projects.Save(context.Background(), project))
 
 	h := createcasefile.NewHandler(caseFiles, projects)
-	cmd, err := createcasefile.NewCommand(project.ID().String(), "abc123", "main", testTime)
+	cmd, err := createcasefile.NewCommand(testTenantExternal.String(), project.ID().String(), "abc123", "main", testTime)
 	require.NoError(t, err)
 	res, err := h.Execute(context.Background(), cmd)
 	require.NoError(t, err)

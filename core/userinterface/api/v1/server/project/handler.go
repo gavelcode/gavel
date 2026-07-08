@@ -12,6 +12,7 @@ import (
 	"github.com/usegavel/gavel/core/application/shared/apperr"
 	"github.com/usegavel/gavel/core/userinterface/api/v1/gen"
 	"github.com/usegavel/gavel/core/userinterface/api/v1/server/httpx"
+	auth "github.com/usegavel/gavel/core/userinterface/api/v1/server/httpx/auth"
 )
 
 type Deps struct {
@@ -31,9 +32,14 @@ func New(deps Deps) *Handler {
 }
 
 func (h *Handler) ListProjects(ctx context.Context, req gen.ListProjectsRequestObject) (gen.ListProjectsResponseObject, error) {
+	principal, ok := auth.PrincipalFromContext(ctx)
+	if !ok {
+		return gen.ListProjects401JSONResponse{UnauthorizedJSONResponse: httpx.Unauthorized("unauthenticated")}, nil
+	}
+
 	limit, offset := httpx.PageFromCursor(req.Params.Limit, req.Params.Cursor)
 
-	q, err := projectlist.NewQuery(limit, offset)
+	q, err := projectlist.NewQuery(principal.TenantID, limit, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -50,6 +56,10 @@ func (h *Handler) ListProjects(ctx context.Context, req gen.ListProjectsRequestO
 }
 
 func (h *Handler) CreateProject(ctx context.Context, req gen.CreateProjectRequestObject) (gen.CreateProjectResponseObject, error) {
+	principal, ok := auth.PrincipalFromContext(ctx)
+	if !ok {
+		return gen.CreateProject401JSONResponse{UnauthorizedJSONResponse: httpx.Unauthorized("unauthenticated")}, nil
+	}
 	if req.Body == nil {
 		return gen.CreateProject400JSONResponse{BadRequestJSONResponse: httpx.BadRequest("missing body")}, nil
 	}
@@ -57,7 +67,7 @@ func (h *Handler) CreateProject(ctx context.Context, req gen.CreateProjectReques
 	if req.Body.TargetPattern != nil {
 		target = *req.Body.TargetPattern
 	}
-	cmd, err := projectcreate.NewCommand(req.Body.Key, req.Body.Name, target)
+	cmd, err := projectcreate.NewCommand(principal.TenantID, req.Body.Key, req.Body.Name, target)
 	if err != nil {
 		return gen.CreateProject400JSONResponse{BadRequestJSONResponse: httpx.BadRequest(err.Error())}, nil
 	}
@@ -76,7 +86,11 @@ func (h *Handler) CreateProject(ctx context.Context, req gen.CreateProjectReques
 }
 
 func (h *Handler) GetProject(ctx context.Context, req gen.GetProjectRequestObject) (gen.GetProjectResponseObject, error) {
-	detail, err := h.fetchProjectDetail(ctx, string(req.Key))
+	principal, ok := auth.PrincipalFromContext(ctx)
+	if !ok {
+		return gen.GetProject401JSONResponse{UnauthorizedJSONResponse: httpx.Unauthorized("unauthenticated")}, nil
+	}
+	detail, err := h.fetchProjectDetail(ctx, principal.TenantID, string(req.Key))
 	if err != nil {
 		if apperr.Of(err) == apperr.NotFound {
 			return gen.GetProject404JSONResponse{NotFoundJSONResponse: httpx.NotFound("project not found")}, nil
@@ -87,10 +101,14 @@ func (h *Handler) GetProject(ctx context.Context, req gen.GetProjectRequestObjec
 }
 
 func (h *Handler) UpdateProjectQualityGate(ctx context.Context, req gen.UpdateProjectQualityGateRequestObject) (gen.UpdateProjectQualityGateResponseObject, error) {
+	principal, ok := auth.PrincipalFromContext(ctx)
+	if !ok {
+		return gen.UpdateProjectQualityGate401JSONResponse{UnauthorizedJSONResponse: httpx.Unauthorized("unauthenticated")}, nil
+	}
 	if req.Body == nil {
 		return gen.UpdateProjectQualityGate400JSONResponse{BadRequestJSONResponse: httpx.BadRequest("missing body")}, nil
 	}
-	detail, err := h.fetchProjectDetail(ctx, string(req.Key))
+	detail, err := h.fetchProjectDetail(ctx, principal.TenantID, string(req.Key))
 	if err != nil {
 		if apperr.Of(err) == apperr.NotFound {
 			return gen.UpdateProjectQualityGate404JSONResponse{NotFoundJSONResponse: httpx.NotFound("project not found")}, nil
@@ -101,7 +119,7 @@ func (h *Handler) UpdateProjectQualityGate(ctx context.Context, req gen.UpdatePr
 	if err != nil {
 		return gen.UpdateProjectQualityGate400JSONResponse{BadRequestJSONResponse: httpx.BadRequest(err.Error())}, nil
 	}
-	cmd, err := updatequalitygate.NewCommand(detail.ID, input)
+	cmd, err := updatequalitygate.NewCommand(principal.TenantID, detail.ID, input)
 	if err != nil {
 		return gen.UpdateProjectQualityGate400JSONResponse{BadRequestJSONResponse: httpx.BadRequest(err.Error())}, nil
 	}
@@ -119,17 +137,21 @@ func (h *Handler) UpdateProjectQualityGate(ctx context.Context, req gen.UpdatePr
 }
 
 func (h *Handler) UpdateProjectLanguages(ctx context.Context, req gen.UpdateProjectLanguagesRequestObject) (gen.UpdateProjectLanguagesResponseObject, error) {
+	principal, ok := auth.PrincipalFromContext(ctx)
+	if !ok {
+		return gen.UpdateProjectLanguages401JSONResponse{UnauthorizedJSONResponse: httpx.Unauthorized("unauthenticated")}, nil
+	}
 	if req.Body == nil {
 		return gen.UpdateProjectLanguages400JSONResponse{BadRequestJSONResponse: httpx.BadRequest("missing body")}, nil
 	}
-	detail, err := h.fetchProjectDetail(ctx, string(req.Key))
+	detail, err := h.fetchProjectDetail(ctx, principal.TenantID, string(req.Key))
 	if err != nil {
 		if apperr.Of(err) == apperr.NotFound {
 			return gen.UpdateProjectLanguages404JSONResponse{NotFoundJSONResponse: httpx.NotFound("project not found")}, nil
 		}
 		return nil, err
 	}
-	cmd, err := updatelanguages.NewCommand(detail.ID, req.Body.Languages)
+	cmd, err := updatelanguages.NewCommand(principal.TenantID, detail.ID, req.Body.Languages)
 	if err != nil {
 		return gen.UpdateProjectLanguages400JSONResponse{BadRequestJSONResponse: httpx.BadRequest(err.Error())}, nil
 	}
@@ -146,8 +168,8 @@ func (h *Handler) UpdateProjectLanguages(ctx context.Context, req gen.UpdateProj
 	return gen.UpdateProjectLanguages204Response{}, nil
 }
 
-func (h *Handler) fetchProjectDetail(ctx context.Context, key string) (*projectgetbykey.ProjectDetail, error) {
-	q, err := projectgetbykey.NewQuery(key)
+func (h *Handler) fetchProjectDetail(ctx context.Context, tenantID, key string) (*projectgetbykey.ProjectDetail, error) {
+	q, err := projectgetbykey.NewQuery(tenantID, key)
 	if err != nil {
 		return nil, err
 	}

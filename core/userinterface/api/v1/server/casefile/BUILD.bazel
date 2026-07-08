@@ -24,6 +24,7 @@ go_library(
         "//core/application/shared/apperr",
         "//core/userinterface/api/v1/gen",
         "//core/userinterface/api/v1/server/httpx",
+        "//core/userinterface/api/v1/server/httpx/auth",
     ],
 )
 
@@ -47,12 +48,14 @@ go_test(
         "//core/application/project/getbaseline",
         "//core/application/project/getbykey",
         "//core/application/project/projectview",
+        "//core/domain/iam/model/tenant",
         "//core/domain/project/model",
         "//core/domain/shared/failure",
         "//core/infrastructure/casefile/memory",
         "//core/infrastructure/project/memory",
         "//core/userinterface/api/v1/gen",
         "//core/userinterface/api/v1/server/httpx",
+        "//core/userinterface/api/v1/server/httpx/auth",
         "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//require",
     ],

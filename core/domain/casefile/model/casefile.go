@@ -12,6 +12,7 @@ import (
 	"github.com/usegavel/gavel/core/domain/casefile/model/evidence/toolexecution"
 	"github.com/usegavel/gavel/core/domain/casefile/model/tracking"
 	"github.com/usegavel/gavel/core/domain/casefile/model/verdict"
+	"github.com/usegavel/gavel/core/domain/iam/model/tenant"
 	projectmodel "github.com/usegavel/gavel/core/domain/project/model"
 	"github.com/usegavel/gavel/core/domain/project/model/qualitygate"
 	"github.com/usegavel/gavel/core/domain/shared/event"
@@ -19,6 +20,7 @@ import (
 
 type CaseFile struct {
 	id                CaseFileID
+	tenantID          tenant.TenantID
 	projectID         projectmodel.ProjectID
 	commitSHA         string
 	branch            string
@@ -29,7 +31,7 @@ type CaseFile struct {
 	events            []event.DomainEvent
 }
 
-func NewCaseFile(projectID projectmodel.ProjectID, commitSHA, branch string, startedAt, createdAt time.Time) (CaseFile, error) {
+func NewCaseFile(tenantID tenant.TenantID, projectID projectmodel.ProjectID, commitSHA, branch string, startedAt, createdAt time.Time) (CaseFile, error) {
 	if err := validateCaseFileFields(commitSHA, branch, startedAt); err != nil {
 		return CaseFile{}, err
 	}
@@ -39,6 +41,7 @@ func NewCaseFile(projectID projectmodel.ProjectID, commitSHA, branch string, sta
 	caseFileID := NewCaseFileID(uuid.New())
 	return CaseFile{
 		id:        caseFileID,
+		tenantID:  tenantID,
 		projectID: projectID,
 		commitSHA: commitSHA,
 		branch:    branch,
@@ -47,12 +50,13 @@ func NewCaseFile(projectID projectmodel.ProjectID, commitSHA, branch string, sta
 	}, nil
 }
 
-func ReconstituteCaseFile(id CaseFileID, projectID projectmodel.ProjectID, commitSHA, branch string, startedAt time.Time, evidences []evidence.Evidence, verdict *verdict.Result, isFreshEvaluation bool) (CaseFile, error) {
+func ReconstituteCaseFile(id CaseFileID, tenantID tenant.TenantID, projectID projectmodel.ProjectID, commitSHA, branch string, startedAt time.Time, evidences []evidence.Evidence, verdict *verdict.Result, isFreshEvaluation bool) (CaseFile, error) {
 	if err := validateCaseFileFields(commitSHA, branch, startedAt); err != nil {
 		return CaseFile{}, err
 	}
 	return CaseFile{
 		id:                id,
+		tenantID:          tenantID,
 		projectID:         projectID,
 		commitSHA:         commitSHA,
 		branch:            branch,
@@ -283,6 +287,7 @@ func collectFailingSubtypes(rulings []verdict.Ruling) []string {
 }
 
 func (cf *CaseFile) ID() CaseFileID                    { return cf.id }
+func (cf *CaseFile) TenantID() tenant.TenantID         { return cf.tenantID }
 func (cf *CaseFile) ProjectID() projectmodel.ProjectID { return cf.projectID }
 func (cf *CaseFile) CommitSHA() string                 { return cf.commitSHA }
 func (cf *CaseFile) Branch() string                    { return cf.branch }

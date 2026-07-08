@@ -25,9 +25,9 @@ func TestProjectQueryList(t *testing.T) {
 	query := projectpostgres.NewProjectFinder(db)
 	ctx := context.Background()
 
-	projectAlpha, err := projectmodel.NewProject("alpha", "Alpha", "//alpha/...")
+	projectAlpha, err := projectmodel.NewProject(testTenantID, "alpha", "Alpha", "//alpha/...")
 	require.NoError(t, err)
-	p2, err := projectmodel.NewProject("beta", "Beta", "//beta/...")
+	p2, err := projectmodel.NewProject(testTenantID, "beta", "Beta", "//beta/...")
 	require.NoError(t, err)
 	require.NoError(t, projRepo.Save(ctx, projectAlpha))
 	require.NoError(t, projRepo.Save(ctx, p2))
@@ -37,11 +37,11 @@ func TestProjectQueryList(t *testing.T) {
 	require.NoError(t, caseFile.AddEvidence(ev, time.Now().UTC()))
 
 	verdict := newTestVerdict(t)
-	caseFile, err = casefile.ReconstituteCaseFile(caseFile.ID(), caseFile.ProjectID(), caseFile.CommitSHA(), caseFile.Branch(), caseFile.StartedAt(), caseFile.Evidences(), &verdict, false)
+	caseFile, err = casefile.ReconstituteCaseFile(caseFile.ID(), testTenantID, caseFile.ProjectID(), caseFile.CommitSHA(), caseFile.Branch(), caseFile.StartedAt(), caseFile.Evidences(), &verdict, false)
 	require.NoError(t, err)
 	require.NoError(t, cfRepo.Save(ctx, caseFile))
 
-	items, total, err := query.List(ctx, 10, 0)
+	items, total, err := query.List(ctx, testTenantID, 10, 0)
 	require.NoError(t, err)
 	assert.GreaterOrEqual(t, total, 2)
 	assert.GreaterOrEqual(t, len(items), 2)
@@ -72,10 +72,10 @@ func TestProjectQueryGetByID(t *testing.T) {
 	qualityGate, err := qualitygate.NewGate([]qualitygate.Rule{rule})
 	require.NoError(t, err)
 
-	project, err := projectmodel.NewProject("detailed", "Detailed Project", "//detailed/...")
+	project, err := projectmodel.NewProject(testTenantID, "detailed", "Detailed Project", "//detailed/...")
 	require.NoError(t, err)
 	project, err = projectmodel.ReconstituteProject(
-		project.ID(), project.Key(), project.Name(), project.TargetPattern(),
+		project.ID(), testTenantID, project.Key(), project.Name(), project.TargetPattern(),
 		project.DefaultBranch(), []coverage.Language{java}, qualityGate, nil, nil,
 	)
 	require.NoError(t, err)
@@ -86,11 +86,11 @@ func TestProjectQueryGetByID(t *testing.T) {
 	require.NoError(t, caseFile.AddEvidence(ev, time.Now().UTC()))
 
 	verdict := newTestVerdict(t)
-	caseFile, err = casefile.ReconstituteCaseFile(caseFile.ID(), caseFile.ProjectID(), caseFile.CommitSHA(), caseFile.Branch(), caseFile.StartedAt(), caseFile.Evidences(), &verdict, false)
+	caseFile, err = casefile.ReconstituteCaseFile(caseFile.ID(), testTenantID, caseFile.ProjectID(), caseFile.CommitSHA(), caseFile.Branch(), caseFile.StartedAt(), caseFile.Evidences(), &verdict, false)
 	require.NoError(t, err)
 	require.NoError(t, cfRepo.Save(ctx, caseFile))
 
-	detail, err := query.GetByID(ctx, project.ID().String())
+	detail, err := query.GetByID(ctx, testTenantID, project.ID().String())
 	require.NoError(t, err)
 	assert.Equal(t, "detailed", detail.Key)
 	assert.Equal(t, "Detailed Project", detail.Name)
@@ -113,11 +113,11 @@ func TestProjectQueryGetByKey(t *testing.T) {
 	query := projectpostgres.NewProjectFinder(db)
 	ctx := context.Background()
 
-	project, err := projectmodel.NewProject("by-key", "By Key", "//key/...")
+	project, err := projectmodel.NewProject(testTenantID, "by-key", "By Key", "//key/...")
 	require.NoError(t, err)
 	require.NoError(t, projRepo.Save(ctx, project))
 
-	detail, err := query.GetByKey(ctx, "by-key")
+	detail, err := query.GetByKey(ctx, testTenantID, "by-key")
 	require.NoError(t, err)
 	assert.Equal(t, project.ID().String(), detail.ID)
 	assert.Equal(t, "By Key", detail.Name)
@@ -129,12 +129,12 @@ func TestProjectQueryReturnsEmptySlicesNotNil(t *testing.T) {
 	query := projectpostgres.NewProjectFinder(db)
 	ctx := context.Background()
 
-	project, err := projectmodel.NewProject("no-extras", "No Extras", "//bare/...")
+	project, err := projectmodel.NewProject(testTenantID, "no-extras", "No Extras", "//bare/...")
 	require.NoError(t, err)
 	require.NoError(t, projRepo.Save(ctx, project))
 
 	t.Run("GetByKey", func(t *testing.T) {
-		detail, err := query.GetByKey(ctx, "no-extras")
+		detail, err := query.GetByKey(ctx, testTenantID, "no-extras")
 		require.NoError(t, err)
 
 		assert.NotNil(t, detail.Languages, "Languages must be empty slice, not nil")
@@ -144,7 +144,7 @@ func TestProjectQueryReturnsEmptySlicesNotNil(t *testing.T) {
 	})
 
 	t.Run("GetByID", func(t *testing.T) {
-		detail, err := query.GetByID(ctx, project.ID().String())
+		detail, err := query.GetByID(ctx, testTenantID, project.ID().String())
 		require.NoError(t, err)
 
 		assert.NotNil(t, detail.Languages, "Languages must be empty slice, not nil")
@@ -158,7 +158,7 @@ func TestProjectQueryGetByIDNotFound(t *testing.T) {
 	db := setupDB(t)
 	query := projectpostgres.NewProjectFinder(db)
 
-	_, err := query.GetByID(context.Background(), "nonexistent-id")
+	_, err := query.GetByID(context.Background(), testTenantID, "nonexistent-id")
 	assert.Error(t, err)
 }
 
@@ -166,7 +166,7 @@ func TestProjectQueryGetByKeyNotFound(t *testing.T) {
 	db := setupDB(t)
 	query := projectpostgres.NewProjectFinder(db)
 
-	_, err := query.GetByKey(context.Background(), "nonexistent-key")
+	_, err := query.GetByKey(context.Background(), testTenantID, "nonexistent-key")
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "not found")
 }
@@ -178,7 +178,7 @@ func TestProjectQueryListReturnsErrorOnCancelledContext(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 
-	_, _, err := query.List(ctx, 10, 0)
+	_, _, err := query.List(ctx, testTenantID, 10, 0)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "count projects")
 }
@@ -189,14 +189,14 @@ func TestProjectQueryGetByIDReturnsErrorOnCancelledContext(t *testing.T) {
 	query := projectpostgres.NewProjectFinder(db)
 	ctx := context.Background()
 
-	project, err := projectmodel.NewProject("ctx-get-id", "Ctx Get ID", "//ctx/...")
+	project, err := projectmodel.NewProject(testTenantID, "ctx-get-id", "Ctx Get ID", "//ctx/...")
 	require.NoError(t, err)
 	require.NoError(t, projRepo.Save(ctx, project))
 
 	cancelledCtx, cancel := context.WithCancel(context.Background())
 	cancel()
 
-	_, err = query.GetByID(cancelledCtx, project.ID().String())
+	_, err = query.GetByID(cancelledCtx, testTenantID, project.ID().String())
 	assert.Error(t, err)
 }
 
@@ -206,14 +206,14 @@ func TestProjectQueryGetByKeyReturnsErrorOnCancelledContext(t *testing.T) {
 	query := projectpostgres.NewProjectFinder(db)
 	ctx := context.Background()
 
-	project, err := projectmodel.NewProject("ctx-get-key", "Ctx Get Key", "//ctx/...")
+	project, err := projectmodel.NewProject(testTenantID, "ctx-get-key", "Ctx Get Key", "//ctx/...")
 	require.NoError(t, err)
 	require.NoError(t, projRepo.Save(ctx, project))
 
 	cancelledCtx, cancel := context.WithCancel(context.Background())
 	cancel()
 
-	_, err = query.GetByKey(cancelledCtx, "ctx-get-key")
+	_, err = query.GetByKey(cancelledCtx, testTenantID, "ctx-get-key")
 	assert.Error(t, err)
 }
 
@@ -225,17 +225,17 @@ func TestProjectQueryListPagination(t *testing.T) {
 
 	for i := range 3 {
 		key := fmt.Sprintf("page-%d", i)
-		p, err := projectmodel.NewProject(key, key, "//page/...")
+		p, err := projectmodel.NewProject(testTenantID, key, key, "//page/...")
 		require.NoError(t, err)
 		require.NoError(t, projRepo.Save(ctx, p))
 	}
 
-	items, total, err := query.List(ctx, 2, 0)
+	items, total, err := query.List(ctx, testTenantID, 2, 0)
 	require.NoError(t, err)
 	assert.GreaterOrEqual(t, total, 3)
 	assert.Len(t, items, 2)
 
-	items2, total2, err := query.List(ctx, 2, 2)
+	items2, total2, err := query.List(ctx, testTenantID, 2, 2)
 	require.NoError(t, err)
 	assert.Equal(t, total, total2)
 	assert.GreaterOrEqual(t, len(items2), 1)
@@ -257,10 +257,10 @@ func TestProjectQueryGetByKeyWithQualityGateRules(t *testing.T) {
 	java, err := coverage.NewLanguage("java")
 	require.NoError(t, err)
 
-	project, err := projectmodel.NewProject("qg-key", "QG Key Project", "//qg/...")
+	project, err := projectmodel.NewProject(testTenantID, "qg-key", "QG Key Project", "//qg/...")
 	require.NoError(t, err)
 	project, err = projectmodel.ReconstituteProject(
-		project.ID(), project.Key(), project.Name(), project.TargetPattern(),
+		project.ID(), testTenantID, project.Key(), project.Name(), project.TargetPattern(),
 		project.DefaultBranch(), []coverage.Language{java}, qualityGate, nil, nil,
 	)
 	require.NoError(t, err)
@@ -271,11 +271,11 @@ func TestProjectQueryGetByKeyWithQualityGateRules(t *testing.T) {
 	require.NoError(t, caseFile.AddEvidence(ev, time.Now().UTC()))
 
 	verdict := newTestVerdict(t)
-	caseFile, err = casefile.ReconstituteCaseFile(caseFile.ID(), caseFile.ProjectID(), caseFile.CommitSHA(), caseFile.Branch(), caseFile.StartedAt(), caseFile.Evidences(), &verdict, false)
+	caseFile, err = casefile.ReconstituteCaseFile(caseFile.ID(), testTenantID, caseFile.ProjectID(), caseFile.CommitSHA(), caseFile.Branch(), caseFile.StartedAt(), caseFile.Evidences(), &verdict, false)
 	require.NoError(t, err)
 	require.NoError(t, cfRepo.Save(ctx, caseFile))
 
-	detail, err := query.GetByKey(ctx, "qg-key")
+	detail, err := query.GetByKey(ctx, testTenantID, "qg-key")
 	require.NoError(t, err)
 	assert.Equal(t, "QG Key Project", detail.Name)
 	require.Len(t, detail.QualityGateRules, 1)
@@ -299,16 +299,16 @@ func TestProjectQueryGetByIDWithoutCasefiles(t *testing.T) {
 	qualityGate, err := qualitygate.NewGate([]qualitygate.Rule{rule})
 	require.NoError(t, err)
 
-	project, err := projectmodel.NewProject("no-cases", "No CaseFiles", "//nocase/...")
+	project, err := projectmodel.NewProject(testTenantID, "no-cases", "No CaseFiles", "//nocase/...")
 	require.NoError(t, err)
 	project, err = projectmodel.ReconstituteProject(
-		project.ID(), project.Key(), project.Name(), project.TargetPattern(),
+		project.ID(), testTenantID, project.Key(), project.Name(), project.TargetPattern(),
 		project.DefaultBranch(), []coverage.Language{java}, qualityGate, nil, nil,
 	)
 	require.NoError(t, err)
 	require.NoError(t, projRepo.Save(ctx, project))
 
-	detail, err := query.GetByID(ctx, project.ID().String())
+	detail, err := query.GetByID(ctx, testTenantID, project.ID().String())
 	require.NoError(t, err)
 	assert.Equal(t, "no-cases", detail.Key)
 	assert.Equal(t, "No CaseFiles", detail.Name)
@@ -327,11 +327,11 @@ func TestProjectQueryGetByKeyWithoutCasefiles(t *testing.T) {
 	query := projectpostgres.NewProjectFinder(db)
 	ctx := context.Background()
 
-	project, err := projectmodel.NewProject("no-cases-key", "No CaseFiles Key", "//nocase/...")
+	project, err := projectmodel.NewProject(testTenantID, "no-cases-key", "No CaseFiles Key", "//nocase/...")
 	require.NoError(t, err)
 	require.NoError(t, projRepo.Save(ctx, project))
 
-	detail, err := query.GetByKey(ctx, "no-cases-key")
+	detail, err := query.GetByKey(ctx, testTenantID, "no-cases-key")
 	require.NoError(t, err)
 	assert.Equal(t, "", detail.LatestVerdict)
 	assert.Equal(t, 0, detail.TotalFindings)
@@ -345,7 +345,7 @@ func TestProjectQueryGetByIDSeverityCountsAllTypes(t *testing.T) {
 	query := projectpostgres.NewProjectFinder(db)
 	ctx := context.Background()
 
-	project, err := projectmodel.NewProject("sev-counts", "Severity Counts", "//sev/...")
+	project, err := projectmodel.NewProject(testTenantID, "sev-counts", "Severity Counts", "//sev/...")
 	require.NoError(t, err)
 	require.NoError(t, projRepo.Save(ctx, project))
 
@@ -354,11 +354,11 @@ func TestProjectQueryGetByIDSeverityCountsAllTypes(t *testing.T) {
 	require.NoError(t, caseFile.AddEvidence(ev, time.Now().UTC()))
 
 	verdict := newTestVerdict(t)
-	caseFile, err = casefile.ReconstituteCaseFile(caseFile.ID(), caseFile.ProjectID(), caseFile.CommitSHA(), caseFile.Branch(), caseFile.StartedAt(), caseFile.Evidences(), &verdict, false)
+	caseFile, err = casefile.ReconstituteCaseFile(caseFile.ID(), testTenantID, caseFile.ProjectID(), caseFile.CommitSHA(), caseFile.Branch(), caseFile.StartedAt(), caseFile.Evidences(), &verdict, false)
 	require.NoError(t, err)
 	require.NoError(t, cfRepo.Save(ctx, caseFile))
 
-	detail, err := query.GetByID(ctx, project.ID().String())
+	detail, err := query.GetByID(ctx, testTenantID, project.ID().String())
 	require.NoError(t, err)
 	assert.Equal(t, 1, detail.SeverityCounts["error"])
 	assert.Equal(t, 2, detail.SeverityCounts["warning"])
@@ -374,9 +374,9 @@ func TestProjectQueryListWithCasefilesAndWithout(t *testing.T) {
 	query := projectpostgres.NewProjectFinder(db)
 	ctx := context.Background()
 
-	withCF, err := projectmodel.NewProject("with-cf", "With CaseFile", "//with/...")
+	withCF, err := projectmodel.NewProject(testTenantID, "with-cf", "With CaseFile", "//with/...")
 	require.NoError(t, err)
-	withoutCF, err := projectmodel.NewProject("without-cf", "Without CaseFile", "//without/...")
+	withoutCF, err := projectmodel.NewProject(testTenantID, "without-cf", "Without CaseFile", "//without/...")
 	require.NoError(t, err)
 	require.NoError(t, projRepo.Save(ctx, withCF))
 	require.NoError(t, projRepo.Save(ctx, withoutCF))
@@ -385,11 +385,11 @@ func TestProjectQueryListWithCasefilesAndWithout(t *testing.T) {
 	ev := newFindingsEvidence(t)
 	require.NoError(t, caseFile.AddEvidence(ev, time.Now().UTC()))
 	verdict := newTestVerdict(t)
-	caseFile, err = casefile.ReconstituteCaseFile(caseFile.ID(), caseFile.ProjectID(), caseFile.CommitSHA(), caseFile.Branch(), caseFile.StartedAt(), caseFile.Evidences(), &verdict, false)
+	caseFile, err = casefile.ReconstituteCaseFile(caseFile.ID(), testTenantID, caseFile.ProjectID(), caseFile.CommitSHA(), caseFile.Branch(), caseFile.StartedAt(), caseFile.Evidences(), &verdict, false)
 	require.NoError(t, err)
 	require.NoError(t, cfRepo.Save(ctx, caseFile))
 
-	items, total, err := query.List(ctx, 10, 0)
+	items, total, err := query.List(ctx, testTenantID, 10, 0)
 	require.NoError(t, err)
 	assert.GreaterOrEqual(t, total, 2)
 
@@ -416,7 +416,7 @@ func TestProjectQueryGetByIDReturnsErrorOnCorruptedCreatedAt(t *testing.T) {
 	query := projectpostgres.NewProjectFinder(testDB)
 	ctx := context.Background()
 
-	project, err := projectmodel.NewProject("bad-date-id", "Bad Date", "//bad/...")
+	project, err := projectmodel.NewProject(testTenantID, "bad-date-id", "Bad Date", "//bad/...")
 	require.NoError(t, err)
 	require.NoError(t, projRepo.Save(ctx, project))
 
@@ -425,7 +425,7 @@ func TestProjectQueryGetByIDReturnsErrorOnCorruptedCreatedAt(t *testing.T) {
 		project.ID().UUID())
 	require.NoError(t, err)
 
-	_, err = query.GetByID(ctx, project.ID().String())
+	_, err = query.GetByID(ctx, testTenantID, project.ID().String())
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "created_at")
 }
@@ -436,7 +436,7 @@ func TestProjectQueryGetByKeyReturnsErrorOnCorruptedCreatedAt(t *testing.T) {
 	query := projectpostgres.NewProjectFinder(testDB)
 	ctx := context.Background()
 
-	project, err := projectmodel.NewProject("bad-date-key", "Bad Date Key", "//bad/...")
+	project, err := projectmodel.NewProject(testTenantID, "bad-date-key", "Bad Date Key", "//bad/...")
 	require.NoError(t, err)
 	require.NoError(t, projRepo.Save(ctx, project))
 
@@ -445,7 +445,7 @@ func TestProjectQueryGetByKeyReturnsErrorOnCorruptedCreatedAt(t *testing.T) {
 		project.ID().UUID())
 	require.NoError(t, err)
 
-	_, err = query.GetByKey(ctx, "bad-date-key")
+	_, err = query.GetByKey(ctx, testTenantID, "bad-date-key")
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "created_at")
 }
@@ -456,7 +456,7 @@ func TestProjectQueryListReturnsErrorOnCorruptedCreatedAt(t *testing.T) {
 	query := projectpostgres.NewProjectFinder(testDB)
 	ctx := context.Background()
 
-	project, err := projectmodel.NewProject("bad-date-list", "Bad Date List", "//bad/...")
+	project, err := projectmodel.NewProject(testTenantID, "bad-date-list", "Bad Date List", "//bad/...")
 	require.NoError(t, err)
 	require.NoError(t, projRepo.Save(ctx, project))
 
@@ -465,7 +465,7 @@ func TestProjectQueryListReturnsErrorOnCorruptedCreatedAt(t *testing.T) {
 		project.ID().UUID())
 	require.NoError(t, err)
 
-	_, _, err = query.List(ctx, 10, 0)
+	_, _, err = query.List(ctx, testTenantID, 10, 0)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "created_at")
 }
@@ -475,7 +475,7 @@ func TestProjectQueryListWithNoProjects(t *testing.T) {
 	query := projectpostgres.NewProjectFinder(db)
 	ctx := context.Background()
 
-	items, total, err := query.List(ctx, 10, 0)
+	items, total, err := query.List(ctx, testTenantID, 10, 0)
 	require.NoError(t, err)
 	assert.Equal(t, 0, total)
 	assert.Empty(t, items)

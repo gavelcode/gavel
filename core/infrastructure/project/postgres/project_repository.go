@@ -10,6 +10,7 @@ import (
 
 	"github.com/usegavel/gavel/core/domain/casefile/model/evidence"
 	"github.com/usegavel/gavel/core/domain/casefile/model/evidence/coverage"
+	"github.com/usegavel/gavel/core/domain/iam/model/tenant"
 	"github.com/usegavel/gavel/core/domain/project/model"
 	"github.com/usegavel/gavel/core/domain/project/model/qualitygate"
 	"github.com/usegavel/gavel/core/domain/shared/failure"
@@ -34,15 +35,15 @@ func (r *Repository) Save(ctx context.Context, project model.Project) error {
 	defer func() { _ = transaction.Rollback() }()
 
 	_, err = transaction.ExecContext(ctx, `
-		INSERT INTO projects (id, key, name, target_pattern, default_branch)
-		VALUES (?, ?, ?, ?, ?)
+		INSERT INTO projects (id, key, name, target_pattern, default_branch, tenant_id)
+		VALUES (?, ?, ?, ?, ?, ?)
 		ON CONFLICT(id) DO UPDATE SET
 		    name = excluded.name,
 		    target_pattern = excluded.target_pattern,
 		    default_branch = excluded.default_branch,
 		    updated_at = ?
 	`, project.ID().UUID(), project.Key(), project.Name(),
-		project.TargetPattern(), project.DefaultBranch(), database.Now())
+		project.TargetPattern(), project.DefaultBranch(), project.TenantID().UUID(), database.Now())
 	if err != nil {
 		return fmt.Errorf("upsert project: %w", err)
 	}
@@ -100,22 +101,22 @@ func (r *Repository) replaceQualityGateRules(ctx context.Context, transaction *d
 	return nil
 }
 
-func (r *Repository) FindByID(ctx context.Context, id model.ProjectID) (model.Project, error) {
-	return r.findProject(ctx, "SELECT id, key, name, target_pattern, default_branch FROM projects WHERE id = ?", id.UUID(), id.String())
+func (r *Repository) FindByID(ctx context.Context, tenantID tenant.TenantID, id model.ProjectID) (model.Project, error) {
+	return r.findProject(ctx, "SELECT id, key, name, target_pattern, default_branch FROM projects WHERE id = ? AND tenant_id = ?", tenantID, id.UUID(), id.String())
 }
 
-func (r *Repository) FindByName(ctx context.Context, name string) (model.Project, error) {
-	return r.findProject(ctx, "SELECT id, key, name, target_pattern, default_branch FROM projects WHERE name = ?", name, name)
+func (r *Repository) FindByName(ctx context.Context, tenantID tenant.TenantID, name string) (model.Project, error) {
+	return r.findProject(ctx, "SELECT id, key, name, target_pattern, default_branch FROM projects WHERE name = ? AND tenant_id = ?", tenantID, name, name)
 }
 
-func (r *Repository) FindByKey(ctx context.Context, key string) (model.Project, error) {
-	return r.findProject(ctx, "SELECT id, key, name, target_pattern, default_branch FROM projects WHERE key = ?", key, key)
+func (r *Repository) FindByKey(ctx context.Context, tenantID tenant.TenantID, key string) (model.Project, error) {
+	return r.findProject(ctx, "SELECT id, key, name, target_pattern, default_branch FROM projects WHERE key = ? AND tenant_id = ?", tenantID, key, key)
 }
 
-func (r *Repository) findProject(ctx context.Context, query string, param any, label string) (model.Project, error) {
+func (r *Repository) findProject(ctx context.Context, query string, tenantID tenant.TenantID, param any, label string) (model.Project, error) {
 	var idVal uuid.UUID
 	var key, name, targetPattern, branch string
-	err := r.db.QueryRowContext(ctx, query, param).Scan(&idVal, &key, &name, &targetPattern, &branch)
+	err := r.db.QueryRowContext(ctx, query, param, tenantID.UUID()).Scan(&idVal, &key, &name, &targetPattern, &branch)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return model.Project{}, fmt.Errorf("%w: %s", errProjectNotFound, label)
@@ -140,7 +141,7 @@ func (r *Repository) findProject(ctx context.Context, query string, param any, l
 		return model.Project{}, fmt.Errorf("load baselines: %w", err)
 	}
 
-	return model.ReconstituteProject(projectID, key, name, targetPattern, branch, languages, qualityGate, nil, baselines)
+	return model.ReconstituteProject(projectID, tenantID, key, name, targetPattern, branch, languages, qualityGate, nil, baselines)
 }
 
 func (r *Repository) loadLanguages(ctx context.Context, projectID uuid.UUID) ([]coverage.Language, error) {

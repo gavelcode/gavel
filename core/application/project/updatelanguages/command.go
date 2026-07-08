@@ -8,11 +8,15 @@ import (
 )
 
 type Command struct {
+	tenantID  string
 	projectID string
 	languages []coverage.Language
 }
 
-func NewCommand(projectID string, languages []string) (Command, error) {
+func NewCommand(tenantID, projectID string, languages []string) (Command, error) {
+	if strings.TrimSpace(tenantID) == "" {
+		return Command{}, fmt.Errorf("%w: tenantID must not be empty", ErrInvalidCommand)
+	}
 	if strings.TrimSpace(projectID) == "" {
 		return Command{}, fmt.Errorf("%w: projectID must not be empty", ErrInvalidCommand)
 	}
@@ -21,10 +25,13 @@ func NewCommand(projectID string, languages []string) (Command, error) {
 		return Command{}, err
 	}
 	return Command{
+		tenantID:  tenantID,
 		projectID: projectID,
 		languages: parsed,
 	}, nil
 }
+
+func (c Command) TenantID() string { return c.tenantID }
 
 func parseLanguages(names []string) ([]coverage.Language, error) {
 	parsed := make([]coverage.Language, 0, len(names))

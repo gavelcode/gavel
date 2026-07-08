@@ -19,13 +19,13 @@ func RunServer(
 	deps Deps,
 	workspace string,
 	collected collectevidence.Result,
-	projectID, projectName, commitSHA, branch string,
+	tenantID, projectID, projectName, commitSHA, branch string,
 	startedAt time.Time,
 	opts Options,
 ) (Result, error) {
 	log := deps.Log.With("project", projectName)
 
-	localResult, err := RunLocal(ctx, deps, workspace, collected, projectID, projectName, commitSHA, branch, startedAt, opts)
+	localResult, err := RunLocal(ctx, deps, workspace, collected, tenantID, projectID, projectName, commitSHA, branch, startedAt, opts)
 	if err != nil {
 		return Result{}, err
 	}

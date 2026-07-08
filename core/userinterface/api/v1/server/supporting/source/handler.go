@@ -13,6 +13,7 @@ import (
 	"github.com/usegavel/gavel/core/application/shared/apperr"
 	"github.com/usegavel/gavel/core/userinterface/api/v1/gen"
 	"github.com/usegavel/gavel/core/userinterface/api/v1/server/httpx"
+	auth "github.com/usegavel/gavel/core/userinterface/api/v1/server/httpx/auth"
 )
 
 type Blobs interface {
@@ -44,6 +45,10 @@ func New(deps Deps) *Handler {
 }
 
 func (h *Handler) UploadProjectSource(ctx context.Context, req gen.UploadProjectSourceRequestObject) (gen.UploadProjectSourceResponseObject, error) {
+	principal, ok := auth.PrincipalFromContext(ctx)
+	if !ok {
+		return gen.UploadProjectSource401JSONResponse{UnauthorizedJSONResponse: httpx.Unauthorized("unauthenticated")}, nil
+	}
 	if req.Body == nil {
 		return gen.UploadProjectSource400JSONResponse{BadRequestJSONResponse: httpx.BadRequest("request body is required")}, nil
 	}
@@ -54,7 +59,7 @@ func (h *Handler) UploadProjectSource(ctx context.Context, req gen.UploadProject
 	if len(req.Body.Files) == 0 {
 		return gen.UploadProjectSource204Response{}, nil
 	}
-	detail, err := h.fetchProjectDetail(ctx, string(req.Key))
+	detail, err := h.fetchProjectDetail(ctx, principal.TenantID, string(req.Key))
 	if err != nil {
 		if apperr.Of(err) == apperr.NotFound {
 			return gen.UploadProjectSource404JSONResponse{NotFoundJSONResponse: httpx.NotFound("project not found")}, nil
@@ -75,6 +80,10 @@ func (h *Handler) UploadProjectSource(ctx context.Context, req gen.UploadProject
 }
 
 func (h *Handler) GetProjectSource(ctx context.Context, req gen.GetProjectSourceRequestObject) (gen.GetProjectSourceResponseObject, error) {
+	principal, ok := auth.PrincipalFromContext(ctx)
+	if !ok {
+		return gen.GetProjectSource401JSONResponse{UnauthorizedJSONResponse: httpx.Unauthorized("unauthenticated")}, nil
+	}
 	commit := req.Params.Commit
 	path := req.Params.Path
 	if strings.TrimSpace(commit) == "" || strings.TrimSpace(path) == "" {
@@ -83,7 +92,7 @@ func (h *Handler) GetProjectSource(ctx context.Context, req gen.GetProjectSource
 	if !isSafeSourcePath(path) {
 		return gen.GetProjectSource400JSONResponse{BadRequestJSONResponse: httpx.BadRequest("path must be a relative repository path")}, nil
 	}
-	detail, err := h.fetchProjectDetail(ctx, string(req.Key))
+	detail, err := h.fetchProjectDetail(ctx, principal.TenantID, string(req.Key))
 	if err != nil {
 		if apperr.Of(err) == apperr.NotFound {
 			return gen.GetProjectSource404JSONResponse{NotFoundJSONResponse: httpx.NotFound("project not found")}, nil
@@ -172,8 +181,8 @@ func toInt32Slice(ints []int) []int32 {
 	return out
 }
 
-func (h *Handler) fetchProjectDetail(ctx context.Context, key string) (*projectgetbykey.ProjectDetail, error) {
-	q, err := projectgetbykey.NewQuery(key)
+func (h *Handler) fetchProjectDetail(ctx context.Context, tenantID, key string) (*projectgetbykey.ProjectDetail, error) {
+	q, err := projectgetbykey.NewQuery(tenantID, key)
 	if err != nil {
 		return nil, err
 	}

@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -19,9 +20,12 @@ import (
 	"github.com/usegavel/gavel/core/domain/casefile/model/evidence/architecture"
 	"github.com/usegavel/gavel/core/domain/casefile/model/evidence/coverage"
 	"github.com/usegavel/gavel/core/domain/casefile/model/evidence/finding"
+	"github.com/usegavel/gavel/core/domain/iam/model/tenant"
 	projectmodel "github.com/usegavel/gavel/core/domain/project/model"
 	"github.com/usegavel/gavel/core/domain/project/model/qualitygate"
 )
+
+var testTenant = tenant.NewTenantID(uuid.MustParse("22222222-2222-2222-2222-222222222222"))
 
 func newHandler(cfRepo *fakeCaseFileRepo, projRepo *fakeProjectRepo) *finalize.Handler {
 	return finalize.NewHandler(cfRepo, projRepo, classify.NewHandler(cfRepo), judge.NewHandler(cfRepo, projRepo), nil)
@@ -323,14 +327,14 @@ func TestExecuteAbsoluteDoesNotUpdateBaseline(t *testing.T) {
 	_, err = handler.Execute(context.Background(), cmd)
 	require.NoError(t, err)
 
-	found, _ := projRepo.FindByID(context.Background(), project.ID())
+	found, _ := projRepo.FindByID(context.Background(), testTenant, project.ID())
 	baseline := found.Baseline("main")
 	assert.False(t, baseline.HasPrevious(), "absolute mode must not update baseline")
 }
 
 func mustProject(t *testing.T, key, name, target string) projectmodel.Project {
 	t.Helper()
-	p, err := projectmodel.NewProject(key, name, target)
+	p, err := projectmodel.NewProject(testTenant, key, name, target)
 	require.NoError(t, err)
 	return p
 }
@@ -338,7 +342,7 @@ func mustProject(t *testing.T, key, name, target string) projectmodel.Project {
 func mustCaseFileWithFindings(t *testing.T, projectID projectmodel.ProjectID, branch string, fingerprints []string) casefile.CaseFile {
 	t.Helper()
 	now := time.Now().UTC()
-	caseF, err := casefile.NewCaseFile(projectID, "abc123", branch, now, now)
+	caseF, err := casefile.NewCaseFile(testTenant, projectID, "abc123", branch, now, now)
 	require.NoError(t, err)
 
 	if len(fingerprints) > 0 {
@@ -363,7 +367,7 @@ func mustCaseFileWithFindings(t *testing.T, projectID projectmodel.ProjectID, br
 func mustCaseFileWithCoverage(t *testing.T, projectID projectmodel.ProjectID, branch string, fingerprints []string, coveragePct float64) casefile.CaseFile {
 	t.Helper()
 	now := time.Now().UTC()
-	caseF, err := casefile.NewCaseFile(projectID, "abc123", branch, now, now)
+	caseF, err := casefile.NewCaseFile(testTenant, projectID, "abc123", branch, now, now)
 	require.NoError(t, err)
 
 	if len(fingerprints) > 0 {
@@ -841,7 +845,7 @@ func TestExecuteDeduplicatesFingerprintsAcrossEvidence(t *testing.T) {
 func mustCaseFileWithDuplicateFindings(t *testing.T, projectID projectmodel.ProjectID, branch string, fps1, fps2 []string) casefile.CaseFile {
 	t.Helper()
 	now := time.Now().UTC()
-	caseF, err := casefile.NewCaseFile(projectID, "abc123", branch, now, now)
+	caseF, err := casefile.NewCaseFile(testTenant, projectID, "abc123", branch, now, now)
 	require.NoError(t, err)
 
 	for i, fps := range [][]string{fps1, fps2} {
@@ -1096,7 +1100,7 @@ func TestExecuteExtractsArchIDsFromEvidence(t *testing.T) {
 	projRepo.seed(project)
 
 	now := time.Now().UTC()
-	caseF, err := casefile.NewCaseFile(project.ID(), "abc", "main", now, now)
+	caseF, err := casefile.NewCaseFile(testTenant, project.ID(), "abc", "main", now, now)
 	require.NoError(t, err)
 
 	archContent, err := architecture.NewContent([]architecture.Violation{

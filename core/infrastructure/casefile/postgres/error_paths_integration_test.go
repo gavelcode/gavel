@@ -191,7 +191,7 @@ func TestRepoSaveReturnsErrorOnRulingsInsertFailure(t *testing.T) {
 	caseFile := newTestCaseFile(t, project.ID(), "ruling-fail", "main")
 	verdictRes := newTestVerdict(t)
 	caseFile, err := casefile.ReconstituteCaseFile(
-		caseFile.ID(), caseFile.ProjectID(), caseFile.CommitSHA(), caseFile.Branch(),
+		caseFile.ID(), testTenantID, caseFile.ProjectID(), caseFile.CommitSHA(), caseFile.Branch(),
 		caseFile.StartedAt(), nil, &verdictRes, false,
 	)
 	require.NoError(t, err)
@@ -319,7 +319,7 @@ func TestRepoFindByIDReturnsErrorOnCorruptedVerdictTime(t *testing.T) {
 	caseFile := newTestCaseFile(t, project.ID(), "verdict-corrupt", "main")
 	verdictRes := newTestVerdict(t)
 	caseFile, err := casefile.ReconstituteCaseFile(
-		caseFile.ID(), caseFile.ProjectID(), caseFile.CommitSHA(), caseFile.Branch(),
+		caseFile.ID(), testTenantID, caseFile.ProjectID(), caseFile.CommitSHA(), caseFile.Branch(),
 		caseFile.StartedAt(), nil, &verdictRes, false,
 	)
 	require.NoError(t, err)
@@ -344,7 +344,7 @@ func TestRepoFindByIDReturnsErrorOnRulingsQueryFailure(t *testing.T) {
 	caseFile := newTestCaseFile(t, project.ID(), "rulings-fail", "main")
 	verdictRes := newTestVerdict(t)
 	caseFile, err := casefile.ReconstituteCaseFile(
-		caseFile.ID(), caseFile.ProjectID(), caseFile.CommitSHA(), caseFile.Branch(),
+		caseFile.ID(), testTenantID, caseFile.ProjectID(), caseFile.CommitSHA(), caseFile.Branch(),
 		caseFile.StartedAt(), nil, &verdictRes, false,
 	)
 	require.NoError(t, err)
@@ -753,7 +753,7 @@ func TestCaseFileFinderGetByIDReturnsErrorOnRulingsQueryFailure(t *testing.T) {
 	caseFile := newTestCaseFile(t, project.ID(), "get-rulings", "main")
 	verdictRes := newTestVerdict(t)
 	caseFile, err := casefile.ReconstituteCaseFile(
-		caseFile.ID(), caseFile.ProjectID(), caseFile.CommitSHA(), caseFile.Branch(),
+		caseFile.ID(), testTenantID, caseFile.ProjectID(), caseFile.CommitSHA(), caseFile.Branch(),
 		caseFile.StartedAt(), nil, &verdictRes, false,
 	)
 	require.NoError(t, err)
@@ -862,7 +862,7 @@ func TestCaseFileFinderGetByIDReturnsErrorOnRulingsScanCorruption(t *testing.T) 
 	caseFile := newTestCaseFile(t, project.ID(), "rul-scan", "main")
 	verdictRes := newTestVerdict(t)
 	caseFile, err := casefile.ReconstituteCaseFile(
-		caseFile.ID(), caseFile.ProjectID(), caseFile.CommitSHA(), caseFile.Branch(),
+		caseFile.ID(), testTenantID, caseFile.ProjectID(), caseFile.CommitSHA(), caseFile.Branch(),
 		caseFile.StartedAt(), nil, &verdictRes, false,
 	)
 	require.NoError(t, err)

@@ -8,7 +8,9 @@ import (
 	pleadingget "github.com/usegavel/gavel/core/application/pleading/get"
 	pleadinglist "github.com/usegavel/gavel/core/application/pleading/list"
 	"github.com/usegavel/gavel/core/application/project/projectview"
+	"github.com/usegavel/gavel/core/domain/iam/model/tenant"
 	"github.com/usegavel/gavel/core/domain/shared/failure"
+	auth "github.com/usegavel/gavel/core/userinterface/api/v1/server/httpx/auth"
 )
 
 var (
@@ -40,7 +42,7 @@ type fakeGetByKeyFinder struct {
 	err    error
 }
 
-func (f *fakeGetByKeyFinder) GetByKey(_ context.Context, _ string) (*projectview.ProjectDetail, error) {
+func (f *fakeGetByKeyFinder) GetByKey(_ context.Context, _ tenant.TenantID, _ string) (*projectview.ProjectDetail, error) {
 	return f.detail, f.err
 }
 
@@ -82,6 +84,12 @@ func testProjectDetail() *projectview.ProjectDetail {
 		Key:  "core",
 		Name: "Core",
 	}
+}
+
+const testTenant = "22222222-2222-2222-2222-222222222222"
+
+func authContext() context.Context {
+	return auth.WithPrincipal(context.Background(), &auth.Principal{TenantID: testTenant})
 }
 
 func testPleadingSummaryWithGate() pleadinglist.PleadingSummary {

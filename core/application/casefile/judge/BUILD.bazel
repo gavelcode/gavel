@@ -38,6 +38,7 @@ go_test(
         "//core/domain/casefile/model/evidence",
         "//core/domain/casefile/model/evidence/finding",
         "//core/domain/casefile/model/verdict",
+        "//core/domain/iam/model/tenant",
         "//core/domain/project/model",
         "//core/domain/project/model/qualitygate",
         "@com_github_google_uuid//:uuid",

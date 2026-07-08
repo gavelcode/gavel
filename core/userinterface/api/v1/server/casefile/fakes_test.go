@@ -10,6 +10,7 @@ import (
 	casefilelist "github.com/usegavel/gavel/core/application/casefile/list"
 	findinglist "github.com/usegavel/gavel/core/application/casefile/listfindings"
 	"github.com/usegavel/gavel/core/application/project/projectview"
+	"github.com/usegavel/gavel/core/domain/iam/model/tenant"
 	"github.com/usegavel/gavel/core/domain/shared/failure"
 )
 
@@ -52,7 +53,7 @@ type fakeGetByKeyFinder struct {
 	err    error
 }
 
-func (f *fakeGetByKeyFinder) GetByKey(_ context.Context, _ string) (*projectview.ProjectDetail, error) {
+func (f *fakeGetByKeyFinder) GetByKey(_ context.Context, _ tenant.TenantID, _ string) (*projectview.ProjectDetail, error) {
 	return f.detail, f.err
 }
 
@@ -132,6 +133,6 @@ type fakeBaselineFinder struct {
 	err    error
 }
 
-func (f *fakeBaselineFinder) GetByKey(_ context.Context, _ string) (*projectview.ProjectDetail, error) {
+func (f *fakeBaselineFinder) GetByKey(_ context.Context, _ tenant.TenantID, _ string) (*projectview.ProjectDetail, error) {
 	return f.detail, f.err
 }

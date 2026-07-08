@@ -8,6 +8,7 @@ import (
 	"github.com/usegavel/gavel/core/application/shared/event"
 	casefilemodel "github.com/usegavel/gavel/core/domain/casefile/model"
 	caseservice "github.com/usegavel/gavel/core/domain/casefile/service"
+	"github.com/usegavel/gavel/core/domain/iam/model/tenant"
 	projectmodel "github.com/usegavel/gavel/core/domain/project/model"
 	projectservice "github.com/usegavel/gavel/core/domain/project/service"
 )
@@ -28,16 +29,21 @@ func NewHandler(caseFiles caseservice.CaseFileRepository, projects projectservic
 }
 
 func (h *Handler) Execute(ctx context.Context, cmd Command) (Result, error) {
+	tenantID, err := tenant.ParseTenantID(cmd.TenantID())
+	if err != nil {
+		return Result{}, fmt.Errorf("tenant id: %w", err)
+	}
+
 	projectID, err := projectmodel.ParseProjectID(cmd.ProjectID())
 	if err != nil {
 		return Result{}, fmt.Errorf("project id: %w", err)
 	}
 
-	if _, err := h.projects.FindByID(ctx, projectID); err != nil {
+	if _, err := h.projects.FindByID(ctx, tenantID, projectID); err != nil {
 		return Result{}, fmt.Errorf("load project: %w", err)
 	}
 
-	caseFile, err := casefilemodel.NewCaseFile(projectID, cmd.CommitSHA(), cmd.Branch(), cmd.StartedAt(), time.Now().UTC())
+	caseFile, err := casefilemodel.NewCaseFile(tenantID, projectID, cmd.CommitSHA(), cmd.Branch(), cmd.StartedAt(), time.Now().UTC())
 	if err != nil {
 		return Result{}, fmt.Errorf("new case file: %w", err)
 	}

@@ -14,6 +14,7 @@ import (
 	"github.com/usegavel/gavel/core/application/casefile/finalize"
 	"github.com/usegavel/gavel/core/application/casefile/ingestevidence"
 	"github.com/usegavel/gavel/core/application/casefile/judge"
+	"github.com/usegavel/gavel/core/domain/iam/model/tenant"
 	projectmodel "github.com/usegavel/gavel/core/domain/project/model"
 	casefilepostgres "github.com/usegavel/gavel/core/infrastructure/casefile/postgres"
 	"github.com/usegavel/gavel/core/infrastructure/platform/database/testkit"
@@ -35,7 +36,7 @@ func TestSubmitFlow_HappyPathProducesVerdict(t *testing.T) {
 
 	project := seedProject(t, ctx, projectRepo, "dogfood")
 
-	createCmd, err := createcasefile.NewCommand(project.ID().String(), "abc123", "main", time.Date(2026, 6, 1, 12, 0, 0, 0, time.UTC))
+	createCmd, err := createcasefile.NewCommand(tenant.LocalTenantID.String(), project.ID().String(), "abc123", "main", time.Date(2026, 6, 1, 12, 0, 0, 0, time.UTC))
 	require.NoError(t, err)
 	createRes, err := createH.Execute(ctx, createCmd)
 	require.NoError(t, err)
@@ -72,6 +73,7 @@ func TestSubmitFlow_FreshEvaluationSkipsClassify(t *testing.T) {
 	project := seedProject(t, ctx, projectRepo, "fresh-dogfood")
 
 	createCmd, err := createcasefile.NewCommand(
+		tenant.LocalTenantID.String(),
 		project.ID().String(),
 		"abc123", "main",
 		time.Date(2026, 6, 1, 12, 0, 0, 0, time.UTC),
@@ -105,7 +107,7 @@ func TestSubmitFlow_DoubleFinalizeIsRejected(t *testing.T) {
 	finalizeH := finalize.NewHandler(caseFileRepo, projectRepo, classifyH, judgeH, nil)
 
 	project := seedProject(t, ctx, projectRepo, "double-finalize")
-	createCmd, _ := createcasefile.NewCommand(project.ID().String(), "abc123", "main", time.Date(2026, 6, 1, 12, 0, 0, 0, time.UTC))
+	createCmd, _ := createcasefile.NewCommand(tenant.LocalTenantID.String(), project.ID().String(), "abc123", "main", time.Date(2026, 6, 1, 12, 0, 0, 0, time.UTC))
 	createRes, err := createH.Execute(ctx, createCmd)
 	require.NoError(t, err)
 
@@ -123,7 +125,7 @@ func TestSubmitFlow_DoubleFinalizeIsRejected(t *testing.T) {
 
 func seedProject(t *testing.T, ctx context.Context, repo *projectpostgres.Repository, key string) projectmodel.Project {
 	t.Helper()
-	p, err := projectmodel.NewProject(key, "Dogfood "+key, "//...")
+	p, err := projectmodel.NewProject(tenant.LocalTenantID, key, "Dogfood "+key, "//...")
 	require.NoError(t, err)
 	p.ClearEvents()
 	require.NoError(t, repo.Save(ctx, p))

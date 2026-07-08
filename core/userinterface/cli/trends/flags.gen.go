@@ -9,11 +9,11 @@ import (
 
 // Options holds the parsed flag values for the trends command.
 type Options struct {
-	Branch string
-	JSONOutput bool
-	Limit int
-	Project string
-	ServerURL string
+	Branch      string
+	JSONOutput  bool
+	Limit       int
+	Project     string
+	ServerURL   string
 	ServerToken string
 }
 

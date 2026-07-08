@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -16,8 +17,11 @@ import (
 	"github.com/usegavel/gavel/core/application/casefile/ingestevidence"
 	"github.com/usegavel/gavel/core/application/casefile/judge"
 	"github.com/usegavel/gavel/core/application/casefile/submit"
+	"github.com/usegavel/gavel/core/domain/iam/model/tenant"
 	projectmodel "github.com/usegavel/gavel/core/domain/project/model"
 )
+
+var testTenant = tenant.NewTenantID(uuid.MustParse("22222222-2222-2222-2222-222222222222"))
 
 func TestExecuteReturnsVerdictAndDelta(t *testing.T) {
 	cfRepo := newFakeCaseFileRepo()
@@ -84,7 +88,7 @@ func TestExecuteSeedsBaselineWithFileCoverage(t *testing.T) {
 
 	handler := newSubmitHandler(cfRepo, projRepo)
 
-	cmd, err := submit.NewCommand(project.ID().String(), "abc123", "main",
+	cmd, err := submit.NewCommand(testTenant.String(), project.ID().String(), "abc123", "main",
 		[]evidencedto.Evidence{findingsEvidence("fp-1")},
 		[]string{"fp-1"}, nil, finalize.ArchDeltaInput{},
 		[]evidencedto.FileCoverage{{FilePath: "file.go", Covered: []int{1, 2}, Uncovered: []int{3}}},
@@ -103,7 +107,7 @@ func TestExecuteSeedsBaselineWithFileCoverage(t *testing.T) {
 }
 
 func TestExecuteInvalidCommandRejected(t *testing.T) {
-	_, err := submit.NewCommand("", "sha", "main", nil, nil, nil, finalize.ArchDeltaInput{}, nil, false, false, time.Now())
+	_, err := submit.NewCommand("", "", "sha", "main", nil, nil, nil, finalize.ArchDeltaInput{}, nil, false, false, time.Now())
 	assert.ErrorIs(t, err, submit.ErrInvalidCommand)
 }
 
@@ -116,7 +120,7 @@ func TestExecuteCreateCaseFileCommandError(t *testing.T) {
 
 	handler := newSubmitHandler(cfRepo, projRepo)
 
-	cmd, err := submit.NewCommand(project.ID().String(), "abc", "main",
+	cmd, err := submit.NewCommand(testTenant.String(), project.ID().String(), "abc", "main",
 		[]evidencedto.Evidence{findingsEvidence("fp-1")},
 		[]string{"fp-1"}, nil, finalize.ArchDeltaInput{}, nil, false, false, time.Time{})
 	require.NoError(t, err)
@@ -239,14 +243,14 @@ func newSubmitHandler(cfRepo *fakeCaseFileRepo, projRepo *fakeProjectRepo) *subm
 
 func mustProject(t *testing.T) projectmodel.Project {
 	t.Helper()
-	p, err := projectmodel.NewProject("test", "test", "//test/...")
+	p, err := projectmodel.NewProject(testTenant, "test", "test", "//test/...")
 	require.NoError(t, err)
 	return p
 }
 
 func mustCommand(t *testing.T, projectID, commitSHA, branch string, evidences []evidencedto.Evidence, fps, archIDs []string, archDelta finalize.ArchDeltaInput, quick bool) submit.Command {
 	t.Helper()
-	cmd, err := submit.NewCommand(projectID, commitSHA, branch, evidences, fps, archIDs, archDelta, nil, quick, false, time.Now().UTC())
+	cmd, err := submit.NewCommand(testTenant.String(), projectID, commitSHA, branch, evidences, fps, archIDs, archDelta, nil, quick, false, time.Now().UTC())
 	require.NoError(t, err)
 	return cmd
 }

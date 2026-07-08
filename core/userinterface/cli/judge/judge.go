@@ -142,7 +142,7 @@ func run(cmd *cobra.Command, opts Options, deps deps) error {
 	deps.log.Debug("resolved git info", "commit", commitSHA, "branch", branch)
 
 	if !opts.Absolute {
-		blResult := prepareBaselines(ctx, deps, view.Projects)
+		blResult := prepareBaselines(ctx, deps, view.TenantID, view.Projects)
 		if !opts.JSONOutput {
 			if err := printBaselineStatus(writer, blResult); err != nil {
 				return err
@@ -159,7 +159,7 @@ func run(cmd *cobra.Command, opts Options, deps deps) error {
 	}
 
 	startedAt := time.Now().UTC()
-	results, err := executeProjects(ctx, writer, deps, workspace, view.Projects, commitSHA, branch, startedAt, opts)
+	results, err := executeProjects(ctx, writer, deps, workspace, view.TenantID, view.Projects, commitSHA, branch, startedAt, opts)
 	if err != nil {
 		return err
 	}
@@ -239,6 +239,7 @@ func executeProjects(
 	writer io.Writer,
 	deps deps,
 	workspace string,
+	tenantID string,
 	projects []loadgavelspace.ProjectView,
 	commitSHA, branch string,
 	startedAt time.Time,
@@ -252,7 +253,7 @@ func executeProjects(
 				return nil, err
 			}
 		}
-		projResult, err := runProject(ctx, writer, deps, workspace, project, commitSHA, branch, startedAt, opts, interactive)
+		projResult, err := runProject(ctx, writer, deps, workspace, tenantID, project, commitSHA, branch, startedAt, opts, interactive)
 		if err != nil {
 			return nil, fmt.Errorf("project %s: %writer", project.Name, err)
 		}
@@ -328,6 +329,7 @@ func runProject(
 	writer io.Writer,
 	deps deps,
 	workspace string,
+	tenantID string,
 	project loadgavelspace.ProjectView,
 	commitSHA, branch string,
 	startedAt time.Time,
@@ -403,7 +405,7 @@ func runProject(
 			Findings:     deps.findings,
 			Coverage:     deps.coverage,
 			ServerClient: deps.serverClient,
-		}, workspace, collected, project.ID, project.Name, commitSHA, branch, startedAt, pipeline.Options{
+		}, workspace, collected, tenantID, project.ID, project.Name, commitSHA, branch, startedAt, pipeline.Options{
 			Quick:         opts.Quick,
 			Absolute:      opts.Absolute,
 			RequireSubmit: opts.RequireSubmit,
@@ -433,7 +435,7 @@ func runProject(
 		Findings:     deps.findings,
 		Coverage:     deps.coverage,
 		ServerClient: deps.serverClient,
-	}, workspace, collected, project.ID, project.Name, commitSHA, branch, startedAt, pipeline.Options{
+	}, workspace, collected, tenantID, project.ID, project.Name, commitSHA, branch, startedAt, pipeline.Options{
 		Quick:         opts.Quick,
 		Absolute:      opts.Absolute,
 		RequireSubmit: opts.RequireSubmit,

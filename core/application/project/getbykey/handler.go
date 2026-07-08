@@ -1,6 +1,11 @@
 package getbykey
 
-import "context"
+import (
+	"context"
+	"fmt"
+
+	"github.com/usegavel/gavel/core/domain/iam/model/tenant"
+)
 
 type Handler struct {
 	getter Finder
@@ -14,5 +19,9 @@ func NewHandler(getter Finder) *Handler {
 }
 
 func (h *Handler) Execute(ctx context.Context, q Query) (*ProjectDetail, error) {
-	return h.getter.GetByKey(ctx, q.Key())
+	tenantID, err := tenant.ParseTenantID(q.TenantID())
+	if err != nil {
+		return nil, fmt.Errorf("tenant id: %w", err)
+	}
+	return h.getter.GetByKey(ctx, tenantID, q.Key())
 }

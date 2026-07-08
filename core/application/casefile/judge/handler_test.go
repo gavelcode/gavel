@@ -15,9 +15,12 @@ import (
 	"github.com/usegavel/gavel/core/domain/casefile/model/evidence"
 	"github.com/usegavel/gavel/core/domain/casefile/model/evidence/finding"
 	"github.com/usegavel/gavel/core/domain/casefile/model/verdict"
+	"github.com/usegavel/gavel/core/domain/iam/model/tenant"
 	projectmodel "github.com/usegavel/gavel/core/domain/project/model"
 	"github.com/usegavel/gavel/core/domain/project/model/qualitygate"
 )
+
+var testTenant = tenant.NewTenantID(uuid.MustParse("22222222-2222-2222-2222-222222222222"))
 
 func TestHandlerExecuteRendersVerdict(t *testing.T) {
 	caseFiles := newFakeCaseFileRepo()
@@ -81,7 +84,7 @@ func TestHandlerExecuteProjectNotFound(t *testing.T) {
 	caseFiles := newFakeCaseFileRepo()
 	projects := newFakeProjectRepo()
 	projectID := projectmodel.NewProjectID(uuid.New())
-	caseFile, err := casefile.NewCaseFile(projectID, "abc", "main", time.Now().UTC(), time.Now().UTC())
+	caseFile, err := casefile.NewCaseFile(testTenant, projectID, "abc", "main", time.Now().UTC(), time.Now().UTC())
 	require.NoError(t, err)
 	caseFiles.seed(caseFile)
 
@@ -185,7 +188,7 @@ func seedPassingScenario(t *testing.T, caseFiles *fakeCaseFileRepo, projects *fa
 	project := buildProject(t, qualitygate.Gate{})
 	projects.seed(project)
 
-	caseFile, err := casefile.NewCaseFile(project.ID(), "abc", "main", time.Now().UTC(), time.Now().UTC())
+	caseFile, err := casefile.NewCaseFile(testTenant, project.ID(), "abc", "main", time.Now().UTC(), time.Now().UTC())
 	require.NoError(t, err)
 	caseFiles.seed(caseFile)
 	return caseFile, project
@@ -204,7 +207,7 @@ func seedFailingScenario(t *testing.T, caseFiles *fakeCaseFileRepo, projects *fa
 	project := buildProject(t, qg)
 	projects.seed(project)
 
-	caseFile, err := casefile.NewCaseFile(project.ID(), "abc", "main", time.Now().UTC(), time.Now().UTC())
+	caseFile, err := casefile.NewCaseFile(testTenant, project.ID(), "abc", "main", time.Now().UTC(), time.Now().UTC())
 	require.NoError(t, err)
 	require.NoError(t, caseFile.AddEvidence(buildFindingsEvidence(t), time.Now().UTC()))
 	caseFiles.seed(caseFile)
@@ -213,7 +216,7 @@ func seedFailingScenario(t *testing.T, caseFiles *fakeCaseFileRepo, projects *fa
 
 func buildProject(t *testing.T, qg qualitygate.Gate) projectmodel.Project {
 	t.Helper()
-	p, err := projectmodel.NewProject("svc", "svc", "//svc/...")
+	p, err := projectmodel.NewProject(testTenant, "svc", "svc", "//svc/...")
 	require.NoError(t, err)
 	p.UpdateQualityGate(qg, time.Now().UTC())
 	p.ClearEvents()

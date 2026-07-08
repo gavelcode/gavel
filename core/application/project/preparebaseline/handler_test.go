@@ -23,7 +23,7 @@ func TestExecuteFetchesBaselineFromServer(t *testing.T) {
 	}
 
 	handler := preparebaseline.NewHandler(projRepo, cfRepo, preparebaseline.WithFetcher(fetcher))
-	cmd := mustCommand(t, []preparebaseline.ProjectInput{{Name: "core", DefaultBranch: "main"}})
+	cmd := mustCommand(t, []preparebaseline.ProjectInput{{Name: "core", DefaultBranch: "main"}}, testTenant.String())
 
 	result, err := handler.Execute(context.Background(), cmd)
 	require.NoError(t, err)
@@ -49,7 +49,7 @@ func TestExecuteUsesLocalBaselineWhenNoFetcher(t *testing.T) {
 	require.NoError(t, projRepo.Save(context.Background(), project))
 
 	handler := preparebaseline.NewHandler(projRepo, cfRepo)
-	cmd := mustCommand(t, []preparebaseline.ProjectInput{{Name: "local", DefaultBranch: "main"}})
+	cmd := mustCommand(t, []preparebaseline.ProjectInput{{Name: "local", DefaultBranch: "main"}}, testTenant.String())
 
 	result, err := handler.Execute(context.Background(), cmd)
 	require.NoError(t, err)
@@ -68,7 +68,7 @@ func TestExecuteNoBaselineFirstRun(t *testing.T) {
 	seedProject(t, projRepo, "new")
 
 	handler := preparebaseline.NewHandler(projRepo, cfRepo)
-	cmd := mustCommand(t, []preparebaseline.ProjectInput{{Name: "new", DefaultBranch: "main"}})
+	cmd := mustCommand(t, []preparebaseline.ProjectInput{{Name: "new", DefaultBranch: "main"}}, testTenant.String())
 
 	result, err := handler.Execute(context.Background(), cmd)
 	require.NoError(t, err)
@@ -92,7 +92,7 @@ func TestExecuteRemoteBaselineSaveErrorLogsWarning(t *testing.T) {
 	}
 
 	handler := preparebaseline.NewHandler(projRepo, cfRepo, preparebaseline.WithFetcher(fetcher))
-	cmd := mustCommand(t, []preparebaseline.ProjectInput{{Name: "core", DefaultBranch: "main"}})
+	cmd := mustCommand(t, []preparebaseline.ProjectInput{{Name: "core", DefaultBranch: "main"}}, testTenant.String())
 
 	result, err := handler.Execute(context.Background(), cmd)
 	require.NoError(t, err)
@@ -113,7 +113,7 @@ func TestExecuteRemoteBaselineSkipsInvalidFingerprints(t *testing.T) {
 	}
 
 	handler := preparebaseline.NewHandler(projRepo, cfRepo, preparebaseline.WithFetcher(fetcher))
-	cmd := mustCommand(t, []preparebaseline.ProjectInput{{Name: "core", DefaultBranch: "main"}})
+	cmd := mustCommand(t, []preparebaseline.ProjectInput{{Name: "core", DefaultBranch: "main"}}, testTenant.String())
 
 	result, err := handler.Execute(context.Background(), cmd)
 	require.NoError(t, err)
@@ -131,13 +131,13 @@ func TestNewHandlerPanicsOnNilRepos(t *testing.T) {
 }
 
 func TestNewCommandRejectsEmptyProjectName(t *testing.T) {
-	_, err := preparebaseline.NewCommand([]preparebaseline.ProjectInput{{Name: "", DefaultBranch: "main"}})
+	_, err := preparebaseline.NewCommand(testTenant.String(), []preparebaseline.ProjectInput{{Name: "", DefaultBranch: "main"}})
 	assert.ErrorIs(t, err, preparebaseline.ErrInvalidCommand)
 }
 
-func mustCommand(t *testing.T, projects []preparebaseline.ProjectInput) preparebaseline.Command {
+func mustCommand(t *testing.T, projects []preparebaseline.ProjectInput, tenantID string) preparebaseline.Command {
 	t.Helper()
-	cmd, err := preparebaseline.NewCommand(projects)
+	cmd, err := preparebaseline.NewCommand(tenantID, projects)
 	require.NoError(t, err)
 	return cmd
 }

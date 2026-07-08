@@ -12,7 +12,10 @@ go_library(
     ],
     importpath = "github.com/usegavel/gavel/core/application/project/list",
     visibility = ["//visibility:public"],
-    deps = ["//core/domain/shared/failure"],
+    deps = [
+        "//core/domain/iam/model/tenant",
+        "//core/domain/shared/failure",
+    ],
 )
 
 go_test(
@@ -23,7 +26,9 @@ go_test(
     ],
     deps = [
         ":list",
+        "//core/domain/iam/model/tenant",
         "//core/domain/shared/failure",
+        "@com_github_google_uuid//:uuid",
         "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//require",
     ],

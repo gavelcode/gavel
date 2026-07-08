@@ -24,7 +24,7 @@ func TestNewCommand(t *testing.T) {
 
 	for _, testCase := range tests {
 		t.Run(testCase.name, func(t *testing.T) {
-			cmd, err := updatetargetpattern.NewCommand(testCase.projectID, testCase.pattern)
+			cmd, err := updatetargetpattern.NewCommand(testTenant.String(), testCase.projectID, testCase.pattern)
 
 			if testCase.wantErr {
 				require.Error(t, err)

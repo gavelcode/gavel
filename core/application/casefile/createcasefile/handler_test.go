@@ -10,10 +10,13 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/usegavel/gavel/core/application/casefile/createcasefile"
+	"github.com/usegavel/gavel/core/domain/iam/model/tenant"
 	projectmodel "github.com/usegavel/gavel/core/domain/project/model"
 	casefilememory "github.com/usegavel/gavel/core/infrastructure/casefile/memory"
 	projectmemory "github.com/usegavel/gavel/core/infrastructure/project/memory"
 )
+
+var testTenantExternal = tenant.NewTenantID(uuid.MustParse("22222222-2222-2222-2222-222222222222"))
 
 var testTime = time.Date(2026, time.June, 10, 12, 0, 0, 0, time.UTC)
 
@@ -22,6 +25,7 @@ func TestExecutePersistsEmptyCaseFile(t *testing.T) {
 
 	handler := createcasefile.NewHandler(caseFiles, project)
 	cmd, err := createcasefile.NewCommand(
+		testTenantExternal.String(),
 		seededProjectID(t, project).String(),
 		"abc123",
 		"main",
@@ -44,6 +48,7 @@ func TestExecuteFreshEvaluationOption(t *testing.T) {
 	handler := createcasefile.NewHandler(caseFiles, project)
 
 	cmd, err := createcasefile.NewCommand(
+		testTenantExternal.String(),
 		seededProjectID(t, project).String(),
 		"abc123",
 		"main",
@@ -61,6 +66,7 @@ func TestExecuteProjectNotFound(t *testing.T) {
 	handler := createcasefile.NewHandler(caseFiles, project)
 
 	cmd, _ := createcasefile.NewCommand(
+		testTenantExternal.String(),
 		projectmodel.NewProjectID(uuid.New()).String(),
 		"abc123",
 		"main",
@@ -83,16 +89,19 @@ func TestNewHandlerPanicsOnNilProjects(t *testing.T) {
 }
 
 func TestNewCommandRejectsInvalidInputs(t *testing.T) {
-	_, err := createcasefile.NewCommand("", "abc", "main", testTime)
+	_, err := createcasefile.NewCommand("", "proj", "abc", "main", testTime)
 	require.ErrorIs(t, err, createcasefile.ErrInvalidCommand)
 
-	_, err = createcasefile.NewCommand("p", "", "main", testTime)
+	_, err = createcasefile.NewCommand("t", "", "abc", "main", testTime)
 	require.ErrorIs(t, err, createcasefile.ErrInvalidCommand)
 
-	_, err = createcasefile.NewCommand("p", "abc", "", testTime)
+	_, err = createcasefile.NewCommand("t", "p", "", "main", testTime)
 	require.ErrorIs(t, err, createcasefile.ErrInvalidCommand)
 
-	_, err = createcasefile.NewCommand("p", "abc", "main", time.Time{})
+	_, err = createcasefile.NewCommand("t", "p", "abc", "", testTime)
+	require.ErrorIs(t, err, createcasefile.ErrInvalidCommand)
+
+	_, err = createcasefile.NewCommand("t", "p", "abc", "main", time.Time{})
 	require.ErrorIs(t, err, createcasefile.ErrInvalidCommand)
 }
 
@@ -103,7 +112,7 @@ func setup(t *testing.T) (*casefilememory.CaseFileRepository, *projectmemory.Pro
 
 func seededProjectID(t *testing.T, repo *projectmemory.ProjectRepository) projectmodel.ProjectID {
 	t.Helper()
-	p, err := projectmodel.NewProject("test-project", "Test Project", "//...")
+	p, err := projectmodel.NewProject(testTenantExternal, "test-project", "Test Project", "//...")
 	require.NoError(t, err)
 	p.ClearEvents()
 	require.NoError(t, repo.Save(context.Background(), p))

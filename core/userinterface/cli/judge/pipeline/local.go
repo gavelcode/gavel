@@ -14,12 +14,12 @@ func RunLocal(
 	deps Deps,
 	workspace string,
 	collected collectevidence.Result,
-	projectID, projectName, commitSHA, branch string,
+	tenantID, projectID, projectName, commitSHA, branch string,
 	startedAt time.Time,
 	opts Options,
 ) (Result, error) {
 	cmd, err := submit.NewCommand(
-		projectID, commitSHA, branch,
+		tenantID, projectID, commitSHA, branch,
 		collected.Evidences,
 		collected.Fingerprints,
 		collected.ArchIDs,

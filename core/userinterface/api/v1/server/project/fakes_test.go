@@ -7,9 +7,11 @@ import (
 
 	projectlist "github.com/usegavel/gavel/core/application/project/list"
 	"github.com/usegavel/gavel/core/application/project/projectview"
+	"github.com/usegavel/gavel/core/domain/iam/model/tenant"
 	projectmodel "github.com/usegavel/gavel/core/domain/project/model"
 	"github.com/usegavel/gavel/core/domain/shared/failure"
 	memproject "github.com/usegavel/gavel/core/infrastructure/project/memory"
+	auth "github.com/usegavel/gavel/core/userinterface/api/v1/server/httpx/auth"
 )
 
 var (
@@ -23,7 +25,7 @@ type fakeListFinder struct {
 	err   error
 }
 
-func (f *fakeListFinder) List(_ context.Context, _, _ int) ([]projectlist.ProjectSummary, int, error) {
+func (f *fakeListFinder) List(_ context.Context, _ tenant.TenantID, _, _ int) ([]projectlist.ProjectSummary, int, error) {
 	return f.items, f.total, f.err
 }
 
@@ -32,7 +34,7 @@ type fakeGetByKeyFinder struct {
 	err    error
 }
 
-func (f *fakeGetByKeyFinder) GetByKey(_ context.Context, _ string) (*projectview.ProjectDetail, error) {
+func (f *fakeGetByKeyFinder) GetByKey(_ context.Context, _ tenant.TenantID, _ string) (*projectview.ProjectDetail, error) {
 	return f.detail, f.err
 }
 
@@ -84,14 +86,20 @@ func (r *conflictRepo) Save(_ context.Context, _ projectmodel.Project) error {
 	return failure.New("project key already exists", failure.Conflict)
 }
 
-func (r *conflictRepo) FindByID(ctx context.Context, id projectmodel.ProjectID) (projectmodel.Project, error) {
-	return r.inner.FindByID(ctx, id)
+func (r *conflictRepo) FindByID(ctx context.Context, tenantID tenant.TenantID, id projectmodel.ProjectID) (projectmodel.Project, error) {
+	return r.inner.FindByID(ctx, tenantID, id)
 }
 
-func (r *conflictRepo) FindByName(ctx context.Context, name string) (projectmodel.Project, error) {
-	return r.inner.FindByName(ctx, name)
+func (r *conflictRepo) FindByName(ctx context.Context, tenantID tenant.TenantID, name string) (projectmodel.Project, error) {
+	return r.inner.FindByName(ctx, tenantID, name)
 }
 
-func (r *conflictRepo) FindByKey(ctx context.Context, key string) (projectmodel.Project, error) {
-	return r.inner.FindByKey(ctx, key)
+func (r *conflictRepo) FindByKey(ctx context.Context, tenantID tenant.TenantID, key string) (projectmodel.Project, error) {
+	return r.inner.FindByKey(ctx, tenantID, key)
+}
+
+const testTenant = "22222222-2222-2222-2222-222222222222"
+
+func authContext() context.Context {
+	return auth.WithPrincipal(context.Background(), &auth.Principal{TenantID: testTenant})
 }

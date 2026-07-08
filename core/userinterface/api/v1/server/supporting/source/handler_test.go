@@ -1,7 +1,6 @@
 package source_test
 
 import (
-	"context"
 	"errors"
 	"testing"
 
@@ -38,7 +37,7 @@ func TestGetProjectSourceWithCasefileReturnsCoverageAndFindings(t *testing.T) {
 	})
 
 	cfUUID := httpx.ParseUUIDOrZero(casefileID)
-	resp, err := handler.GetProjectSource(context.Background(), gen.GetProjectSourceRequestObject{
+	resp, err := handler.GetProjectSource(authContext(), gen.GetProjectSourceRequestObject{
 		Key: "core",
 		Params: gen.GetProjectSourceParams{
 			Commit:   "abc123",
@@ -67,7 +66,7 @@ func TestGetProjectSourceWithoutCasefileReturnsBinary(t *testing.T) {
 		ResolveProjectByKey: fakeProjectResolver(projectID),
 	})
 
-	resp, err := handler.GetProjectSource(context.Background(), gen.GetProjectSourceRequestObject{
+	resp, err := handler.GetProjectSource(authContext(), gen.GetProjectSourceRequestObject{
 		Key: "core",
 		Params: gen.GetProjectSourceParams{
 			Commit: "abc123",
@@ -94,7 +93,7 @@ func TestGetProjectSourceWithCasefileNoCoverageReturnsNilCoverage(t *testing.T) 
 	})
 
 	cfUUID := httpx.ParseUUIDOrZero(casefileID)
-	resp, err := handler.GetProjectSource(context.Background(), gen.GetProjectSourceRequestObject{
+	resp, err := handler.GetProjectSource(authContext(), gen.GetProjectSourceRequestObject{
 		Key: "core",
 		Params: gen.GetProjectSourceParams{
 			Commit:   "abc123",
@@ -116,7 +115,7 @@ func TestUploadProjectSourceNilBodyReturns400(t *testing.T) {
 		ResolveProjectByKey: fakeProjectResolver(testProjectID),
 	})
 
-	resp, err := handler.UploadProjectSource(context.Background(), gen.UploadProjectSourceRequestObject{
+	resp, err := handler.UploadProjectSource(authContext(), gen.UploadProjectSourceRequestObject{
 		Key:  "core",
 		Body: nil,
 	})
@@ -132,7 +131,7 @@ func TestUploadProjectSourceEmptyCommitReturns400(t *testing.T) {
 		ResolveProjectByKey: fakeProjectResolver(testProjectID),
 	})
 
-	resp, err := handler.UploadProjectSource(context.Background(), gen.UploadProjectSourceRequestObject{
+	resp, err := handler.UploadProjectSource(authContext(), gen.UploadProjectSourceRequestObject{
 		Key: "core",
 		Body: &gen.UploadProjectSourceJSONRequestBody{
 			Commit: "   ",
@@ -151,7 +150,7 @@ func TestUploadProjectSourceEmptyFilesReturns204(t *testing.T) {
 		ResolveProjectByKey: fakeProjectResolver(testProjectID),
 	})
 
-	resp, err := handler.UploadProjectSource(context.Background(), gen.UploadProjectSourceRequestObject{
+	resp, err := handler.UploadProjectSource(authContext(), gen.UploadProjectSourceRequestObject{
 		Key: "core",
 		Body: &gen.UploadProjectSourceJSONRequestBody{
 			Commit: "abc123",
@@ -171,7 +170,7 @@ func TestUploadProjectSourceSavesBlobs(t *testing.T) {
 		ResolveProjectByKey: fakeProjectResolver(testProjectID),
 	})
 
-	resp, err := handler.UploadProjectSource(context.Background(), gen.UploadProjectSourceRequestObject{
+	resp, err := handler.UploadProjectSource(authContext(), gen.UploadProjectSourceRequestObject{
 		Key: "core",
 		Body: &gen.UploadProjectSourceJSONRequestBody{
 			Commit: "abc123",
@@ -202,7 +201,7 @@ func TestUploadProjectSourceSkipsUnsafePaths(t *testing.T) {
 		ResolveProjectByKey: fakeProjectResolver(testProjectID),
 	})
 
-	resp, err := handler.UploadProjectSource(context.Background(), gen.UploadProjectSourceRequestObject{
+	resp, err := handler.UploadProjectSource(authContext(), gen.UploadProjectSourceRequestObject{
 		Key: "core",
 		Body: &gen.UploadProjectSourceJSONRequestBody{
 			Commit: "abc123",
@@ -226,7 +225,7 @@ func TestUploadProjectSourceProjectNotFoundReturns404(t *testing.T) {
 		ResolveProjectByKey: notFoundProjectResolver(),
 	})
 
-	resp, err := handler.UploadProjectSource(context.Background(), gen.UploadProjectSourceRequestObject{
+	resp, err := handler.UploadProjectSource(authContext(), gen.UploadProjectSourceRequestObject{
 		Key: "nonexistent",
 		Body: &gen.UploadProjectSourceJSONRequestBody{
 			Commit: "abc123",
@@ -245,7 +244,7 @@ func TestGetProjectSourceMissingParamsReturns400(t *testing.T) {
 		ResolveProjectByKey: fakeProjectResolver(testProjectID),
 	})
 
-	resp, err := handler.GetProjectSource(context.Background(), gen.GetProjectSourceRequestObject{
+	resp, err := handler.GetProjectSource(authContext(), gen.GetProjectSourceRequestObject{
 		Key: "core",
 		Params: gen.GetProjectSourceParams{
 			Commit: "",
@@ -264,7 +263,7 @@ func TestGetProjectSourceUnsafePathReturns400(t *testing.T) {
 		ResolveProjectByKey: fakeProjectResolver(testProjectID),
 	})
 
-	resp, err := handler.GetProjectSource(context.Background(), gen.GetProjectSourceRequestObject{
+	resp, err := handler.GetProjectSource(authContext(), gen.GetProjectSourceRequestObject{
 		Key: "core",
 		Params: gen.GetProjectSourceParams{
 			Commit: "abc",
@@ -283,7 +282,7 @@ func TestGetProjectSourceProjectNotFoundReturns404(t *testing.T) {
 		ResolveProjectByKey: notFoundProjectResolver(),
 	})
 
-	resp, err := handler.GetProjectSource(context.Background(), gen.GetProjectSourceRequestObject{
+	resp, err := handler.GetProjectSource(authContext(), gen.GetProjectSourceRequestObject{
 		Key: "nonexistent",
 		Params: gen.GetProjectSourceParams{
 			Commit: "abc123",
@@ -302,7 +301,7 @@ func TestGetProjectSourceBlobNotFoundReturns404(t *testing.T) {
 		ResolveProjectByKey: fakeProjectResolver(testProjectID),
 	})
 
-	resp, err := handler.GetProjectSource(context.Background(), gen.GetProjectSourceRequestObject{
+	resp, err := handler.GetProjectSource(authContext(), gen.GetProjectSourceRequestObject{
 		Key: "core",
 		Params: gen.GetProjectSourceParams{
 			Commit: "abc123",
@@ -327,7 +326,7 @@ func TestGetProjectSourceCoverageFetchErrorReturnsError(t *testing.T) {
 	})
 
 	cfUUID := httpx.ParseUUIDOrZero(casefileID)
-	resp, err := handler.GetProjectSource(context.Background(), gen.GetProjectSourceRequestObject{
+	resp, err := handler.GetProjectSource(authContext(), gen.GetProjectSourceRequestObject{
 		Key: "core",
 		Params: gen.GetProjectSourceParams{
 			Commit:   "abc123",
@@ -352,7 +351,7 @@ func TestGetProjectSourceFindingsFetchErrorReturnsError(t *testing.T) {
 	})
 
 	cfUUID := httpx.ParseUUIDOrZero(casefileID)
-	resp, err := handler.GetProjectSource(context.Background(), gen.GetProjectSourceRequestObject{
+	resp, err := handler.GetProjectSource(authContext(), gen.GetProjectSourceRequestObject{
 		Key: "core",
 		Params: gen.GetProjectSourceParams{
 			Commit:   "abc123",

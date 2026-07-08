@@ -16,6 +16,7 @@ import (
 	"github.com/usegavel/gavel/core/application/shared/apperr"
 	"github.com/usegavel/gavel/core/userinterface/api/v1/gen"
 	"github.com/usegavel/gavel/core/userinterface/api/v1/server/httpx"
+	auth "github.com/usegavel/gavel/core/userinterface/api/v1/server/httpx/auth"
 )
 
 type FileCoverageSaver interface {
@@ -122,7 +123,11 @@ func (h *Handler) ListFindings(ctx context.Context, req gen.ListFindingsRequestO
 }
 
 func (h *Handler) ListProjectCaseFiles(ctx context.Context, req gen.ListProjectCaseFilesRequestObject) (gen.ListProjectCaseFilesResponseObject, error) {
-	detail, err := h.fetchProjectDetail(ctx, string(req.Key))
+	principal, ok := auth.PrincipalFromContext(ctx)
+	if !ok {
+		return gen.ListProjectCaseFiles401JSONResponse{UnauthorizedJSONResponse: httpx.Unauthorized("unauthenticated")}, nil
+	}
+	detail, err := h.fetchProjectDetail(ctx, principal.TenantID, string(req.Key))
 	if err != nil {
 		if apperr.Of(err) == apperr.NotFound {
 			return gen.ListProjectCaseFiles404JSONResponse{NotFoundJSONResponse: httpx.NotFound("project not found")}, nil
@@ -146,11 +151,15 @@ func (h *Handler) ListProjectCaseFiles(ctx context.Context, req gen.ListProjectC
 }
 
 func (h *Handler) GetProjectBaseline(ctx context.Context, req gen.GetProjectBaselineRequestObject) (gen.GetProjectBaselineResponseObject, error) {
+	principal, ok := auth.PrincipalFromContext(ctx)
+	if !ok {
+		return gen.GetProjectBaseline401JSONResponse{UnauthorizedJSONResponse: httpx.Unauthorized("unauthenticated")}, nil
+	}
 	branch := ""
 	if req.Params.Branch != nil {
 		branch = *req.Params.Branch
 	}
-	q, err := getbaseline.NewQuery(string(req.Key), branch)
+	q, err := getbaseline.NewQuery(principal.TenantID, string(req.Key), branch)
 	if err != nil {
 		return nil, err
 	}
@@ -168,8 +177,8 @@ func (h *Handler) GetProjectBaseline(ctx context.Context, req gen.GetProjectBase
 	}, nil
 }
 
-func (h *Handler) fetchProjectDetail(ctx context.Context, key string) (*projectgetbykey.ProjectDetail, error) {
-	q, err := projectgetbykey.NewQuery(key)
+func (h *Handler) fetchProjectDetail(ctx context.Context, tenantID, key string) (*projectgetbykey.ProjectDetail, error) {
+	q, err := projectgetbykey.NewQuery(tenantID, key)
 	if err != nil {
 		return nil, err
 	}

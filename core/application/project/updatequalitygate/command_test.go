@@ -154,7 +154,7 @@ func TestNewCommand(t *testing.T) {
 
 	for _, testCase := range tests {
 		t.Run(testCase.name, func(t *testing.T) {
-			cmd, err := updatequalitygate.NewCommand(testCase.projectID, testCase.input)
+			cmd, err := updatequalitygate.NewCommand(testTenant.String(), testCase.projectID, testCase.input)
 
 			if testCase.wantErr {
 				require.Error(t, err)

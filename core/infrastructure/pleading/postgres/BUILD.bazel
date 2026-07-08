@@ -33,6 +33,7 @@ go_test(
         "//core/domain/casefile/model/evidence",
         "//core/domain/casefile/model/evidence/finding",
         "//core/domain/casefile/model/verdict",
+        "//core/domain/iam/model/tenant",
         "//core/domain/pleading/model",
         "//core/domain/project/model",
         "//core/domain/shared/failure",

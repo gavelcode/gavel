@@ -35,7 +35,7 @@ func NewHandler(
 }
 
 func (h *Handler) Execute(ctx context.Context, cmd Command) (Result, error) {
-	createCmd, err := createcasefile.NewCommand(cmd.ProjectID(), cmd.CommitSHA(), cmd.Branch(), cmd.StartedAt())
+	createCmd, err := createcasefile.NewCommand(cmd.TenantID(), cmd.ProjectID(), cmd.CommitSHA(), cmd.Branch(), cmd.StartedAt())
 	if err != nil {
 		return Result{}, fmt.Errorf("create case file: %w", err)
 	}

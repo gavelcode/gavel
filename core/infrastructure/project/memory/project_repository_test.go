@@ -18,12 +18,12 @@ func TestProjectRepositorySaveAndFindByID(t *testing.T) {
 	repo := memory.NewProjectRepository()
 	ctx := context.Background()
 
-	project, err := projectmodel.NewProject("backend", "backend", "//backend/...")
+	project, err := projectmodel.NewProject(testTenantID, "backend", "backend", "//backend/...")
 	require.NoError(t, err)
 
 	require.NoError(t, repo.Save(ctx, project))
 
-	found, err := repo.FindByID(ctx, project.ID())
+	found, err := repo.FindByID(ctx, testTenantID, project.ID())
 	require.NoError(t, err)
 	assert.Equal(t, project.ID(), found.ID())
 	assert.Equal(t, "backend", found.Name())
@@ -33,12 +33,12 @@ func TestProjectRepositorySaveAndFindByName(t *testing.T) {
 	repo := memory.NewProjectRepository()
 	ctx := context.Background()
 
-	project, err := projectmodel.NewProject("backend", "backend", "//backend/...")
+	project, err := projectmodel.NewProject(testTenantID, "backend", "backend", "//backend/...")
 	require.NoError(t, err)
 
 	require.NoError(t, repo.Save(ctx, project))
 
-	found, err := repo.FindByName(ctx, "backend")
+	found, err := repo.FindByName(ctx, testTenantID, "backend")
 	require.NoError(t, err)
 	assert.Equal(t, project.ID(), found.ID())
 }
@@ -47,7 +47,7 @@ func TestProjectRepositoryFindByIDNotFound(t *testing.T) {
 	repo := memory.NewProjectRepository()
 	ctx := context.Background()
 	id := projectmodel.NewProjectID(uuid.New())
-	_, err := repo.FindByID(ctx, id)
+	_, err := repo.FindByID(ctx, testTenantID, id)
 	assert.ErrorIs(t, err, memory.ErrProjectNotFound)
 }
 
@@ -55,12 +55,12 @@ func TestProjectRepositorySaveAndFindByKey(t *testing.T) {
 	repo := memory.NewProjectRepository()
 	ctx := context.Background()
 
-	project, err := projectmodel.NewProject("backend", "backend", "//backend/...")
+	project, err := projectmodel.NewProject(testTenantID, "backend", "backend", "//backend/...")
 	require.NoError(t, err)
 
 	require.NoError(t, repo.Save(ctx, project))
 
-	found, err := repo.FindByKey(ctx, "backend")
+	found, err := repo.FindByKey(ctx, testTenantID, "backend")
 	require.NoError(t, err)
 	assert.Equal(t, project.ID(), found.ID())
 }
@@ -69,7 +69,7 @@ func TestProjectRepositoryFindByKeyNotFound(t *testing.T) {
 	repo := memory.NewProjectRepository()
 	ctx := context.Background()
 
-	_, err := repo.FindByKey(ctx, "nonexistent")
+	_, err := repo.FindByKey(ctx, testTenantID, "nonexistent")
 	assert.ErrorIs(t, err, memory.ErrProjectNotFound)
 }
 
@@ -77,7 +77,7 @@ func TestProjectRepositoryFindByNameNotFound(t *testing.T) {
 	repo := memory.NewProjectRepository()
 	ctx := context.Background()
 
-	_, err := repo.FindByName(ctx, "nonexistent")
+	_, err := repo.FindByName(ctx, testTenantID, "nonexistent")
 	assert.ErrorIs(t, err, memory.ErrProjectNotFound)
 }
 
@@ -87,18 +87,18 @@ func TestProjectRepositoryBaselinePersistsToDisk(t *testing.T) {
 	repo := memory.NewProjectRepositoryWithBaseline(store)
 	ctx := context.Background()
 
-	project, err := projectmodel.NewProject("core", "core", "//core/...")
+	project, err := projectmodel.NewProject(testTenantID, "core", "core", "//core/...")
 	require.NoError(t, err)
 	project.UpdateBaseline("main", []string{"fp-1", "fp-2"}, []string{"arch-1"}, nil, nil)
 
 	require.NoError(t, repo.Save(ctx, project))
 
 	repo2 := memory.NewProjectRepositoryWithBaseline(store)
-	project2, err := projectmodel.NewProject("core", "core", "//core/...")
+	project2, err := projectmodel.NewProject(testTenantID, "core", "core", "//core/...")
 	require.NoError(t, err)
 	require.NoError(t, repo2.Save(ctx, project2))
 
-	found, err := repo2.FindByName(ctx, "core")
+	found, err := repo2.FindByName(ctx, testTenantID, "core")
 	require.NoError(t, err)
 	baseline := found.Baseline("main")
 	assert.True(t, baseline.HasPrevious(), "baseline should persist across repo instances")
@@ -112,7 +112,7 @@ func TestProjectRepositoryReconstitutesFileCoverageFromDisk(t *testing.T) {
 	repo := memory.NewProjectRepositoryWithBaseline(store)
 	ctx := context.Background()
 
-	project, err := projectmodel.NewProject("core", "core", "//core/...")
+	project, err := projectmodel.NewProject(testTenantID, "core", "core", "//core/...")
 	require.NoError(t, err)
 	pct := 75.0
 	entry, err := projectmodel.NewFileCoverageEntry("core/a.go", []int{1, 2, 3}, []int{4})
@@ -121,11 +121,11 @@ func TestProjectRepositoryReconstitutesFileCoverageFromDisk(t *testing.T) {
 	require.NoError(t, repo.Save(ctx, project))
 
 	repo2 := memory.NewProjectRepositoryWithBaseline(store)
-	project2, err := projectmodel.NewProject("core", "core", "//core/...")
+	project2, err := projectmodel.NewProject(testTenantID, "core", "core", "//core/...")
 	require.NoError(t, err)
 	require.NoError(t, repo2.Save(ctx, project2))
 
-	found, err := repo2.FindByName(ctx, "core")
+	found, err := repo2.FindByName(ctx, testTenantID, "core")
 	require.NoError(t, err)
 	baseline := found.Baseline("main")
 	require.Len(t, baseline.FileCoverage(), 1, "per-file coverage must survive the disk round-trip")
@@ -138,18 +138,18 @@ func TestProjectRepositoryWithoutBaselineStoreDoesNotPersist(t *testing.T) {
 	repo := memory.NewProjectRepository()
 	ctx := context.Background()
 
-	project, err := projectmodel.NewProject("core", "core", "//core/...")
+	project, err := projectmodel.NewProject(testTenantID, "core", "core", "//core/...")
 	require.NoError(t, err)
 	project.UpdateBaseline("main", []string{"fp-1"}, nil, nil, nil)
 
 	require.NoError(t, repo.Save(ctx, project))
 
 	repo2 := memory.NewProjectRepository()
-	project2, err := projectmodel.NewProject("core", "core", "//core/...")
+	project2, err := projectmodel.NewProject(testTenantID, "core", "core", "//core/...")
 	require.NoError(t, err)
 	require.NoError(t, repo2.Save(ctx, project2))
 
-	found, err := repo2.FindByName(ctx, "core")
+	found, err := repo2.FindByName(ctx, testTenantID, "core")
 	require.NoError(t, err)
 	baseline := found.Baseline("main")
 	assert.False(t, baseline.HasPrevious(), "without BaselineStore, baseline is lost between instances")
@@ -159,18 +159,18 @@ func TestProjectRepositorySaveOverwrites(t *testing.T) {
 	repo := memory.NewProjectRepository()
 	ctx := context.Background()
 
-	project, err := projectmodel.NewProject("backend", "backend", "//backend/...")
+	project, err := projectmodel.NewProject(testTenantID, "backend", "backend", "//backend/...")
 	require.NoError(t, err)
 
 	require.NoError(t, repo.Save(ctx, project))
 
-	found, err := repo.FindByID(ctx, project.ID())
+	found, err := repo.FindByID(ctx, testTenantID, project.ID())
 	require.NoError(t, err)
 	assert.Equal(t, "//backend/...", found.TargetPattern())
 
 	require.NoError(t, repo.Save(ctx, project))
 
-	found2, err := repo.FindByID(ctx, project.ID())
+	found2, err := repo.FindByID(ctx, testTenantID, project.ID())
 	require.NoError(t, err)
 	assert.Equal(t, project.ID(), found2.ID())
 }
@@ -183,18 +183,18 @@ func TestProjectRepositorySetBaselineStore(t *testing.T) {
 
 	repo.SetBaselineStore(store)
 
-	project, err := projectmodel.NewProject("core", "core", "//core/...")
+	project, err := projectmodel.NewProject(testTenantID, "core", "core", "//core/...")
 	require.NoError(t, err)
 	project.UpdateBaseline("main", []string{"fp-1"}, nil, nil, nil)
 
 	require.NoError(t, repo.Save(ctx, project))
 
 	repo2 := memory.NewProjectRepositoryWithBaseline(store)
-	project2, err := projectmodel.NewProject("core", "core", "//core/...")
+	project2, err := projectmodel.NewProject(testTenantID, "core", "core", "//core/...")
 	require.NoError(t, err)
 	require.NoError(t, repo2.Save(ctx, project2))
 
-	found, err := repo2.FindByName(ctx, "core")
+	found, err := repo2.FindByName(ctx, testTenantID, "core")
 	require.NoError(t, err)
 	baseline := found.Baseline("main")
 	assert.True(t, baseline.HasPrevious())
@@ -212,7 +212,7 @@ func TestProjectRepositorySaveReturnsErrorWhenBaselineStoreFails(t *testing.T) {
 	require.NoError(t, os.Chmod(dir, 0o444))
 	t.Cleanup(func() { _ = os.Chmod(dir, 0o755) })
 
-	project, err := projectmodel.NewProject("core", "core", "//core/...")
+	project, err := projectmodel.NewProject(testTenantID, "core", "core", "//core/...")
 	require.NoError(t, err)
 	project.UpdateBaseline("main", []string{"fp-1"}, nil, nil, nil)
 

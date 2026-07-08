@@ -11,11 +11,11 @@ import (
 )
 
 func TestNewCommandRejectsEmptyCommitSHA(t *testing.T) {
-	_, err := submit.NewCommand("proj-1", "", "main", nil, nil, nil, finalize.ArchDeltaInput{}, nil, false, false, time.Now())
+	_, err := submit.NewCommand("tenant-1", "proj-1", "", "main", nil, nil, nil, finalize.ArchDeltaInput{}, nil, false, false, time.Now())
 	assert.ErrorIs(t, err, submit.ErrInvalidCommand)
 }
 
 func TestNewCommandRejectsEmptyBranch(t *testing.T) {
-	_, err := submit.NewCommand("proj-1", "sha123", "", nil, nil, nil, finalize.ArchDeltaInput{}, nil, false, false, time.Now())
+	_, err := submit.NewCommand("tenant-1", "proj-1", "sha123", "", nil, nil, nil, finalize.ArchDeltaInput{}, nil, false, false, time.Now())
 	assert.ErrorIs(t, err, submit.ErrInvalidCommand)
 }

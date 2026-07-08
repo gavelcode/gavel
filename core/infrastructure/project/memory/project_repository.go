@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/usegavel/gavel/core/domain/iam/model/tenant"
 	"github.com/usegavel/gavel/core/domain/project/model"
 	"github.com/usegavel/gavel/core/domain/project/service"
 	"github.com/usegavel/gavel/core/domain/shared/failure"
@@ -14,27 +15,35 @@ var _ service.ProjectRepository = (*ProjectRepository)(nil)
 
 var ErrProjectNotFound = failure.New("project not found", failure.NotFound)
 
-type ProjectRepository struct {
-	mu            sync.RWMutex
-	byID          map[string]model.Project
-	byName        map[string]model.Project
-	byKey         map[string]model.Project
-	baselineStore *BaselineStore
+type tenantProjects struct {
+	byID   map[string]model.Project
+	byName map[string]model.Project
+	byKey  map[string]model.Project
 }
 
-func NewProjectRepository() *ProjectRepository {
-	return &ProjectRepository{
+func newTenantProjects() *tenantProjects {
+	return &tenantProjects{
 		byID:   make(map[string]model.Project),
 		byName: make(map[string]model.Project),
 		byKey:  make(map[string]model.Project),
 	}
 }
 
+type ProjectRepository struct {
+	mu            sync.RWMutex
+	byTenant      map[string]*tenantProjects
+	baselineStore *BaselineStore
+}
+
+func NewProjectRepository() *ProjectRepository {
+	return &ProjectRepository{
+		byTenant: make(map[string]*tenantProjects),
+	}
+}
+
 func NewProjectRepositoryWithBaseline(store *BaselineStore) *ProjectRepository {
 	return &ProjectRepository{
-		byID:          make(map[string]model.Project),
-		byName:        make(map[string]model.Project),
-		byKey:         make(map[string]model.Project),
+		byTenant:      make(map[string]*tenantProjects),
 		baselineStore: store,
 	}
 }
@@ -64,41 +73,50 @@ func (r *ProjectRepository) Save(_ context.Context, project model.Project) error
 		}
 	}
 
-	r.byID[project.ID().String()] = project
-	r.byName[project.Name()] = project
-	r.byKey[project.Key()] = project
+	tenantKey := project.TenantID().String()
+	scoped := r.byTenant[tenantKey]
+	if scoped == nil {
+		scoped = newTenantProjects()
+		r.byTenant[tenantKey] = scoped
+	}
+	scoped.byID[project.ID().String()] = project
+	scoped.byName[project.Name()] = project
+	scoped.byKey[project.Key()] = project
 	return nil
 }
 
-func (r *ProjectRepository) FindByID(_ context.Context, projectID model.ProjectID) (model.Project, error) {
+func (r *ProjectRepository) FindByID(_ context.Context, tenantID tenant.TenantID, projectID model.ProjectID) (model.Project, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
-	p, ok := r.byID[projectID.String()]
-	if !ok {
-		return model.Project{}, fmt.Errorf("%w: %s", ErrProjectNotFound, projectID)
+	if scoped := r.byTenant[tenantID.String()]; scoped != nil {
+		if p, ok := scoped.byID[projectID.String()]; ok {
+			return p, nil
+		}
 	}
-	return p, nil
+	return model.Project{}, fmt.Errorf("%w: %s", ErrProjectNotFound, projectID)
 }
 
-func (r *ProjectRepository) FindByName(_ context.Context, name string) (model.Project, error) {
+func (r *ProjectRepository) FindByName(_ context.Context, tenantID tenant.TenantID, name string) (model.Project, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
-	p, ok := r.byName[name]
-	if !ok {
-		return model.Project{}, fmt.Errorf("%w: %s", ErrProjectNotFound, name)
+	if scoped := r.byTenant[tenantID.String()]; scoped != nil {
+		if p, ok := scoped.byName[name]; ok {
+			return p, nil
+		}
 	}
-	return p, nil
+	return model.Project{}, fmt.Errorf("%w: %s", ErrProjectNotFound, name)
 }
 
-func (r *ProjectRepository) FindByKey(_ context.Context, key string) (model.Project, error) {
+func (r *ProjectRepository) FindByKey(_ context.Context, tenantID tenant.TenantID, key string) (model.Project, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
-	p, ok := r.byKey[key]
-	if !ok {
-		return model.Project{}, fmt.Errorf("%w: %s", ErrProjectNotFound, key)
+	if scoped := r.byTenant[tenantID.String()]; scoped != nil {
+		if p, ok := scoped.byKey[key]; ok {
+			return p, nil
+		}
 	}
-	return p, nil
+	return model.Project{}, fmt.Errorf("%w: %s", ErrProjectNotFound, key)
 }

@@ -10,6 +10,7 @@ import (
 )
 
 type Command struct {
+	tenantID     string
 	projectID    string
 	commitSHA    string
 	branch       string
@@ -24,7 +25,7 @@ type Command struct {
 }
 
 func NewCommand(
-	projectID, commitSHA, branch string,
+	tenantID, projectID, commitSHA, branch string,
 	evidences []evidencedto.Evidence,
 	fingerprints, archIDs []string,
 	archDelta finalize.ArchDeltaInput,
@@ -32,6 +33,9 @@ func NewCommand(
 	quick, absolute bool,
 	startedAt time.Time,
 ) (Command, error) {
+	if strings.TrimSpace(tenantID) == "" {
+		return Command{}, fmt.Errorf("%w: tenantID must not be empty", ErrInvalidCommand)
+	}
 	if strings.TrimSpace(projectID) == "" {
 		return Command{}, fmt.Errorf("%w: projectID must not be empty", ErrInvalidCommand)
 	}
@@ -42,6 +46,7 @@ func NewCommand(
 		return Command{}, fmt.Errorf("%w: branch must not be empty", ErrInvalidCommand)
 	}
 	return Command{
+		tenantID:     tenantID,
 		projectID:    projectID,
 		commitSHA:    commitSHA,
 		branch:       branch,
@@ -56,6 +61,7 @@ func NewCommand(
 	}, nil
 }
 
+func (c Command) TenantID() string                         { return c.tenantID }
 func (c Command) ProjectID() string                        { return c.projectID }
 func (c Command) CommitSHA() string                        { return c.commitSHA }
 func (c Command) Branch() string                           { return c.branch }

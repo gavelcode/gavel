@@ -15,9 +15,12 @@ import (
 	"github.com/usegavel/gavel/core/domain/casefile/model/evidence/coverage"
 	"github.com/usegavel/gavel/core/domain/casefile/model/evidence/finding"
 	"github.com/usegavel/gavel/core/domain/casefile/model/verdict"
+	"github.com/usegavel/gavel/core/domain/iam/model/tenant"
 	projectmodel "github.com/usegavel/gavel/core/domain/project/model"
 	"github.com/usegavel/gavel/core/infrastructure/casefile/memory"
 )
+
+var testTenantID = tenant.NewTenantID(uuid.MustParse("22222222-2222-2222-2222-222222222222"))
 
 func TestCaseFileRepositorySaveAndFindByID(t *testing.T) {
 	repo := memory.NewCaseFileRepository()
@@ -233,7 +236,7 @@ func newTestCaseFile(t *testing.T, commitSHA, branch string) casefile.CaseFile {
 
 func newCaseFileWithProject(t *testing.T, projectID projectmodel.ProjectID, commitSHA, branch string, startedAt time.Time) casefile.CaseFile {
 	t.Helper()
-	cf, err := casefile.NewCaseFile(projectID, commitSHA, branch, startedAt, startedAt)
+	cf, err := casefile.NewCaseFile(testTenantID, projectID, commitSHA, branch, startedAt, startedAt)
 	require.NoError(t, err)
 	return cf
 }

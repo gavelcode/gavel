@@ -32,11 +32,6 @@ const (
 	fingerprintLen = 12
 )
 
-// MigrationsFingerprint returns a short, deterministic hash of the embedded
-// migration set. It changes whenever any migration file is added or edited, so
-// a test harness can key an ephemeral database's identity to the schema it
-// expects: a schema change yields a new fingerprint (and thus a fresh database)
-// instead of reusing one whose accumulated state predates the new migrations.
 func MigrationsFingerprint() string {
 	entries, err := fs.ReadDir(migrationsFS, migrationsDir)
 	if err != nil {
@@ -90,10 +85,6 @@ func Migrate(ctx context.Context, database *DB) error {
 	return nil
 }
 
-// migrationProvider builds a goose provider that holds a Postgres session-level
-// advisory lock for the duration of the migration, so concurrent server
-// replicas booting against a fresh database serialize instead of racing on
-// CREATE TABLE. It logs through slog rather than goose's default stdout writer.
 func migrationProvider(sqlDB *sql.DB) (*goose.Provider, error) {
 	migrations, err := fs.Sub(migrationsFS, migrationsDir)
 	if err != nil {

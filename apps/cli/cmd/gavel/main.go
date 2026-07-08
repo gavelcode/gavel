@@ -38,7 +38,6 @@ import (
 	"github.com/usegavel/gavel/core/userinterface/cli/judge"
 )
 
-// Overridden at release time via -ldflags "-X main.version".
 var version = "dev"
 
 func main() {

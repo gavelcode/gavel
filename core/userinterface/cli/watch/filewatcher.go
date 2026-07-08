@@ -28,9 +28,7 @@ func NewFileWatcher(root string, debounce time.Duration, onChange func(context.C
 	return &FileWatcher{watcher: w, root: root, debounce: debounce, onChange: onChange, log: log}, nil
 }
 
-// Run registers the recursive watch and then loops on filesystem events. The
-// onStart hook fires only after the watch is in place, so a change made the
-// instant a consumer sees the started signal is guaranteed to be observed.
+// onStart fires only after the watch is registered, so no event is missed between the start signal and the watch.
 func (fw *FileWatcher) Run(ctx context.Context) error {
 	if err := fw.addRecursive(fw.root); err != nil {
 		return err

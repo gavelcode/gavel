@@ -68,6 +68,19 @@ The one real risk of the shared-schema model is a query that forgets its tenant 
 
 RLS is the natural next capa if isolation guarantees ever need to be raised beyond application discipline. Schema/database-per-tenant stays reserved for a dedicated tier.
 
+## Provisioning & seeding
+
+- **A tenant and its first admin are provisioned as one atomic unit.** A tenant with no admin is unusable, so the domain's `TenantProvisioner` port (mirroring Vernon's `TenantProvisioningService`) commits both aggregates in a single transaction — the Postgres impl runs both repository writes against the same `*Tx`; the in-memory fake rolls the tenant back if the admin write fails. A partial provision (a tenant with no admin) cannot happen. The provisioned admin is forced to change the password on first login.
+- **The default tenant/admin identity is defined once** (`core/infrastructure/iam/bootstrap`). First-boot seeding and the integration testkit both seed *this exact identity*, and login-flow tests authenticate against it; a divergence would let tests pass against an admin production never creates.
+- **First-boot seeding runs only in `serve`, never in `migrate`** — a migration job must never log a credential. It holds a Postgres advisory lock so replicas booting a fresh database serialize: the winner seeds, the rest see the admin and no-op without paying the Argon2 cost. The admin is (re)created whenever missing, so a deleted admin never locks an operator out permanently; a generated password is logged once, after the write. The password-resolution branch lives in a small testable unit (`apps/server/internal/platform/firstadmin`) kept out of the composition root, so it is covered directly instead of dragging the untestable DI wiring into the coverage denominator.
+- **Cross-tenant lifecycle commands are operator-only.** Provisioning/suspending a tenant crosses the tenant boundary, so it belongs to whoever operates the host (the same privilege as `serve`/`migrate`) — an operator CLI subcommand, not an in-tenant admin or an HTTP endpoint. Those commands migrate the database first (like `serve`), so running against a never-migrated database applies the schema instead of failing with a raw "relation does not exist".
+- **`tenant.LocalTenantID`** is a fixed, well-known non-nil sentinel under which the CLI runs single-tenant local judgements with in-memory repositories, so aggregates minted locally are never persisted tenant-less.
+
+## Operational notes: migrations & test isolation
+
+- **Migrations hold a Postgres session-level advisory lock**, so concurrent server replicas booting against a fresh database serialize instead of racing on `CREATE TABLE`.
+- **The integration testkit** keys its reused Postgres container to a hash of the embedded migrations (a schema change yields a fresh container automatically — see the `test(db)` commit), serializes per-test truncate+seed with an advisory lock so parallel packages don't race the shared schema, caches the Argon2 hash of the seed password once (so seeding each test doesn't pay the deliberately slow hash), and **fails loudly** on a broken migration / bad DSN / seed error — skipping *only* when no container runtime is reachable.
+
 ## Sources
 
 - [Approaches to tenancy in Postgres — PlanetScale](https://planetscale.com/blog/approaches-to-tenancy-in-postgres)

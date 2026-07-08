@@ -152,9 +152,6 @@ func (h *Handler) Execute(ctx context.Context, cmd Command) (Result, error) {
 	}, nil
 }
 
-// appendToolExecutionEvidence reads the analyzer invocations from the collected
-// SARIF and, if any analyzer did not complete, adds a tool_execution evidence
-// carrying the failures. CaseFile.Judge turns that into a failing verdict.
 func (h *Handler) appendToolExecutionEvidence(evidences []evidencedto.Evidence, rawSARIF []RawFile) []evidencedto.Evidence {
 	if h.toolExecution == nil {
 		return evidences

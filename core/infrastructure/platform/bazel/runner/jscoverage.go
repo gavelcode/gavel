@@ -51,9 +51,9 @@ func runJSCoverage(ctx context.Context, cmd CommandRunner, workspace, targetPatt
 
 	_, stderr, err := cmd.Run(ctx, projectDir, npx, args...)
 	if err != nil {
-		if exitErr, ok := err.(*exec.ExitError); ok && exitErr.ExitCode() == 1 {
-			// vitest returns 1 for test failures — coverage may still be valid
-		} else {
+		// vitest exits 1 on test failures; coverage is still valid, so only other errors are fatal.
+		exitErr, ok := err.(*exec.ExitError)
+		if !ok || exitErr.ExitCode() != 1 {
 			return nil, fmt.Errorf("vitest coverage: %w\n%s", err, string(stderr))
 		}
 	}

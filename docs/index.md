@@ -43,6 +43,7 @@ this index maps them. Start here and follow the links.
 * [PostgreSQL connection pool tuning](design/postgres-pool-tuning.md) — Sizing the server's pgx pool.
 * [Coverage exclusion policy](design/coverage-exclusion-policy.md) — Why Gavel mirrors what the tools measure (no per-line pragma) and where legitimate exclusions belong.
 * [GitHub Checks reporting](design/github-checks-reporting.md) — Why `gavel report` is a separate command from `judge`, and why its GitHub client lives in userinterface.
+* [Multi-tenancy decision record](design/multi-tenancy.md) — Why tenants are isolated with a shared schema + `tenant_id` carried in each aggregate's identity, not schema-per-tenant, and where RLS fits as a future layer.
 
 ## Related
 

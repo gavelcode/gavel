@@ -31,6 +31,10 @@ func New(deps Deps) *Handler {
 }
 
 func (h *Handler) ListPleadings(ctx context.Context, req gen.ListPleadingsRequestObject) (gen.ListPleadingsResponseObject, error) {
+	principal, ok := auth.PrincipalFromContext(ctx)
+	if !ok {
+		return gen.ListPleadings401JSONResponse{UnauthorizedJSONResponse: httpx.Unauthorized("unauthenticated")}, nil
+	}
 	limit, offset := httpx.PageFromCursor(req.Params.Limit, req.Params.Cursor)
 	projectID := ""
 	if req.Params.ProjectId != nil {
@@ -44,7 +48,7 @@ func (h *Handler) ListPleadings(ctx context.Context, req gen.ListPleadingsReques
 	if req.Params.Status != nil {
 		status = string(*req.Params.Status)
 	}
-	q, err := pleadinglist.NewQuery(projectID, status, gavelspace, limit, offset)
+	q, err := pleadinglist.NewQuery(principal.TenantID, projectID, status, gavelspace, limit, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -60,7 +64,11 @@ func (h *Handler) ListPleadings(ctx context.Context, req gen.ListPleadingsReques
 }
 
 func (h *Handler) GetPleading(ctx context.Context, req gen.GetPleadingRequestObject) (gen.GetPleadingResponseObject, error) {
-	q, err := pleadingget.NewQuery(req.Id.String())
+	principal, ok := auth.PrincipalFromContext(ctx)
+	if !ok {
+		return gen.GetPleading401JSONResponse{UnauthorizedJSONResponse: httpx.Unauthorized("unauthenticated")}, nil
+	}
+	q, err := pleadingget.NewQuery(principal.TenantID, req.Id.String())
 	if err != nil {
 		return nil, err
 	}
@@ -75,10 +83,14 @@ func (h *Handler) GetPleading(ctx context.Context, req gen.GetPleadingRequestObj
 }
 
 func (h *Handler) ResolvePleading(ctx context.Context, req gen.ResolvePleadingRequestObject) (gen.ResolvePleadingResponseObject, error) {
+	principal, ok := auth.PrincipalFromContext(ctx)
+	if !ok {
+		return gen.ResolvePleading401JSONResponse{UnauthorizedJSONResponse: httpx.Unauthorized("unauthenticated")}, nil
+	}
 	if req.Body == nil {
 		return gen.ResolvePleading400JSONResponse{BadRequestJSONResponse: httpx.BadRequest("missing body")}, nil
 	}
-	cmd, err := pleadingresolve.NewCommand(req.Id.String(), string(req.Body.Outcome))
+	cmd, err := pleadingresolve.NewCommand(principal.TenantID, req.Id.String(), string(req.Body.Outcome))
 	if err != nil {
 		return gen.ResolvePleading400JSONResponse{BadRequestJSONResponse: httpx.BadRequest(err.Error())}, nil
 	}
@@ -112,7 +124,7 @@ func (h *Handler) ListProjectPleadings(ctx context.Context, req gen.ListProjectP
 	if req.Params.Status != nil {
 		status = string(*req.Params.Status)
 	}
-	q, err := pleadinglist.NewQuery(detail.ID, status, "", limit, offset)
+	q, err := pleadinglist.NewQuery(principal.TenantID, detail.ID, status, "", limit, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -143,6 +155,7 @@ func (h *Handler) FileProjectPleading(ctx context.Context, req gen.FileProjectPl
 		return nil, err
 	}
 	cmd, err := pleadingfile.NewCommand(
+		principal.TenantID,
 		detail.ID,
 		int(req.Body.Number),
 		req.Body.Title,

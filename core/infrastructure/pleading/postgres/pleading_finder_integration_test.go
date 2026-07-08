@@ -32,7 +32,7 @@ func insertProjectWithKey(t *testing.T, testDB *database.DB, key, name string) p
 
 func insertPleading(t *testing.T, testDB *database.DB, projectID projectmodel.ProjectID, number int, commitSHA string) model.Pleading {
 	t.Helper()
-	pleading, err := model.FilePleading(projectID, number, fmt.Sprintf("PR #%d", number), "alice", "feature", "main", commitSHA)
+	pleading, err := model.FilePleading(testTenantID, projectID, number, fmt.Sprintf("PR #%d", number), "alice", "feature", "main", commitSHA)
 	require.NoError(t, err)
 	repo := pleadingpostgres.NewRepository(testDB)
 	require.NoError(t, repo.Save(context.Background(), pleading))
@@ -95,7 +95,7 @@ func TestFinderListByProjectReturnsAll(t *testing.T) {
 	insertPleading(t, testDB, project.ID(), 1, "sha-1")
 	insertPleading(t, testDB, project.ID(), 2, "sha-2")
 
-	items, total, err := finder.ListByProject(ctx, project.ID().String(), "", "", 10, 0)
+	items, total, err := finder.ListByProject(ctx, testTenantID.String(), project.ID().String(), "", "", 10, 0)
 	require.NoError(t, err)
 	assert.Equal(t, 2, total)
 	assert.Len(t, items, 2)
@@ -116,7 +116,7 @@ func TestFinderListByProjectFiltersByStatus(t *testing.T) {
 	repo := pleadingpostgres.NewRepository(testDB)
 	require.NoError(t, repo.Save(ctx, merged))
 
-	items, total, err := finder.ListByProject(ctx, project.ID().String(), "open", "", 10, 0)
+	items, total, err := finder.ListByProject(ctx, testTenantID.String(), project.ID().String(), "open", "", 10, 0)
 	require.NoError(t, err)
 	assert.Equal(t, 1, total)
 	require.Len(t, items, 1)
@@ -136,7 +136,7 @@ func TestFinderListByProjectFiltersByGavelspace(t *testing.T) {
 	insertPleading(t, testDB, projectAlpha.ID(), 1, "sha-a")
 	insertPleading(t, testDB, projectBeta.ID(), 1, "sha-b")
 
-	items, total, err := finder.ListByProject(ctx, "", "", "monorepo", 10, 0)
+	items, total, err := finder.ListByProject(ctx, testTenantID.String(), "", "", "monorepo", 10, 0)
 	require.NoError(t, err)
 	assert.Equal(t, 1, total)
 	require.Len(t, items, 1)
@@ -152,7 +152,7 @@ func TestFinderListByProjectWithGateResult(t *testing.T) {
 	insertPleading(t, testDB, project.ID(), 1, "sha-verdict")
 	insertCaseFileWithVerdict(t, testDB, project.ID(), "sha-verdict", true)
 
-	items, total, err := finder.ListByProject(ctx, project.ID().String(), "", "", 10, 0)
+	items, total, err := finder.ListByProject(ctx, testTenantID.String(), project.ID().String(), "", "", 10, 0)
 	require.NoError(t, err)
 	assert.Equal(t, 1, total)
 	require.Len(t, items, 1)
@@ -168,7 +168,7 @@ func TestFinderListByProjectWithoutFilters(t *testing.T) {
 
 	insertPleading(t, testDB, project.ID(), 1, "sha-all")
 
-	items, total, err := finder.ListByProject(ctx, "", "", "", 10, 0)
+	items, total, err := finder.ListByProject(ctx, testTenantID.String(), "", "", "", 10, 0)
 	require.NoError(t, err)
 	assert.GreaterOrEqual(t, total, 1)
 	assert.GreaterOrEqual(t, len(items), 1)
@@ -184,12 +184,12 @@ func TestFinderListByProjectPagination(t *testing.T) {
 		insertPleading(t, testDB, project.ID(), i, fmt.Sprintf("sha-page-%d", i))
 	}
 
-	items, total, err := finder.ListByProject(ctx, project.ID().String(), "", "", 2, 0)
+	items, total, err := finder.ListByProject(ctx, testTenantID.String(), project.ID().String(), "", "", 2, 0)
 	require.NoError(t, err)
 	assert.Equal(t, 3, total)
 	assert.Len(t, items, 2)
 
-	items2, total2, err := finder.ListByProject(ctx, project.ID().String(), "", "", 2, 2)
+	items2, total2, err := finder.ListByProject(ctx, testTenantID.String(), project.ID().String(), "", "", 2, 2)
 	require.NoError(t, err)
 	assert.Equal(t, total, total2)
 	assert.Len(t, items2, 1)
@@ -202,7 +202,7 @@ func TestFinderListByProjectReturnsErrorOnCancelledContext(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 
-	_, _, err := finder.ListByProject(ctx, "", "", "", 10, 0)
+	_, _, err := finder.ListByProject(ctx, testTenantID.String(), "", "", "", 10, 0)
 	assert.Error(t, err)
 }
 
@@ -214,7 +214,7 @@ func TestFinderGetByIDReturnsDetail(t *testing.T) {
 
 	pleading := insertPleading(t, testDB, project.ID(), 10, "sha-detail")
 
-	detail, err := finder.GetByID(ctx, pleading.ID().String())
+	detail, err := finder.GetByID(ctx, testTenantID.String(), pleading.ID().String())
 	require.NoError(t, err)
 	assert.Equal(t, pleading.ID().String(), detail.ID)
 	assert.Equal(t, project.ID().String(), detail.ProjectID)
@@ -239,7 +239,7 @@ func TestFinderGetByIDWithGateResultAndConditions(t *testing.T) {
 	pleading := insertPleading(t, testDB, project.ID(), 1, "sha-gate")
 	insertCaseFileWithVerdict(t, testDB, project.ID(), "sha-gate", false)
 
-	detail, err := finder.GetByID(ctx, pleading.ID().String())
+	detail, err := finder.GetByID(ctx, testTenantID.String(), pleading.ID().String())
 	require.NoError(t, err)
 
 	require.NotNil(t, detail.GateResult)
@@ -265,7 +265,7 @@ func TestFinderGetByIDNotFound(t *testing.T) {
 	testDB := setupDB(t)
 	finder := pleadingpostgres.NewPleadingFinder(testDB)
 
-	_, err := finder.GetByID(context.Background(), "00000000-0000-0000-0000-000000000000")
+	_, err := finder.GetByID(context.Background(), testTenantID.String(), "00000000-0000-0000-0000-000000000000")
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "pleading not found")
 }
@@ -280,7 +280,7 @@ func TestFinderGetByIDReturnsErrorOnCancelledContext(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 
-	_, err := finder.GetByID(ctx, pleading.ID().String())
+	_, err := finder.GetByID(ctx, testTenantID.String(), pleading.ID().String())
 	assert.Error(t, err)
 }
 
@@ -297,7 +297,7 @@ func TestFinderListByProjectReturnsErrorOnCorruptedCreatedAt(t *testing.T) {
 		pleading.ID().UUID())
 	require.NoError(t, err)
 
-	_, _, err = finder.ListByProject(ctx, project.ID().String(), "", "", 10, 0)
+	_, _, err = finder.ListByProject(ctx, testTenantID.String(), project.ID().String(), "", "", 10, 0)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "created_at")
 }
@@ -315,7 +315,7 @@ func TestFinderListByProjectReturnsErrorOnCorruptedUpdatedAt(t *testing.T) {
 		pleading.ID().UUID())
 	require.NoError(t, err)
 
-	_, _, err = finder.ListByProject(ctx, project.ID().String(), "", "", 10, 0)
+	_, _, err = finder.ListByProject(ctx, testTenantID.String(), project.ID().String(), "", "", 10, 0)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "updated_at")
 }
@@ -333,7 +333,7 @@ func TestFinderGetByIDReturnsErrorOnCorruptedCreatedAt(t *testing.T) {
 		pleading.ID().UUID())
 	require.NoError(t, err)
 
-	_, err = finder.GetByID(ctx, pleading.ID().String())
+	_, err = finder.GetByID(ctx, testTenantID.String(), pleading.ID().String())
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "created_at")
 }
@@ -351,7 +351,7 @@ func TestFinderGetByIDReturnsErrorOnCorruptedUpdatedAt(t *testing.T) {
 		pleading.ID().UUID())
 	require.NoError(t, err)
 
-	_, err = finder.GetByID(ctx, pleading.ID().String())
+	_, err = finder.GetByID(ctx, testTenantID.String(), pleading.ID().String())
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "updated_at")
 }

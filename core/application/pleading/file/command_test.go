@@ -55,7 +55,7 @@ func TestNewCommand(t *testing.T) {
 
 	for _, testCase := range tests {
 		t.Run(testCase.name, func(t *testing.T) {
-			cmd, err := file.NewCommand(testCase.projectID, testCase.number, testCase.title, testCase.petitioner, testCase.sourceBranch, testCase.targetBranch, testCase.commitSHA)
+			cmd, err := file.NewCommand("22222222-2222-2222-2222-222222222222", testCase.projectID, testCase.number, testCase.title, testCase.petitioner, testCase.sourceBranch, testCase.targetBranch, testCase.commitSHA)
 			if testCase.expectErr {
 				require.Error(t, err)
 				assert.ErrorIs(t, err, file.ErrInvalidCommand)

@@ -17,7 +17,7 @@ import (
 
 func newPleading(t *testing.T, projectID projectmodel.ProjectID, number int, commitSHA string) model.Pleading {
 	t.Helper()
-	p, err := model.FilePleading(projectID, number, "title", "alice", "feature", "main", commitSHA)
+	p, err := model.FilePleading(testTenantID, projectID, number, "title", "alice", "feature", "main", commitSHA)
 	require.NoError(t, err)
 	return p
 }
@@ -31,7 +31,7 @@ func TestPleadingRepoSaveAndFindByID(t *testing.T) {
 	pleading := newPleading(t, project.ID(), 42, "abc123")
 	require.NoError(t, repo.Save(ctx, pleading))
 
-	found, err := repo.FindByID(ctx, pleading.ID())
+	found, err := repo.FindByID(ctx, testTenantID, pleading.ID())
 	require.NoError(t, err)
 
 	assert.True(t, pleading.ID().Equal(found.ID()))
@@ -51,7 +51,7 @@ func TestPleadingRepoFindByIDNotFound(t *testing.T) {
 
 	id := model.NewPleadingID(uuid.New())
 
-	_, err := repo.FindByID(context.Background(), id)
+	_, err := repo.FindByID(context.Background(), testTenantID, id)
 	require.Error(t, err)
 	assert.Equal(t, failure.NotFound, failure.Of(err))
 }
@@ -68,7 +68,7 @@ func TestPleadingRepoSaveUpdatesByID(t *testing.T) {
 	require.NoError(t, pleading.MarkMerged(time.Now().UTC()))
 	require.NoError(t, repo.Save(ctx, pleading))
 
-	found, err := repo.FindByID(ctx, pleading.ID())
+	found, err := repo.FindByID(ctx, testTenantID, pleading.ID())
 	require.NoError(t, err)
 	assert.True(t, model.StatusMerged.Equal(found.Status()), "resolve mutation persisted via UPDATE-by-id")
 }
@@ -82,11 +82,11 @@ func TestPleadingRepoUpsertsByNaturalKey(t *testing.T) {
 	first := newPleading(t, project.ID(), 99, "sha-old")
 	require.NoError(t, repo.Save(ctx, first))
 
-	second, err := model.FilePleading(project.ID(), 99, "updated title", "bob", "feature-v2", "main", "sha-new")
+	second, err := model.FilePleading(testTenantID, project.ID(), 99, "updated title", "bob", "feature-v2", "main", "sha-new")
 	require.NoError(t, err)
 	require.NoError(t, repo.Save(ctx, second))
 
-	stored, err := repo.FindByID(ctx, first.ID())
+	stored, err := repo.FindByID(ctx, testTenantID, first.ID())
 	require.NoError(t, err)
 	assert.Equal(t, "updated title", stored.Title())
 	assert.Equal(t, "bob", stored.Petitioner())
@@ -105,11 +105,11 @@ func TestPleadingRepoNaturalKeyConflictPreservesStatus(t *testing.T) {
 	require.NoError(t, first.MarkMerged(time.Now().UTC()))
 	require.NoError(t, repo.Save(ctx, first))
 
-	refile, err := model.FilePleading(project.ID(), 7, "still merged?", "alice", "feature", "main", "sha2")
+	refile, err := model.FilePleading(testTenantID, project.ID(), 7, "still merged?", "alice", "feature", "main", "sha2")
 	require.NoError(t, err)
 	require.NoError(t, repo.Save(ctx, refile))
 
-	stored, err := repo.FindByID(ctx, first.ID())
+	stored, err := repo.FindByID(ctx, testTenantID, first.ID())
 	require.NoError(t, err)
 	assert.True(t, model.StatusMerged.Equal(stored.Status()),
 		"refile via natural-key upsert must not reset a terminal status")
@@ -157,7 +157,7 @@ func TestPleadingRepoFindByIDReturnsErrorOnCancelledContext(t *testing.T) {
 	cancelledCtx, cancel := context.WithCancel(context.Background())
 	cancel()
 
-	_, err := repo.FindByID(cancelledCtx, pleading.ID())
+	_, err := repo.FindByID(cancelledCtx, testTenantID, pleading.ID())
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "scan pleading")
 }
@@ -176,7 +176,7 @@ func TestPleadingRepoFindByIDReturnsErrorOnCorruptedStatus(t *testing.T) {
 		pleading.ID().UUID())
 	require.NoError(t, err)
 
-	_, err = repo.FindByID(ctx, pleading.ID())
+	_, err = repo.FindByID(ctx, testTenantID, pleading.ID())
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "reconstitute pleading status")
 }

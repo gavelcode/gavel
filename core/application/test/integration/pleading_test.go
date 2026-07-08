@@ -40,7 +40,7 @@ func TestPleadingLifecycle_FileAndRetrieve(t *testing.T) {
 
 	fileHandler := pleadingfile.NewHandler(pleadingRepo)
 	fileCmd, err := pleadingfile.NewCommand(
-		projectID, 1, "Add login feature", "alice",
+		testTenant, projectID, 1, "Add login feature", "alice",
 		"feature/login", "main", "abc123def456",
 	)
 	require.NoError(t, err)
@@ -53,7 +53,7 @@ func TestPleadingLifecycle_FileAndRetrieve(t *testing.T) {
 	pleadingID, err := pleadingmodel.ParsePleadingID(fileResult.PleadingID)
 	require.NoError(t, err)
 
-	stored, err := pleadingRepo.FindByID(ctx, pleadingID)
+	stored, err := pleadingRepo.FindByID(ctx, testTenantID, pleadingID)
 	require.NoError(t, err)
 
 	assert.Equal(t, 1, stored.Number())
@@ -74,7 +74,7 @@ func TestPleadingLifecycle_FileAndResolve_Merged(t *testing.T) {
 
 	fileHandler := pleadingfile.NewHandler(pleadingRepo)
 	fileCmd, err := pleadingfile.NewCommand(
-		projectID, 10, "Refactor auth", "bob",
+		testTenant, projectID, 10, "Refactor auth", "bob",
 		"refactor/auth", "main", "deadbeef",
 	)
 	require.NoError(t, err)
@@ -83,7 +83,7 @@ func TestPleadingLifecycle_FileAndResolve_Merged(t *testing.T) {
 	require.NoError(t, err)
 
 	resolveHandler := pleadingresolve.NewHandler(pleadingRepo)
-	resolveCmd, err := pleadingresolve.NewCommand(fileResult.PleadingID, "merged")
+	resolveCmd, err := pleadingresolve.NewCommand(testTenant, fileResult.PleadingID, "merged")
 	require.NoError(t, err)
 
 	resolveResult, err := resolveHandler.Execute(ctx, resolveCmd)
@@ -94,7 +94,7 @@ func TestPleadingLifecycle_FileAndResolve_Merged(t *testing.T) {
 	pleadingID, err := pleadingmodel.ParsePleadingID(fileResult.PleadingID)
 	require.NoError(t, err)
 
-	stored, err := pleadingRepo.FindByID(ctx, pleadingID)
+	stored, err := pleadingRepo.FindByID(ctx, testTenantID, pleadingID)
 	require.NoError(t, err)
 	assert.Equal(t, pleadingmodel.StatusMerged, stored.Status())
 }
@@ -108,7 +108,7 @@ func TestPleadingLifecycle_FileAndResolve_Closed(t *testing.T) {
 
 	fileHandler := pleadingfile.NewHandler(pleadingRepo)
 	fileCmd, err := pleadingfile.NewCommand(
-		projectID, 5, "Experimental change", "carol",
+		testTenant, projectID, 5, "Experimental change", "carol",
 		"experiment/new-ui", "develop", "cafe0123",
 	)
 	require.NoError(t, err)
@@ -117,7 +117,7 @@ func TestPleadingLifecycle_FileAndResolve_Closed(t *testing.T) {
 	require.NoError(t, err)
 
 	resolveHandler := pleadingresolve.NewHandler(pleadingRepo)
-	resolveCmd, err := pleadingresolve.NewCommand(fileResult.PleadingID, "closed")
+	resolveCmd, err := pleadingresolve.NewCommand(testTenant, fileResult.PleadingID, "closed")
 	require.NoError(t, err)
 
 	resolveResult, err := resolveHandler.Execute(ctx, resolveCmd)
@@ -128,7 +128,7 @@ func TestPleadingLifecycle_FileAndResolve_Closed(t *testing.T) {
 	pleadingID, err := pleadingmodel.ParsePleadingID(fileResult.PleadingID)
 	require.NoError(t, err)
 
-	stored, err := pleadingRepo.FindByID(ctx, pleadingID)
+	stored, err := pleadingRepo.FindByID(ctx, testTenantID, pleadingID)
 	require.NoError(t, err)
 	assert.Equal(t, pleadingmodel.StatusClosed, stored.Status())
 }
@@ -138,7 +138,7 @@ func TestPleadingLifecycle_ResolveNonExistent(t *testing.T) {
 	pleadingRepo := mempleading.NewPleadingRepository()
 
 	resolveHandler := pleadingresolve.NewHandler(pleadingRepo)
-	resolveCmd, err := pleadingresolve.NewCommand(uuid.NewString(), "merged")
+	resolveCmd, err := pleadingresolve.NewCommand(testTenant, uuid.NewString(), "merged")
 	require.NoError(t, err)
 
 	_, err = resolveHandler.Execute(ctx, resolveCmd)

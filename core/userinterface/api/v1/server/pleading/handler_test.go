@@ -1,7 +1,6 @@
 package pleading_test
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -34,7 +33,7 @@ func TestListPleadings_ReturnsItems(t *testing.T) {
 	listFinder := &fakeListFinder{items: []pleadinglist.PleadingSummary{summary}, total: 1}
 	handler := newTestHandler(listFinder, &fakeGetFinder{}, &fakeGetByKeyFinder{})
 
-	resp, err := handler.ListPleadings(context.Background(), gen.ListPleadingsRequestObject{Params: gen.ListPleadingsParams{}})
+	resp, err := handler.ListPleadings(authContext(), gen.ListPleadingsRequestObject{Params: gen.ListPleadingsParams{}})
 
 	require.NoError(t, err)
 	jsonResp, ok := resp.(gen.ListPleadings200JSONResponse)
@@ -53,7 +52,7 @@ func TestListPleadings_EmptyList(t *testing.T) {
 	listFinder := &fakeListFinder{items: nil, total: 0}
 	handler := newTestHandler(listFinder, &fakeGetFinder{}, &fakeGetByKeyFinder{})
 
-	resp, err := handler.ListPleadings(context.Background(), gen.ListPleadingsRequestObject{Params: gen.ListPleadingsParams{}})
+	resp, err := handler.ListPleadings(authContext(), gen.ListPleadingsRequestObject{Params: gen.ListPleadingsParams{}})
 
 	require.NoError(t, err)
 	jsonResp, ok := resp.(gen.ListPleadings200JSONResponse)
@@ -66,7 +65,7 @@ func TestListPleadings_FinderError(t *testing.T) {
 	listFinder := &fakeListFinder{err: errFake}
 	handler := newTestHandler(listFinder, &fakeGetFinder{}, &fakeGetByKeyFinder{})
 
-	resp, err := handler.ListPleadings(context.Background(), gen.ListPleadingsRequestObject{Params: gen.ListPleadingsParams{}})
+	resp, err := handler.ListPleadings(authContext(), gen.ListPleadingsRequestObject{Params: gen.ListPleadingsParams{}})
 
 	require.Error(t, err)
 	assert.Nil(t, resp)
@@ -77,7 +76,7 @@ func TestGetPleading_ReturnsDetail(t *testing.T) {
 	getFinder := &fakeGetFinder{detail: detail}
 	handler := newTestHandler(&fakeListFinder{}, getFinder, &fakeGetByKeyFinder{})
 
-	resp, err := handler.GetPleading(context.Background(), gen.GetPleadingRequestObject{
+	resp, err := handler.GetPleading(authContext(), gen.GetPleadingRequestObject{
 		Id: httpx.ParseUUIDOrZero("44444444-4444-4444-4444-444444444444"),
 	})
 
@@ -97,7 +96,7 @@ func TestGetPleading_NotFoundReturns404(t *testing.T) {
 	getFinder := &fakeGetFinder{err: errNotFound}
 	handler := newTestHandler(&fakeListFinder{}, getFinder, &fakeGetByKeyFinder{})
 
-	resp, err := handler.GetPleading(context.Background(), gen.GetPleadingRequestObject{
+	resp, err := handler.GetPleading(authContext(), gen.GetPleadingRequestObject{
 		Id: httpx.ParseUUIDOrZero("44444444-4444-4444-4444-444444444444"),
 	})
 
@@ -109,7 +108,7 @@ func TestGetPleading_NotFoundReturns404(t *testing.T) {
 func TestResolvePleading_NilBodyReturns400(t *testing.T) {
 	handler := newTestHandler(&fakeListFinder{}, &fakeGetFinder{}, &fakeGetByKeyFinder{})
 
-	resp, err := handler.ResolvePleading(context.Background(), gen.ResolvePleadingRequestObject{
+	resp, err := handler.ResolvePleading(authContext(), gen.ResolvePleadingRequestObject{
 		Id:   httpx.ParseUUIDOrZero("44444444-4444-4444-4444-444444444444"),
 		Body: nil,
 	})
@@ -189,7 +188,7 @@ func TestListPleadings_WithOptionalParams(t *testing.T) {
 	projectUUID := httpx.ParseUUIDOrZero("11111111-1111-1111-1111-111111111111")
 	gavelspace := "gavel"
 	status := gen.ListPleadingsParamsStatus("open")
-	resp, err := handler.ListPleadings(context.Background(), gen.ListPleadingsRequestObject{
+	resp, err := handler.ListPleadings(authContext(), gen.ListPleadingsRequestObject{
 		Params: gen.ListPleadingsParams{
 			ProjectId:  &projectUUID,
 			Gavelspace: &gavelspace,
@@ -207,7 +206,7 @@ func TestGetPleading_FinderErrorReturnsError(t *testing.T) {
 	getFinder := &fakeGetFinder{err: errFake}
 	handler := newTestHandler(&fakeListFinder{}, getFinder, &fakeGetByKeyFinder{})
 
-	resp, err := handler.GetPleading(context.Background(), gen.GetPleadingRequestObject{
+	resp, err := handler.GetPleading(authContext(), gen.GetPleadingRequestObject{
 		Id: httpx.ParseUUIDOrZero("44444444-4444-4444-4444-444444444444"),
 	})
 
@@ -231,7 +230,7 @@ func TestResolvePleading_SuccessReturns204(t *testing.T) {
 	require.True(t, found, "expected 201, got %T", fileResp)
 
 	outcome := gen.ResolvePleadingRequestOutcome("merged")
-	resp, err := handler.ResolvePleading(context.Background(), gen.ResolvePleadingRequestObject{
+	resp, err := handler.ResolvePleading(authContext(), gen.ResolvePleadingRequestObject{
 		Id:   created.PleadingId,
 		Body: &gen.ResolvePleadingJSONRequestBody{Outcome: outcome},
 	})
@@ -245,7 +244,7 @@ func TestResolvePleading_NotFoundReturns404(t *testing.T) {
 	handler := newTestHandler(&fakeListFinder{}, &fakeGetFinder{}, &fakeGetByKeyFinder{})
 
 	outcome := gen.ResolvePleadingRequestOutcome("merged")
-	resp, err := handler.ResolvePleading(context.Background(), gen.ResolvePleadingRequestObject{
+	resp, err := handler.ResolvePleading(authContext(), gen.ResolvePleadingRequestObject{
 		Id:   httpx.ParseUUIDOrZero("99999999-9999-9999-9999-999999999999"),
 		Body: &gen.ResolvePleadingJSONRequestBody{Outcome: outcome},
 	})
@@ -259,7 +258,7 @@ func TestResolvePleading_InvalidOutcomeReturns400(t *testing.T) {
 	handler := newTestHandler(&fakeListFinder{}, &fakeGetFinder{}, &fakeGetByKeyFinder{})
 
 	outcome := gen.ResolvePleadingRequestOutcome("invalid-outcome")
-	resp, err := handler.ResolvePleading(context.Background(), gen.ResolvePleadingRequestObject{
+	resp, err := handler.ResolvePleading(authContext(), gen.ResolvePleadingRequestObject{
 		Id:   httpx.ParseUUIDOrZero("44444444-4444-4444-4444-444444444444"),
 		Body: &gen.ResolvePleadingJSONRequestBody{Outcome: outcome},
 	})
@@ -339,7 +338,7 @@ func TestListPleadings_WithGateResult(t *testing.T) {
 	handler := newTestHandler(listFinder, &fakeGetFinder{}, &fakeGetByKeyFinder{})
 
 	projectUUID := httpx.ParseUUIDOrZero("11111111-1111-1111-1111-111111111111")
-	resp, err := handler.ListPleadings(context.Background(), gen.ListPleadingsRequestObject{
+	resp, err := handler.ListPleadings(authContext(), gen.ListPleadingsRequestObject{
 		Params: gen.ListPleadingsParams{ProjectId: &projectUUID},
 	})
 
@@ -358,7 +357,7 @@ func TestGetPleading_WithGateResult(t *testing.T) {
 	getFinder := &fakeGetFinder{detail: detail}
 	handler := newTestHandler(&fakeListFinder{}, getFinder, &fakeGetByKeyFinder{})
 
-	resp, err := handler.GetPleading(context.Background(), gen.GetPleadingRequestObject{
+	resp, err := handler.GetPleading(authContext(), gen.GetPleadingRequestObject{
 		Id: httpx.ParseUUIDOrZero("44444444-4444-4444-4444-444444444444"),
 	})
 

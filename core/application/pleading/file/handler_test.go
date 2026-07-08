@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/usegavel/gavel/core/application/pleading/file"
+	"github.com/usegavel/gavel/core/domain/iam/model/tenant"
 	"github.com/usegavel/gavel/core/domain/pleading/model"
 )
 
@@ -17,7 +18,7 @@ var testProjectID = uuid.NewString()
 
 func validCommand(t *testing.T) file.Command {
 	t.Helper()
-	cmd, err := file.NewCommand(testProjectID, 42, "Add login", "alice", "feature/login", "main", "abc123")
+	cmd, err := file.NewCommand("22222222-2222-2222-2222-222222222222", testProjectID, 42, "Add login", "alice", "feature/login", "main", "abc123")
 	require.NoError(t, err)
 	return cmd
 }
@@ -44,7 +45,7 @@ func TestHandlerExecutePersistsAllFields(t *testing.T) {
 	id, err := model.ParsePleadingID(result.PleadingID)
 	require.NoError(t, err)
 
-	stored, err := repo.FindByID(context.Background(), id)
+	stored, err := repo.FindByID(context.Background(), tenant.NewTenantID(uuid.MustParse("22222222-2222-2222-2222-222222222222")), id)
 	require.NoError(t, err)
 	assert.Equal(t, testProjectID, stored.ProjectID().String())
 	assert.Equal(t, 42, stored.Number())

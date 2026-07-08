@@ -15,6 +15,7 @@ go_library(
         "migrations/00002_tenant_scoping.sql",
         "migrations/00003_gavelspace_tenant_not_null.sql",
         "migrations/00004_project_casefile_tenant_not_null.sql",
+        "migrations/00005_pleading_tenant_not_null.sql",
     ],
     importpath = "github.com/usegavel/gavel/core/infrastructure/platform/database",
     visibility = ["//visibility:public"],

@@ -14,5 +14,5 @@ func NewHandler(getter Finder) *Handler {
 }
 
 func (h *Handler) Execute(ctx context.Context, q Query) (*PleadingDetail, error) {
-	return h.getter.GetByID(ctx, q.ID())
+	return h.getter.GetByID(ctx, q.TenantID(), q.ID())
 }

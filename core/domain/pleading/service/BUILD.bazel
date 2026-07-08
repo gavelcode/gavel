@@ -5,5 +5,8 @@ go_library(
     srcs = ["repository.go"],
     importpath = "github.com/usegavel/gavel/core/domain/pleading/service",
     visibility = ["//visibility:public"],
-    deps = ["//core/domain/pleading/model"],
+    deps = [
+        "//core/domain/iam/model/tenant",
+        "//core/domain/pleading/model",
+    ],
 )

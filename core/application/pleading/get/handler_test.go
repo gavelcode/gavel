@@ -26,7 +26,7 @@ func TestNewQuery(t *testing.T) {
 
 	for _, testCase := range tests {
 		t.Run(testCase.name, func(t *testing.T) {
-			query, err := get.NewQuery(testCase.id)
+			query, err := get.NewQuery("22222222-2222-2222-2222-222222222222", testCase.id)
 			if testCase.wantErr {
 				assert.Error(t, err)
 				return
@@ -60,7 +60,7 @@ func TestExecuteReturnsResult(t *testing.T) {
 	fake := &fakePleadingGetter{result: expected}
 	h := get.NewHandler(fake)
 
-	query, err := get.NewQuery("pr-1")
+	query, err := get.NewQuery("22222222-2222-2222-2222-222222222222", "pr-1")
 	require.NoError(t, err)
 
 	result, err := h.Execute(context.Background(), query)
@@ -79,7 +79,7 @@ func TestExecutePropagatesError(t *testing.T) {
 	fake := &fakePleadingGetter{err: queryErr}
 	h := get.NewHandler(fake)
 
-	query, err := get.NewQuery("pr-1")
+	query, err := get.NewQuery("22222222-2222-2222-2222-222222222222", "pr-1")
 	require.NoError(t, err)
 
 	_, err = h.Execute(context.Background(), query)
@@ -88,7 +88,7 @@ func TestExecutePropagatesError(t *testing.T) {
 }
 
 func TestErrInvalidQueryIsClassifiedAsValidation(t *testing.T) {
-	_, err := get.NewQuery("")
+	_, err := get.NewQuery("22222222-2222-2222-2222-222222222222", "")
 	require.Error(t, err)
 	assert.Equal(t, failure.Validation, failure.Of(err))
 }

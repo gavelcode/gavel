@@ -12,6 +12,7 @@ go_library(
     visibility = ["//visibility:public"],
     deps = [
         "//core/application/shared/event",
+        "//core/domain/iam/model/tenant",
         "//core/domain/pleading/model",
         "//core/domain/pleading/service",
         "//core/domain/shared/failure",
@@ -28,6 +29,7 @@ go_test(
     ],
     embed = [":resolve"],
     deps = [
+        "//core/domain/iam/model/tenant",
         "//core/domain/pleading/model",
         "//core/domain/project/model",
         "@com_github_google_uuid//:uuid",

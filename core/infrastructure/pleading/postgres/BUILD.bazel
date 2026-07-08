@@ -11,6 +11,7 @@ go_library(
     deps = [
         "//core/application/pleading/get",
         "//core/application/pleading/list",
+        "//core/domain/iam/model/tenant",
         "//core/domain/pleading/model",
         "//core/domain/pleading/service",
         "//core/domain/project/model",

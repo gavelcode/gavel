@@ -13,7 +13,7 @@ type fakePleadingGetter struct {
 	err    error
 }
 
-func (f *fakePleadingGetter) GetByID(_ context.Context, _ string) (*get.PleadingDetail, error) {
+func (f *fakePleadingGetter) GetByID(_ context.Context, _, _ string) (*get.PleadingDetail, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	if f.err != nil {

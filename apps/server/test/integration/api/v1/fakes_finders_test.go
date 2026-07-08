@@ -195,7 +195,7 @@ func (s *pleadingStore) putDetail(d *pleadingget.PleadingDetail) {
 	s.byProject[d.ProjectID] = append(s.byProject[d.ProjectID], d.ID)
 }
 
-func (s *pleadingStore) GetByID(_ context.Context, id string) (*pleadingget.PleadingDetail, error) {
+func (s *pleadingStore) GetByID(_ context.Context, _, id string) (*pleadingget.PleadingDetail, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	d, ok := s.byID[id]
@@ -205,7 +205,7 @@ func (s *pleadingStore) GetByID(_ context.Context, id string) (*pleadingget.Plea
 	return d, nil
 }
 
-func (s *pleadingStore) ListByProject(_ context.Context, projectID, status, _ string, limit, offset int) ([]pleadinglist.PleadingSummary, int, error) {
+func (s *pleadingStore) ListByProject(_ context.Context, _, projectID, status, _ string, limit, offset int) ([]pleadinglist.PleadingSummary, int, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	ids := s.byProject[projectID]
@@ -269,7 +269,7 @@ func (r *pleadingMemRepo) Save(_ context.Context, p pleadingmodel.Pleading) erro
 	return nil
 }
 
-func (r *pleadingMemRepo) FindByID(_ context.Context, id pleadingmodel.PleadingID) (pleadingmodel.Pleading, error) {
+func (r *pleadingMemRepo) FindByID(_ context.Context, _ tenant.TenantID, id pleadingmodel.PleadingID) (pleadingmodel.Pleading, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	p, ok := r.byID[id.String()]

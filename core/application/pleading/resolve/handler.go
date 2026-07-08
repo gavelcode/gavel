@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/usegavel/gavel/core/application/shared/event"
+	"github.com/usegavel/gavel/core/domain/iam/model/tenant"
 	"github.com/usegavel/gavel/core/domain/pleading/model"
 	pleadingservice "github.com/usegavel/gavel/core/domain/pleading/service"
 )
@@ -22,12 +23,17 @@ func NewHandler(pleadings pleadingservice.PleadingRepository) *Handler {
 }
 
 func (h *Handler) Execute(ctx context.Context, cmd Command) (Result, error) {
+	tenantID, err := tenant.ParseTenantID(cmd.TenantID())
+	if err != nil {
+		return Result{}, fmt.Errorf("resolve pleading: %w", err)
+	}
+
 	id, err := model.ParsePleadingID(cmd.PleadingID())
 	if err != nil {
 		return Result{}, fmt.Errorf("resolve pleading: %w", err)
 	}
 
-	pleading, err := h.pleadings.FindByID(ctx, id)
+	pleading, err := h.pleadings.FindByID(ctx, tenantID, id)
 	if err != nil {
 		return Result{}, fmt.Errorf("load pleading: %w", err)
 	}

@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/usegavel/gavel/core/domain/iam/model/tenant"
 	"github.com/usegavel/gavel/core/domain/pleading/model"
 	pleadingservice "github.com/usegavel/gavel/core/domain/pleading/service"
 	projectmodel "github.com/usegavel/gavel/core/domain/project/model"
@@ -56,8 +57,8 @@ func (r *Repository) Save(ctx context.Context, pleading model.Pleading) error {
 	}
 
 	_, err = r.db.ExecContext(ctx, `
-		INSERT INTO pleadings (id, project_id, number, title, petitioner, status, source_branch, target_branch, commit_sha)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+		INSERT INTO pleadings (id, project_id, tenant_id, number, title, petitioner, status, source_branch, target_branch, commit_sha)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 		ON CONFLICT(project_id, number) DO UPDATE SET
 			title = EXCLUDED.title,
 			petitioner = EXCLUDED.petitioner,
@@ -66,7 +67,7 @@ func (r *Repository) Save(ctx context.Context, pleading model.Pleading) error {
 			commit_sha = EXCLUDED.commit_sha,
 			updated_at = ?
 	`,
-		pleading.ID().UUID(), pleading.ProjectID().UUID(), pleading.Number(), pleading.Title(),
+		pleading.ID().UUID(), pleading.ProjectID().UUID(), pleading.TenantID().UUID(), pleading.Number(), pleading.Title(),
 		pleading.Petitioner(), pleading.Status().String(), pleading.SourceBranch(), pleading.TargetBranch(), pleading.CommitSHA(),
 		database.Now(),
 	)
@@ -76,11 +77,11 @@ func (r *Repository) Save(ctx context.Context, pleading model.Pleading) error {
 	return nil
 }
 
-func (r *Repository) FindByID(ctx context.Context, pleadingID model.PleadingID) (model.Pleading, error) {
+func (r *Repository) FindByID(ctx context.Context, tenantID tenant.TenantID, pleadingID model.PleadingID) (model.Pleading, error) {
 	row := r.db.QueryRowContext(ctx, `
 		SELECT id, project_id, number, title, petitioner, status, source_branch, target_branch, commit_sha
-		FROM pleadings WHERE id = ?
-	`, pleadingID.UUID())
+		FROM pleadings WHERE id = ? AND tenant_id = ?
+	`, pleadingID.UUID(), tenantID.UUID())
 
 	var (
 		rawID, rawProjectID                                                 uuid.UUID
@@ -101,5 +102,5 @@ func (r *Repository) FindByID(ctx context.Context, pleadingID model.PleadingID) 
 		return model.Pleading{}, fmt.Errorf("reconstitute pleading status: %w", err)
 	}
 
-	return model.ReconstitutePleading(pleadingID, projectID, number, title, petitioner, sourceBranch, targetBranch, commitSHA, status)
+	return model.ReconstitutePleading(pleadingID, tenantID, projectID, number, title, petitioner, sourceBranch, targetBranch, commitSHA, status)
 }

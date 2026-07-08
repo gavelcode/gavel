@@ -28,7 +28,7 @@ func TestNewCommand(t *testing.T) {
 
 	for _, testCase := range tests {
 		t.Run(testCase.name, func(t *testing.T) {
-			cmd, err := resolve.NewCommand(testCase.pleadingID, testCase.outcome)
+			cmd, err := resolve.NewCommand("22222222-2222-2222-2222-222222222222", testCase.pleadingID, testCase.outcome)
 			if testCase.expectErr {
 				require.Error(t, err)
 				assert.ErrorIs(t, err, resolve.ErrInvalidCommand)

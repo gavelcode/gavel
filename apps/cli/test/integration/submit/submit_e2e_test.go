@@ -17,6 +17,7 @@ import (
 	"github.com/usegavel/gavel/core/domain/iam/model/tenant"
 	projectmodel "github.com/usegavel/gavel/core/domain/project/model"
 	casefilepostgres "github.com/usegavel/gavel/core/infrastructure/casefile/postgres"
+	"github.com/usegavel/gavel/core/infrastructure/platform/database"
 	"github.com/usegavel/gavel/core/infrastructure/platform/database/testkit"
 	projectpostgres "github.com/usegavel/gavel/core/infrastructure/project/postgres"
 )
@@ -24,6 +25,7 @@ import (
 func TestSubmitFlow_HappyPathProducesVerdict(t *testing.T) {
 	ctx := context.Background()
 	db := testkit.TestDB(t)
+	seedLocalTenant(t, ctx, db)
 
 	projectRepo := projectpostgres.NewRepository(db)
 	caseFileRepo := casefilepostgres.NewRepository(db)
@@ -62,6 +64,7 @@ func TestSubmitFlow_HappyPathProducesVerdict(t *testing.T) {
 func TestSubmitFlow_FreshEvaluationSkipsClassify(t *testing.T) {
 	ctx := context.Background()
 	db := testkit.TestDB(t)
+	seedLocalTenant(t, ctx, db)
 	projectRepo := projectpostgres.NewRepository(db)
 	caseFileRepo := casefilepostgres.NewRepository(db)
 	createH := createcasefile.NewHandler(caseFileRepo, projectRepo)
@@ -98,6 +101,7 @@ func TestSubmitFlow_FreshEvaluationSkipsClassify(t *testing.T) {
 func TestSubmitFlow_DoubleFinalizeIsRejected(t *testing.T) {
 	ctx := context.Background()
 	db := testkit.TestDB(t)
+	seedLocalTenant(t, ctx, db)
 	projectRepo := projectpostgres.NewRepository(db)
 	caseFileRepo := casefilepostgres.NewRepository(db)
 	createH := createcasefile.NewHandler(caseFileRepo, projectRepo)
@@ -121,6 +125,14 @@ func TestSubmitFlow_DoubleFinalizeIsRejected(t *testing.T) {
 
 	_, err = finalizeH.Execute(ctx, finalizeCmd)
 	require.Error(t, err, "the aggregate must refuse a second judge call")
+}
+
+func seedLocalTenant(t *testing.T, ctx context.Context, db *database.DB) {
+	t.Helper()
+	_, err := db.ExecContext(ctx,
+		"INSERT INTO iam_tenants (id, slug, display_name, status, created_at) VALUES (?, ?, ?, ?, NOW()) ON CONFLICT DO NOTHING",
+		tenant.LocalTenantID.UUID(), "local", "Local", "active")
+	require.NoError(t, err)
 }
 
 func seedProject(t *testing.T, ctx context.Context, repo *projectpostgres.Repository, key string) projectmodel.Project {

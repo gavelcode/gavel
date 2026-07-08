@@ -243,8 +243,8 @@ func TestSearch_ReturnsErrorWhenScanFails(t *testing.T) {
 	})
 
 	_, err = database.ExecContext(ctx,
-		"INSERT INTO projects (id, key, name, target_pattern) VALUES ($1, $2, NULL, $3)",
-		"00000000-0000-0000-0000-ffffffffffff", "null-name-key", "//null/...")
+		"INSERT INTO projects (id, key, name, target_pattern, tenant_id) VALUES ($1, $2, NULL, $3, $4)",
+		"00000000-0000-0000-0000-ffffffffffff", "null-name-key", "//null/...", testTenantID.UUID())
 	require.NoError(t, err)
 
 	finder := searchinfra.NewFinder(database)

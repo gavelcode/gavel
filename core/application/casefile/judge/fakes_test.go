@@ -7,6 +7,7 @@ import (
 
 	casefile "github.com/usegavel/gavel/core/domain/casefile/model"
 	"github.com/usegavel/gavel/core/domain/casefile/model/evidence/finding"
+	"github.com/usegavel/gavel/core/domain/iam/model/tenant"
 	projectmodel "github.com/usegavel/gavel/core/domain/project/model"
 )
 
@@ -82,7 +83,7 @@ func (r *fakeProjectRepo) seed(project projectmodel.Project) {
 	r.store[project.ID().String()] = project
 }
 
-func (r *fakeProjectRepo) FindByID(_ context.Context, projectID projectmodel.ProjectID) (projectmodel.Project, error) {
+func (r *fakeProjectRepo) FindByID(_ context.Context, _ tenant.TenantID, projectID projectmodel.ProjectID) (projectmodel.Project, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	if r.findErr != nil {
@@ -99,10 +100,10 @@ func (r *fakeProjectRepo) Save(_ context.Context, _ projectmodel.Project) error 
 	return nil
 }
 
-func (r *fakeProjectRepo) FindByName(_ context.Context, _ string) (projectmodel.Project, error) {
+func (r *fakeProjectRepo) FindByName(_ context.Context, _ tenant.TenantID, _ string) (projectmodel.Project, error) {
 	return projectmodel.Project{}, errNotFound
 }
 
-func (r *fakeProjectRepo) FindByKey(_ context.Context, _ string) (projectmodel.Project, error) {
+func (r *fakeProjectRepo) FindByKey(_ context.Context, _ tenant.TenantID, _ string) (projectmodel.Project, error) {
 	return projectmodel.Project{}, errNotFound
 }

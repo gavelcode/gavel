@@ -24,7 +24,7 @@ func TestNewCommand(t *testing.T) {
 
 	for _, testCase := range tests {
 		t.Run(testCase.name, func(t *testing.T) {
-			cmd, err := updatelanguages.NewCommand(testCase.projectID, testCase.languages)
+			cmd, err := updatelanguages.NewCommand(testTenant.String(), testCase.projectID, testCase.languages)
 
 			if testCase.wantErr {
 				require.Error(t, err)
@@ -40,7 +40,7 @@ func TestNewCommand(t *testing.T) {
 
 func TestNewCommandDefensiveCopy(t *testing.T) {
 	input := []string{"java"}
-	cmd, err := updatelanguages.NewCommand("proj-1", input)
+	cmd, err := updatelanguages.NewCommand(testTenant.String(), "proj-1", input)
 	require.NoError(t, err)
 
 	input[0] = "go"

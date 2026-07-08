@@ -17,12 +17,12 @@ func TestHandlerExecuteSuccessful(t *testing.T) {
 	projects.seed(project)
 
 	handler := updatelanguages.NewHandler(projects)
-	cmd := mustCommand(t, project.ID().String(), []string{"java", "go"})
+	cmd := mustCommand(t, project.ID().String(), []string{"java", "go"}, testTenant.String())
 
 	_, err := handler.Execute(context.Background(), cmd)
 	require.NoError(t, err)
 
-	persisted, err := projects.FindByID(context.Background(), project.ID())
+	persisted, err := projects.FindByID(context.Background(), testTenant, project.ID())
 	require.NoError(t, err)
 	langs := persisted.Languages()
 	require.Len(t, langs, 2)
@@ -36,12 +36,12 @@ func TestHandlerExecuteEmptyLanguagesAccepted(t *testing.T) {
 	require.NoError(t, projects.Save(context.Background(), project))
 
 	handler := updatelanguages.NewHandler(projects)
-	cmd := mustCommand(t, project.ID().String(), nil)
+	cmd := mustCommand(t, project.ID().String(), nil, testTenant.String())
 
 	_, err := handler.Execute(context.Background(), cmd)
 	require.NoError(t, err)
 
-	persisted, err := projects.FindByID(context.Background(), project.ID())
+	persisted, err := projects.FindByID(context.Background(), testTenant, project.ID())
 	require.NoError(t, err)
 	assert.Empty(t, persisted.Languages())
 }
@@ -49,7 +49,7 @@ func TestHandlerExecuteEmptyLanguagesAccepted(t *testing.T) {
 func TestHandlerExecuteInvalidProjectID(t *testing.T) {
 	projects := newFakeProjectRepo()
 	handler := updatelanguages.NewHandler(projects)
-	cmd := mustCommand(t, "missing", nil)
+	cmd := mustCommand(t, "missing", nil, testTenant.String())
 
 	_, err := handler.Execute(context.Background(), cmd)
 	require.Error(t, err)
@@ -59,7 +59,7 @@ func TestHandlerExecuteProjectNotFound(t *testing.T) {
 	projects := newFakeProjectRepo()
 	handler := updatelanguages.NewHandler(projects)
 
-	cmd, err := updatelanguages.NewCommand("11111111-1111-1111-1111-111111111111", []string{"go"})
+	cmd, err := updatelanguages.NewCommand(testTenant.String(), "11111111-1111-1111-1111-111111111111", []string{"go"})
 	require.NoError(t, err)
 
 	_, err = handler.Execute(context.Background(), cmd)
@@ -73,7 +73,7 @@ func TestHandlerExecuteSaveErrorPropagated(t *testing.T) {
 	projects.saveErr = errors.New("disk full")
 
 	handler := updatelanguages.NewHandler(projects)
-	cmd := mustCommand(t, project.ID().String(), []string{"go"})
+	cmd := mustCommand(t, project.ID().String(), []string{"go"}, testTenant.String())
 
 	_, err := handler.Execute(context.Background(), cmd)
 	require.Error(t, err)
@@ -85,13 +85,13 @@ func TestHandlerExecuteDrainsEvent(t *testing.T) {
 	projects.seed(project)
 
 	handler := updatelanguages.NewHandler(projects)
-	result, err := handler.Execute(context.Background(), mustCommand(t, project.ID().String(), []string{"go"}))
+	result, err := handler.Execute(context.Background(), mustCommand(t, project.ID().String(), []string{"go"}, testTenant.String()))
 	require.NoError(t, err)
 
 	require.NotEmpty(t, result.Events, "LanguagesUpdated event drained to caller")
 	assert.Equal(t, projectmodel.EventNameLanguagesUpdated, result.Events[len(result.Events)-1].Name)
 
-	persisted, err := projects.FindByID(context.Background(), project.ID())
+	persisted, err := projects.FindByID(context.Background(), testTenant, project.ID())
 	require.NoError(t, err)
 	assert.Empty(t, persisted.Events(), "events drained before persistence; not retained")
 }
@@ -100,16 +100,16 @@ func TestNewHandlerRejectsNilRepo(t *testing.T) {
 	assert.Panics(t, func() { updatelanguages.NewHandler(nil) })
 }
 
-func mustCommand(t *testing.T, projectID string, langs []string) updatelanguages.Command {
+func mustCommand(t *testing.T, projectID string, langs []string, tenantID string) updatelanguages.Command {
 	t.Helper()
-	cmd, err := updatelanguages.NewCommand(projectID, langs)
+	cmd, err := updatelanguages.NewCommand(tenantID, projectID, langs)
 	require.NoError(t, err)
 	return cmd
 }
 
 func mustProject(t *testing.T) projectmodel.Project {
 	t.Helper()
-	p, err := projectmodel.NewProject("svc", "svc", "//svc/...")
+	p, err := projectmodel.NewProject(testTenant, "svc", "svc", "//svc/...")
 	require.NoError(t, err)
 	return p
 }

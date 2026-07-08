@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/usegavel/gavel/core/application/project/getbykey"
+	"github.com/usegavel/gavel/core/domain/iam/model/tenant"
 	projectmodel "github.com/usegavel/gavel/core/domain/project/model"
 	projectservice "github.com/usegavel/gavel/core/domain/project/service"
 )
@@ -25,7 +26,12 @@ func NewHandler(byKey getbykey.Finder, projects projectservice.ProjectRepository
 }
 
 func (h *Handler) Execute(ctx context.Context, query Query) (Result, error) {
-	detail, err := h.byKey.GetByKey(ctx, query.Key())
+	tenantID, err := tenant.ParseTenantID(query.TenantID())
+	if err != nil {
+		return Result{}, fmt.Errorf("tenant id: %w", err)
+	}
+
+	detail, err := h.byKey.GetByKey(ctx, tenantID, query.Key())
 	if err != nil {
 		return Result{}, err
 	}
@@ -40,7 +46,7 @@ func (h *Handler) Execute(ctx context.Context, query Query) (Result, error) {
 		return Result{}, fmt.Errorf("parse project id: %w", err)
 	}
 
-	project, err := h.projects.FindByID(ctx, projectID)
+	project, err := h.projects.FindByID(ctx, tenantID, projectID)
 	if err != nil {
 		return Result{}, err
 	}

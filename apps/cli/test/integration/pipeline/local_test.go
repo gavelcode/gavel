@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/usegavel/gavel/core/domain/iam/model/tenant"
 	"github.com/usegavel/gavel/core/userinterface/cli/judge/pipeline"
 )
 
@@ -22,6 +23,7 @@ func TestLocalMode_FullPipeline(t *testing.T) {
 		fix.deps,
 		testWorkspace,
 		collected,
+		tenant.LocalTenantID.String(),
 		proj.ID().String(),
 		proj.Name(),
 		testCommitSHA,
@@ -48,6 +50,7 @@ func TestLocalMode_FailingGate(t *testing.T) {
 		fix.deps,
 		testWorkspace,
 		collected,
+		tenant.LocalTenantID.String(),
 		proj.ID().String(),
 		proj.Name(),
 		testCommitSHA,
@@ -71,6 +74,7 @@ func TestLocalMode_BaselineDelta(t *testing.T) {
 		fix.deps,
 		testWorkspace,
 		firstCollected,
+		tenant.LocalTenantID.String(),
 		proj.ID().String(),
 		proj.Name(),
 		testCommitSHA,
@@ -86,6 +90,7 @@ func TestLocalMode_BaselineDelta(t *testing.T) {
 		fix.deps,
 		testWorkspace,
 		secondCollected,
+		tenant.LocalTenantID.String(),
 		proj.ID().String(),
 		proj.Name(),
 		testCommitSHA,
@@ -112,6 +117,7 @@ func TestLocalMode_FirstRunHasNoPrevious(t *testing.T) {
 		fix.deps,
 		testWorkspace,
 		collected,
+		tenant.LocalTenantID.String(),
 		proj.ID().String(),
 		proj.Name(),
 		testCommitSHA,
@@ -140,6 +146,7 @@ func TestLocalMode_AbsoluteMode(t *testing.T) {
 		fix.deps,
 		testWorkspace,
 		collected,
+		tenant.LocalTenantID.String(),
 		proj.ID().String(),
 		proj.Name(),
 		testCommitSHA,

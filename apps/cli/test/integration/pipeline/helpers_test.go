@@ -20,6 +20,7 @@ import (
 	"github.com/usegavel/gavel/core/application/casefile/judge"
 	"github.com/usegavel/gavel/core/application/casefile/submit"
 	"github.com/usegavel/gavel/core/domain/casefile/model/evidence"
+	"github.com/usegavel/gavel/core/domain/iam/model/tenant"
 	projectmodel "github.com/usegavel/gavel/core/domain/project/model"
 	"github.com/usegavel/gavel/core/domain/project/model/qualitygate"
 	"github.com/usegavel/gavel/core/infrastructure/casefile/lcov"
@@ -142,7 +143,7 @@ func withBaseline(branch string, fingerprints []string) projectOption {
 func mustSeedProject(t *testing.T, repo *memproject.ProjectRepository, key string, opts ...projectOption) projectmodel.Project {
 	t.Helper()
 
-	project, err := projectmodel.NewProject(key, "Test "+key, "//...")
+	project, err := projectmodel.NewProject(tenant.LocalTenantID, key, "Test "+key, "//...")
 	require.NoError(t, err)
 
 	for _, opt := range opts {

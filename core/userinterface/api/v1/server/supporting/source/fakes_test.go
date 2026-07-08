@@ -7,7 +7,9 @@ import (
 	findinglist "github.com/usegavel/gavel/core/application/casefile/listfindings"
 	projectgetbykey "github.com/usegavel/gavel/core/application/project/getbykey"
 	"github.com/usegavel/gavel/core/application/project/projectview"
+	"github.com/usegavel/gavel/core/domain/iam/model/tenant"
 	"github.com/usegavel/gavel/core/domain/shared/failure"
+	auth "github.com/usegavel/gavel/core/userinterface/api/v1/server/httpx/auth"
 )
 
 type fakeBlobs struct {
@@ -84,16 +86,22 @@ type fakeProjectFinder struct {
 	id string
 }
 
-func (f *fakeProjectFinder) GetByKey(_ context.Context, _ string) (*projectview.ProjectDetail, error) {
+func (f *fakeProjectFinder) GetByKey(_ context.Context, _ tenant.TenantID, _ string) (*projectview.ProjectDetail, error) {
 	return &projectview.ProjectDetail{ID: f.id, Key: "core", Name: "core"}, nil
 }
 
 type notFoundProjectFinder struct{}
 
-func (n *notFoundProjectFinder) GetByKey(_ context.Context, _ string) (*projectview.ProjectDetail, error) {
+func (n *notFoundProjectFinder) GetByKey(_ context.Context, _ tenant.TenantID, _ string) (*projectview.ProjectDetail, error) {
 	return nil, failure.New("not found", failure.NotFound)
 }
 
 func notFoundProjectResolver() *projectgetbykey.Handler {
 	return projectgetbykey.NewHandler(&notFoundProjectFinder{})
+}
+
+const testTenant = "22222222-2222-2222-2222-222222222222"
+
+func authContext() context.Context {
+	return auth.WithPrincipal(context.Background(), &auth.Principal{TenantID: testTenant})
 }

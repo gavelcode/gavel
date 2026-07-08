@@ -227,7 +227,7 @@ func TestNewCommand_HasRequireSubmitFlag(t *testing.T) {
 }
 
 func TestProjectBaseline_LoadsFromAggregate(t *testing.T) {
-	project, err := projectmodel.NewProject("backend", "backend", "//backend/...")
+	project, err := projectmodel.NewProject(tenant.LocalTenantID, "backend", "backend", "//backend/...")
 	require.NoError(t, err)
 	project.UpdateBaseline("main", []string{"fp1", "fp2"}, []string{"rule:a:b"}, nil, nil)
 
@@ -306,7 +306,7 @@ func newGavelspace(t *testing.T, name string) gavelspacemodel.Gavelspace {
 
 func newProject(t *testing.T, key, pattern string) projectmodel.Project {
 	t.Helper()
-	p, err := projectmodel.NewProject(key, key, pattern)
+	p, err := projectmodel.NewProject(tenant.LocalTenantID, key, key, pattern)
 	require.NoError(t, err)
 	return p
 }
@@ -633,7 +633,7 @@ func newProjectWithGate(t *testing.T, key, pattern string) projectmodel.Project 
 	gate, err := qualitygate.NewGate([]qualitygate.Rule{rule})
 	require.NoError(t, err)
 
-	p, err := projectmodel.NewProject(key, key, pattern)
+	p, err := projectmodel.NewProject(tenant.LocalTenantID, key, key, pattern)
 	require.NoError(t, err)
 	p.UpdateQualityGate(gate, time.Now())
 	return p
@@ -834,7 +834,7 @@ func TestExecuteProjects_WriteError(t *testing.T) {
 	}
 
 	_, err := executeProjects(context.Background(), failWriter{}, dependencies, t.TempDir(),
-		projects, "abc123", "main", time.Now(), Options{Quick: true})
+		localTenantID, projects, "abc123", "main", time.Now(), Options{Quick: true})
 
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "write failed")

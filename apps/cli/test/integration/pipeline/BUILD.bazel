@@ -18,6 +18,7 @@ go_test(
         "//core/application/casefile/judge",
         "//core/application/casefile/submit",
         "//core/domain/casefile/model/evidence",
+        "//core/domain/iam/model/tenant",
         "//core/domain/project/model",
         "//core/domain/project/model/qualitygate",
         "//core/infrastructure/casefile/lcov",

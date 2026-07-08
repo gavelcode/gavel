@@ -23,7 +23,7 @@ import (
 
 func insertProjectWithKey(t *testing.T, testDB *database.DB, key, name string) projectmodel.Project {
 	t.Helper()
-	project, err := projectmodel.NewProject(key, name, "//"+key+"/...")
+	project, err := projectmodel.NewProject(testTenantID, key, name, "//"+key+"/...")
 	require.NoError(t, err)
 	repo := projectpostgres.NewRepository(testDB)
 	require.NoError(t, repo.Save(context.Background(), project))
@@ -42,7 +42,7 @@ func insertPleading(t *testing.T, testDB *database.DB, projectID projectmodel.Pr
 func insertCaseFileWithVerdict(t *testing.T, testDB *database.DB, projectID projectmodel.ProjectID, commitSHA string, passed bool) casefile.CaseFile {
 	t.Helper()
 	startedAt := time.Now().UTC()
-	caseFile, err := casefile.NewCaseFile(projectID, commitSHA, "main", startedAt, startedAt)
+	caseFile, err := casefile.NewCaseFile(testTenantID, projectID, commitSHA, "main", startedAt, startedAt)
 	require.NoError(t, err)
 
 	fp, err := finding.NewFingerprintID("fp-" + commitSHA)
@@ -60,7 +60,7 @@ func insertCaseFileWithVerdict(t *testing.T, testDB *database.DB, projectID proj
 	verdictResult, err := verdict.Compose([]verdict.Ruling{rulingCodeQuality, rulingCoverage}, startedAt)
 	require.NoError(t, err)
 	caseFile, err = casefile.ReconstituteCaseFile(
-		caseFile.ID(), caseFile.ProjectID(), caseFile.CommitSHA(), caseFile.Branch(),
+		caseFile.ID(), testTenantID, caseFile.ProjectID(), caseFile.CommitSHA(), caseFile.Branch(),
 		caseFile.StartedAt(), caseFile.Evidences(), &verdictResult, false,
 	)
 	require.NoError(t, err)

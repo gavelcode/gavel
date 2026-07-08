@@ -27,7 +27,7 @@ func TestNewQuery(t *testing.T) {
 
 	for _, testCase := range tests {
 		t.Run(testCase.name, func(t *testing.T) {
-			query, err := getbykey.NewQuery(testCase.key)
+			query, err := getbykey.NewQuery(testTenant.String(), testCase.key)
 			if testCase.wantErr {
 				assert.Error(t, err)
 				assert.ErrorIs(t, err, getbykey.ErrInvalidQuery)
@@ -63,7 +63,7 @@ func TestExecuteReturnsResult(t *testing.T) {
 	fake := &fakeProjectKeyGetter{result: expected}
 	h := getbykey.NewHandler(fake)
 
-	query, err := getbykey.NewQuery("my-project")
+	query, err := getbykey.NewQuery(testTenant.String(), "my-project")
 	require.NoError(t, err)
 
 	result, err := h.Execute(context.Background(), query)
@@ -82,7 +82,7 @@ func TestExecutePropagatesError(t *testing.T) {
 	fake := &fakeProjectKeyGetter{err: queryErr}
 	h := getbykey.NewHandler(fake)
 
-	query, err := getbykey.NewQuery("my-project")
+	query, err := getbykey.NewQuery(testTenant.String(), "my-project")
 	require.NoError(t, err)
 
 	_, err = h.Execute(context.Background(), query)
@@ -91,7 +91,7 @@ func TestExecutePropagatesError(t *testing.T) {
 }
 
 func TestErrInvalidQueryIsClassifiedAsValidation(t *testing.T) {
-	_, err := getbykey.NewQuery("")
+	_, err := getbykey.NewQuery(testTenant.String(), "")
 	require.Error(t, err)
 	assert.Equal(t, failure.Validation, failure.Of(err))
 }

@@ -15,12 +15,14 @@ import (
 	"github.com/usegavel/gavel/core/domain/casefile/model/evidence/toolexecution"
 	"github.com/usegavel/gavel/core/domain/casefile/model/tracking"
 	"github.com/usegavel/gavel/core/domain/casefile/model/verdict"
+	"github.com/usegavel/gavel/core/domain/iam/model/tenant"
 	projectmodel "github.com/usegavel/gavel/core/domain/project/model"
 	"github.com/usegavel/gavel/core/domain/project/model/qualitygate"
 )
 
 var (
-	testTime = time.Date(2025, 6, 15, 10, 0, 0, 0, time.UTC)
+	testTime   = time.Date(2025, 6, 15, 10, 0, 0, 0, time.UTC)
+	testTenant = tenant.NewTenantID(uuid.MustParse("22222222-2222-2222-2222-222222222222"))
 )
 
 func mustProjectID(t *testing.T) projectmodel.ProjectID {
@@ -98,7 +100,7 @@ func TestNewCaseFile(t *testing.T) {
 
 	for _, tcase := range tests {
 		t.Run(tcase.name, func(t *testing.T) {
-			caseF, err := model.NewCaseFile(tcase.projectID, tcase.commitSHA, tcase.branch, tcase.startedAt, tcase.createdAt)
+			caseF, err := model.NewCaseFile(testTenant, tcase.projectID, tcase.commitSHA, tcase.branch, tcase.startedAt, tcase.createdAt)
 
 			if tcase.wantErr {
 				require.Error(t, err)
@@ -106,6 +108,7 @@ func TestNewCaseFile(t *testing.T) {
 				return
 			}
 			require.NoError(t, err)
+			assert.True(t, testTenant.Equal(caseF.TenantID()))
 			assert.True(t, tcase.projectID.Equal(caseF.ProjectID()))
 			assert.Equal(t, tcase.commitSHA, caseF.CommitSHA())
 			assert.Equal(t, tcase.branch, caseF.Branch())
@@ -122,7 +125,7 @@ func TestCaseFileOpenedEventUsesCreatedAtNotStartedAt(t *testing.T) {
 	startedAt := time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC)
 	createdAt := time.Date(2025, 6, 15, 10, 0, 0, 0, time.UTC)
 
-	caseF, err := model.NewCaseFile(mustProjectID(t), "abc123", "main", startedAt, createdAt)
+	caseF, err := model.NewCaseFile(testTenant, mustProjectID(t), "abc123", "main", startedAt, createdAt)
 	require.NoError(t, err)
 
 	events := caseF.Events()
@@ -182,7 +185,7 @@ func TestReconstituteCaseFile(t *testing.T) {
 
 	for _, tcase := range tests {
 		t.Run(tcase.name, func(t *testing.T) {
-			caseF, err := model.ReconstituteCaseFile(tcase.id, tcase.projectID, tcase.commitSHA, tcase.branch, tcase.startedAt, tcase.evidences, tcase.verdict, false)
+			caseF, err := model.ReconstituteCaseFile(tcase.id, testTenant, tcase.projectID, tcase.commitSHA, tcase.branch, tcase.startedAt, tcase.evidences, tcase.verdict, false)
 
 			if tcase.wantErr {
 				require.Error(t, err)
@@ -191,6 +194,7 @@ func TestReconstituteCaseFile(t *testing.T) {
 			}
 			require.NoError(t, err)
 			assert.True(t, tcase.id.Equal(caseF.ID()))
+			assert.True(t, testTenant.Equal(caseF.TenantID()))
 			assert.True(t, tcase.projectID.Equal(caseF.ProjectID()))
 			assert.Equal(t, tcase.commitSHA, caseF.CommitSHA())
 			assert.Equal(t, tcase.branch, caseF.Branch())
@@ -222,11 +226,11 @@ func TestCaseFileMarkFreshEvaluation(t *testing.T) {
 func TestReconstituteCaseFilePreservesFreshEvaluation(t *testing.T) {
 	caseFileID := model.NewCaseFileID(uuid.New())
 
-	caseF, err := model.ReconstituteCaseFile(caseFileID, mustProjectID(t), "abc123", "main", testTime, nil, nil, true)
+	caseF, err := model.ReconstituteCaseFile(caseFileID, testTenant, mustProjectID(t), "abc123", "main", testTime, nil, nil, true)
 	require.NoError(t, err)
 	assert.True(t, caseF.IsFreshEvaluation())
 
-	cf2, err := model.ReconstituteCaseFile(caseFileID, mustProjectID(t), "abc123", "main", testTime, nil, nil, false)
+	cf2, err := model.ReconstituteCaseFile(caseFileID, testTenant, mustProjectID(t), "abc123", "main", testTime, nil, nil, false)
 	require.NoError(t, err)
 	assert.False(t, cf2.IsFreshEvaluation())
 }
@@ -451,7 +455,7 @@ func TestCaseFileJudgeRejectsZeroEvaluatedAt(t *testing.T) {
 }
 
 func TestCaseFileOpenedEventGetters(t *testing.T) {
-	caseF, err := model.NewCaseFile(mustProjectID(t), "abc123", "main", testTime, testTime)
+	caseF, err := model.NewCaseFile(testTenant, mustProjectID(t), "abc123", "main", testTime, testTime)
 	require.NoError(t, err)
 
 	events := caseF.Events()
@@ -845,7 +849,7 @@ func TestCaseFileEvidencesDefensiveCopy(t *testing.T) {
 
 func mustNewCaseFile(t *testing.T) *model.CaseFile {
 	t.Helper()
-	caseF, err := model.NewCaseFile(mustProjectID(t), "abc123", "main", testTime, testTime)
+	caseF, err := model.NewCaseFile(testTenant, mustProjectID(t), "abc123", "main", testTime, testTime)
 	require.NoError(t, err)
 	return &caseF
 }

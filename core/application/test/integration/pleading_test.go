@@ -21,7 +21,7 @@ func mustCreateProject(t *testing.T, projectRepo *memproject.ProjectRepository, 
 	ctx := context.Background()
 
 	handler := projectcreate.NewHandler(projectRepo)
-	cmd, err := projectcreate.NewCommand(key, key+"-name", "//"+key+"/...")
+	cmd, err := projectcreate.NewCommand(testTenant, key, key+"-name", "//"+key+"/...")
 	require.NoError(t, err)
 
 	result, err := handler.Execute(ctx, cmd)

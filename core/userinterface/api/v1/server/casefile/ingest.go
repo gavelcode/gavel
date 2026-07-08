@@ -13,9 +13,14 @@ import (
 	"github.com/usegavel/gavel/core/application/shared/apperr"
 	"github.com/usegavel/gavel/core/userinterface/api/v1/gen"
 	"github.com/usegavel/gavel/core/userinterface/api/v1/server/httpx"
+	auth "github.com/usegavel/gavel/core/userinterface/api/v1/server/httpx/auth"
 )
 
 func (h *Handler) CreateCaseFile(ctx context.Context, req gen.CreateCaseFileRequestObject) (gen.CreateCaseFileResponseObject, error) {
+	principal, ok := auth.PrincipalFromContext(ctx)
+	if !ok {
+		return gen.CreateCaseFile401JSONResponse{UnauthorizedJSONResponse: httpx.Unauthorized("unauthenticated")}, nil
+	}
 	if req.Body == nil {
 		return gen.CreateCaseFile400JSONResponse{BadRequestJSONResponse: httpx.BadRequest("missing body")}, nil
 	}
@@ -30,6 +35,7 @@ func (h *Handler) CreateCaseFile(ctx context.Context, req gen.CreateCaseFileRequ
 	}
 
 	cmd, err := createcasefile.NewCommand(
+		principal.TenantID,
 		req.Body.ProjectId.String(),
 		req.Body.CommitSha,
 		req.Body.Branch,

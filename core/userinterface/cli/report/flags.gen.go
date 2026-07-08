@@ -9,14 +9,14 @@ import (
 
 // Options holds the parsed flag values for the report command.
 type Options struct {
-	CheckName string
-	Commit string
+	CheckName   string
+	Commit      string
 	GithubToken string
-	NewOnly bool
-	PR int
-	Project string
-	Repo string
-	To string
+	NewOnly     bool
+	PR          int
+	Project     string
+	Repo        string
+	To          string
 }
 
 // RegisterFlags binds all report flags to the given Options struct.

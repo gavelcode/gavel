@@ -12,8 +12,11 @@ import (
 
 	casefile "github.com/usegavel/gavel/core/domain/casefile/model"
 	"github.com/usegavel/gavel/core/domain/casefile/model/evidence/finding"
+	"github.com/usegavel/gavel/core/domain/iam/model/tenant"
 	projectmodel "github.com/usegavel/gavel/core/domain/project/model"
 )
+
+var testTenant = tenant.NewTenantID(uuid.MustParse("22222222-2222-2222-2222-222222222222"))
 
 type stubCaseFileRepo struct {
 	saveErr error
@@ -39,21 +42,21 @@ type stubProjectRepo struct {
 }
 
 func (s *stubProjectRepo) Save(_ context.Context, _ projectmodel.Project) error { return nil }
-func (s *stubProjectRepo) FindByID(_ context.Context, _ projectmodel.ProjectID) (projectmodel.Project, error) {
+func (s *stubProjectRepo) FindByID(_ context.Context, _ tenant.TenantID, _ projectmodel.ProjectID) (projectmodel.Project, error) {
 	if s.findErr != nil {
 		return projectmodel.Project{}, s.findErr
 	}
 	return s.project, nil
 }
-func (s *stubProjectRepo) FindByName(_ context.Context, _ string) (projectmodel.Project, error) {
+func (s *stubProjectRepo) FindByName(_ context.Context, _ tenant.TenantID, _ string) (projectmodel.Project, error) {
 	return projectmodel.Project{}, nil
 }
-func (s *stubProjectRepo) FindByKey(_ context.Context, _ string) (projectmodel.Project, error) {
+func (s *stubProjectRepo) FindByKey(_ context.Context, _ tenant.TenantID, _ string) (projectmodel.Project, error) {
 	return projectmodel.Project{}, nil
 }
 
 func TestExecuteNewCaseFileDomainError(t *testing.T) {
-	project, err := projectmodel.NewProject("test", "test", "//...")
+	project, err := projectmodel.NewProject(testTenant, "test", "test", "//...")
 	require.NoError(t, err)
 
 	handler := &Handler{
@@ -62,6 +65,7 @@ func TestExecuteNewCaseFileDomainError(t *testing.T) {
 	}
 
 	cmd := Command{
+		tenantID:  testTenant.String(),
 		projectID: uuid.NewString(),
 		commitSHA: "abc",
 		branch:    "main",
@@ -74,7 +78,7 @@ func TestExecuteNewCaseFileDomainError(t *testing.T) {
 }
 
 func TestExecuteSaveError(t *testing.T) {
-	project, err := projectmodel.NewProject("test", "test", "//...")
+	project, err := projectmodel.NewProject(testTenant, "test", "test", "//...")
 	require.NoError(t, err)
 
 	handler := &Handler{
@@ -83,6 +87,7 @@ func TestExecuteSaveError(t *testing.T) {
 	}
 
 	cmd := Command{
+		tenantID:  testTenant.String(),
 		projectID: project.ID().String(),
 		commitSHA: "abc",
 		branch:    "main",

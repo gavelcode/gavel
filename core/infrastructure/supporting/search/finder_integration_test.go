@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -12,6 +13,7 @@ import (
 	"github.com/usegavel/gavel/core/domain/casefile/model/evidence"
 	"github.com/usegavel/gavel/core/domain/casefile/model/evidence/finding"
 	"github.com/usegavel/gavel/core/domain/casefile/model/verdict"
+	"github.com/usegavel/gavel/core/domain/iam/model/tenant"
 	projectmodel "github.com/usegavel/gavel/core/domain/project/model"
 	casefilepostgres "github.com/usegavel/gavel/core/infrastructure/casefile/postgres"
 	"github.com/usegavel/gavel/core/infrastructure/platform/database"
@@ -20,7 +22,21 @@ import (
 	searchinfra "github.com/usegavel/gavel/core/infrastructure/supporting/search"
 )
 
-func setupDB(t *testing.T) *database.DB { return testkit.TestDB(t) }
+var testTenantID = tenant.NewTenantID(uuid.MustParse("22222222-2222-2222-2222-222222222222"))
+
+func setupDB(t *testing.T) *database.DB {
+	testDB := testkit.TestDB(t)
+	seedTenant(t, testDB)
+	return testDB
+}
+
+func seedTenant(t *testing.T, testDB *database.DB) {
+	t.Helper()
+	_, err := testDB.ExecContext(context.Background(),
+		`INSERT INTO iam_tenants (id, slug, display_name, status, created_at) VALUES (?, ?, ?, ?, ?)`,
+		testTenantID.UUID(), "test-tenant", "Test Tenant", "active", database.Now())
+	require.NoError(t, err)
+}
 
 func TestSearch_MatchesProjectByName(t *testing.T) {
 	db := setupDB(t)
@@ -240,7 +256,7 @@ func TestSearch_ReturnsErrorWhenScanFails(t *testing.T) {
 
 func seedProject(t *testing.T, db *database.DB, key, name, pattern string) projectmodel.ProjectID {
 	t.Helper()
-	project, err := projectmodel.NewProject(key, name, pattern)
+	project, err := projectmodel.NewProject(testTenantID, key, name, pattern)
 	require.NoError(t, err)
 	repo := projectpostgres.NewRepository(db)
 	require.NoError(t, repo.Save(context.Background(), project))
@@ -250,7 +266,7 @@ func seedProject(t *testing.T, db *database.DB, key, name, pattern string) proje
 func seedCaseFile(t *testing.T, db *database.DB, projectID projectmodel.ProjectID, commitSHA, branch string) {
 	t.Helper()
 	now := time.Now().UTC()
-	cf, err := casefile.NewCaseFile(projectID, commitSHA, branch, now, now)
+	cf, err := casefile.NewCaseFile(testTenantID, projectID, commitSHA, branch, now, now)
 	require.NoError(t, err)
 	repo := casefilepostgres.NewRepository(db)
 	require.NoError(t, repo.Save(context.Background(), cf))
@@ -259,7 +275,7 @@ func seedCaseFile(t *testing.T, db *database.DB, projectID projectmodel.ProjectI
 func seedCaseFileWithFindings(t *testing.T, database *database.DB, projectID projectmodel.ProjectID, commitSHA, branch string) {
 	t.Helper()
 	now := time.Now().UTC()
-	caseFile, err := casefile.NewCaseFile(projectID, commitSHA, branch, now, now)
+	caseFile, err := casefile.NewCaseFile(testTenantID, projectID, commitSHA, branch, now, now)
 	require.NoError(t, err)
 
 	fp1, err := finding.NewFingerprintID("fp-search-aaa")
@@ -281,7 +297,7 @@ func seedCaseFileWithFindings(t *testing.T, database *database.DB, projectID pro
 	r1 := verdict.NewRuling(evidence.SubtypeCodeQuality, true, "0 errors")
 	v, err := verdict.Compose([]verdict.Ruling{r1}, now)
 	require.NoError(t, err)
-	caseFile, err = casefile.ReconstituteCaseFile(caseFile.ID(), caseFile.ProjectID(), caseFile.CommitSHA(), caseFile.Branch(), caseFile.StartedAt(), caseFile.Evidences(), &v, false)
+	caseFile, err = casefile.ReconstituteCaseFile(caseFile.ID(), testTenantID, caseFile.ProjectID(), caseFile.CommitSHA(), caseFile.Branch(), caseFile.StartedAt(), caseFile.Evidences(), &v, false)
 	require.NoError(t, err)
 
 	repo := casefilepostgres.NewRepository(database)

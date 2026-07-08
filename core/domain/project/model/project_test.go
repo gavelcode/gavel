@@ -8,16 +8,18 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/usegavel/gavel/core/domain/casefile/model/evidence/coverage"
+	"github.com/usegavel/gavel/core/domain/iam/model/tenant"
 	"github.com/usegavel/gavel/core/domain/project/model"
 	"github.com/usegavel/gavel/core/domain/project/model/qualitygate"
 )
 
 var (
-	testTime = time.Date(2026, 5, 21, 12, 0, 0, 0, time.UTC)
+	testTime   = time.Date(2026, 5, 21, 12, 0, 0, 0, time.UTC)
+	testTenant = tenant.NewTenantID(uuid.MustParse("22222222-2222-2222-2222-222222222222"))
 )
 
 func TestUpdateExcludePatterns_StoresValidPatternsWithinScope(t *testing.T) {
-	p, err := model.NewProject("core", "core", "//core/...")
+	p, err := model.NewProject(testTenant, "core", "core", "//core/...")
 	require.NoError(t, err)
 
 	require.NoError(t, p.UpdateExcludePatterns([]string{"//core/gen/..."}, testTime))
@@ -26,7 +28,7 @@ func TestUpdateExcludePatterns_StoresValidPatternsWithinScope(t *testing.T) {
 }
 
 func TestUpdateExcludePatterns_RejectsPatternOutsideScope(t *testing.T) {
-	p, err := model.NewProject("core", "core", "//core/...")
+	p, err := model.NewProject(testTenant, "core", "core", "//core/...")
 	require.NoError(t, err)
 
 	err = p.UpdateExcludePatterns([]string{"//apps/cli/..."}, testTime)
@@ -35,7 +37,7 @@ func TestUpdateExcludePatterns_RejectsPatternOutsideScope(t *testing.T) {
 }
 
 func TestUpdateExcludePatterns_RejectsMalformedPattern(t *testing.T) {
-	p, err := model.NewProject("core", "core", "//core/...")
+	p, err := model.NewProject(testTenant, "core", "core", "//core/...")
 	require.NoError(t, err)
 
 	err = p.UpdateExcludePatterns([]string{"not a pattern"}, testTime)
@@ -44,7 +46,7 @@ func TestUpdateExcludePatterns_RejectsMalformedPattern(t *testing.T) {
 }
 
 func TestExcludePatterns_ReturnsDefensiveCopy(t *testing.T) {
-	project, err := model.NewProject("core", "core", "//core/...")
+	project, err := model.NewProject(testTenant, "core", "core", "//core/...")
 	require.NoError(t, err)
 	require.NoError(t, project.UpdateExcludePatterns([]string{"//core/gen/..."}, testTime))
 
@@ -199,7 +201,7 @@ func TestNewProject(t *testing.T) {
 
 	for _, tcase := range tests {
 		t.Run(tcase.name, func(t *testing.T) {
-			project, err := model.NewProject(tcase.key, tcase.projectName, tcase.targetPattern)
+			project, err := model.NewProject(testTenant, tcase.key, tcase.projectName, tcase.targetPattern)
 
 			if tcase.expectErr {
 				require.Error(t, err)
@@ -208,6 +210,7 @@ func TestNewProject(t *testing.T) {
 			}
 
 			require.NoError(t, err)
+			assert.True(t, testTenant.Equal(project.TenantID()))
 			assert.Equal(t, tcase.key, project.Key())
 			assert.Equal(t, tcase.projectName, project.Name())
 			assert.Equal(t, tcase.targetPattern, project.TargetPattern())
@@ -217,17 +220,17 @@ func TestNewProject(t *testing.T) {
 }
 
 func TestNewProjectGeneratesUniqueIDs(t *testing.T) {
-	proj1, err := model.NewProject("service-a", "service-a", "//service-a/...")
+	proj1, err := model.NewProject(testTenant, "service-a", "service-a", "//service-a/...")
 	require.NoError(t, err)
 
-	p2, err := model.NewProject("service-b", "service-b", "//service-b/...")
+	p2, err := model.NewProject(testTenant, "service-b", "service-b", "//service-b/...")
 	require.NoError(t, err)
 
 	assert.False(t, proj1.ID().Equal(p2.ID()))
 }
 
 func TestProjectUpdateQualityGate(t *testing.T) {
-	project, err := model.NewProject("my-service", "my-service", "//my-service/...")
+	project, err := model.NewProject(testTenant, "my-service", "my-service", "//my-service/...")
 	require.NoError(t, err)
 	project.ClearEvents()
 
@@ -246,7 +249,7 @@ func TestProjectUpdateQualityGate(t *testing.T) {
 }
 
 func TestProjectUpdateLanguages(t *testing.T) {
-	project, err := model.NewProject("my-service", "my-service", "//my-service/...")
+	project, err := model.NewProject(testTenant, "my-service", "my-service", "//my-service/...")
 	require.NoError(t, err)
 	project.ClearEvents()
 
@@ -269,7 +272,7 @@ func TestProjectUpdateLanguages(t *testing.T) {
 }
 
 func TestProjectUpdateToolSelection(t *testing.T) {
-	project, err := model.NewProject("my-service", "my-service", "//my-service/...")
+	project, err := model.NewProject(testTenant, "my-service", "my-service", "//my-service/...")
 	require.NoError(t, err)
 	project.ClearEvents()
 
@@ -286,7 +289,7 @@ func TestProjectUpdateToolSelection(t *testing.T) {
 }
 
 func TestProjectToolSelectionReturnsDefensiveCopy(t *testing.T) {
-	project, err := model.NewProject("my-service", "my-service", "//my-service/...")
+	project, err := model.NewProject(testTenant, "my-service", "my-service", "//my-service/...")
 	require.NoError(t, err)
 	project.UpdateToolSelection(map[string][]string{"go": {"golangci-lint"}}, testTime)
 
@@ -298,7 +301,7 @@ func TestProjectToolSelectionReturnsDefensiveCopy(t *testing.T) {
 }
 
 func TestProjectUpdateTargetPattern(t *testing.T) {
-	project, err := model.NewProject("my-service", "my-service", "//my-service/...")
+	project, err := model.NewProject(testTenant, "my-service", "my-service", "//my-service/...")
 	require.NoError(t, err)
 	project.ClearEvents()
 
@@ -327,7 +330,7 @@ func TestProjectUpdateTargetPatternRejectsInvalid(t *testing.T) {
 	}
 	for _, tcase := range tests {
 		t.Run(tcase.name, func(t *testing.T) {
-			project, err := model.NewProject("my-service", "my-service", "//my-service/...")
+			project, err := model.NewProject(testTenant, "my-service", "my-service", "//my-service/...")
 			require.NoError(t, err)
 			project.ClearEvents()
 
@@ -343,7 +346,7 @@ func TestProjectUpdateTargetPatternRejectsInvalid(t *testing.T) {
 }
 
 func TestProjectLanguagesDefensiveCopy(t *testing.T) {
-	project, err := model.NewProject("my-service", "my-service", "//my-service/...")
+	project, err := model.NewProject(testTenant, "my-service", "my-service", "//my-service/...")
 	require.NoError(t, err)
 
 	java, err := coverage.NewLanguage("java")
@@ -461,7 +464,7 @@ func TestReconstituteProject(t *testing.T) {
 	for _, tcase := range tests {
 		t.Run(tcase.name, func(t *testing.T) {
 			project, err := model.ReconstituteProject(
-				tcase.id, tcase.key, tcase.projectName, tcase.targetPattern,
+				tcase.id, testTenant, tcase.key, tcase.projectName, tcase.targetPattern,
 				tcase.defaultBranch, tcase.languages, tcase.qualityGate, nil, nil,
 			)
 
@@ -473,6 +476,7 @@ func TestReconstituteProject(t *testing.T) {
 
 			require.NoError(t, err)
 			assert.True(t, tcase.id.Equal(project.ID()))
+			assert.True(t, testTenant.Equal(project.TenantID()))
 			assert.Equal(t, tcase.key, project.Key())
 			assert.Equal(t, tcase.projectName, project.Name())
 			assert.Equal(t, tcase.targetPattern, project.TargetPattern())
@@ -495,7 +499,7 @@ func TestReconstituteProjectWithBaselines(t *testing.T) {
 	}
 
 	project, err := model.ReconstituteProject(
-		projectID, "svc", "svc", "//svc/...", "main",
+		projectID, testTenant, "svc", "svc", "//svc/...", "main",
 		nil, qGate, nil, baselines,
 	)
 	require.NoError(t, err)
@@ -528,7 +532,7 @@ func TestBaselineFallbackToDefaultBranch(t *testing.T) {
 	}
 
 	project, err := model.ReconstituteProject(
-		projectID, "svc", "svc", "//svc/...", "main",
+		projectID, testTenant, "svc", "svc", "//svc/...", "main",
 		nil, qGate, nil, baselines,
 	)
 	require.NoError(t, err)
@@ -549,14 +553,14 @@ func TestBaselineFallbackToDefaultBranch(t *testing.T) {
 	})
 
 	t.Run("shouldReturnEmptyWhenDefaultBranchHasNoBaseline", func(t *testing.T) {
-		empty, err := model.NewProject("empty", "empty", "//empty/...")
+		empty, err := model.NewProject(testTenant, "empty", "empty", "//empty/...")
 		require.NoError(t, err)
 		bl := empty.Baseline("main")
 		assert.False(t, bl.HasPrevious())
 	})
 
 	t.Run("shouldPreferExactBranchOverFallback", func(t *testing.T) {
-		p, err := model.NewProject("multi", "multi", "//multi/...")
+		p, err := model.NewProject(testTenant, "multi", "multi", "//multi/...")
 		require.NoError(t, err)
 		p.UpdateBaseline("main", []string{"main-fp"}, nil, nil, nil)
 		p.UpdateBaseline("feature-x", []string{"feature-fp"}, nil, nil, nil)

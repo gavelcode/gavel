@@ -12,6 +12,7 @@ type Result struct {
 }
 
 type WorkspaceView struct {
+	TenantID       string
 	GavelspaceName string
 	ServerURL      string
 	ServerToken    string
@@ -61,6 +62,7 @@ type ArchDenyRuleView struct {
 
 func buildView(gavelspace gavelspacemodel.Gavelspace, projects []projectmodel.Project) WorkspaceView {
 	view := WorkspaceView{
+		TenantID:       gavelspace.TenantID().String(),
 		GavelspaceName: gavelspace.ID().String(),
 		FindingsSource: gavelspace.FindingsSource(),
 	}

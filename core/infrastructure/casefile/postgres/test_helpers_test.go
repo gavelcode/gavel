@@ -8,10 +8,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 
-	dbpkg "github.com/usegavel/gavel/core/infrastructure/platform/database"
-	"github.com/usegavel/gavel/core/infrastructure/platform/database/testkit"
-	projectpostgres "github.com/usegavel/gavel/core/infrastructure/project/postgres"
-
 	casefile "github.com/usegavel/gavel/core/domain/casefile/model"
 	"github.com/usegavel/gavel/core/domain/casefile/model/evidence"
 	"github.com/usegavel/gavel/core/domain/casefile/model/evidence/architecture"
@@ -19,10 +15,28 @@ import (
 	"github.com/usegavel/gavel/core/domain/casefile/model/evidence/finding"
 	"github.com/usegavel/gavel/core/domain/casefile/model/evidence/toolexecution"
 	"github.com/usegavel/gavel/core/domain/casefile/model/verdict"
+	"github.com/usegavel/gavel/core/domain/iam/model/tenant"
 	projectmodel "github.com/usegavel/gavel/core/domain/project/model"
+	dbpkg "github.com/usegavel/gavel/core/infrastructure/platform/database"
+	"github.com/usegavel/gavel/core/infrastructure/platform/database/testkit"
+	projectpostgres "github.com/usegavel/gavel/core/infrastructure/project/postgres"
 )
 
-func setupDB(t *testing.T) *dbpkg.DB { return testkit.TestDB(t) }
+var testTenantID = tenant.NewTenantID(uuid.MustParse("22222222-2222-2222-2222-222222222222"))
+
+func setupDB(t *testing.T) *dbpkg.DB {
+	testDB := testkit.TestDB(t)
+	seedTenant(t, testDB)
+	return testDB
+}
+
+func seedTenant(t *testing.T, testDB *dbpkg.DB) {
+	t.Helper()
+	_, err := testDB.ExecContext(context.Background(),
+		`INSERT INTO iam_tenants (id, slug, display_name, status, created_at) VALUES (?, ?, ?, ?, ?)`,
+		testTenantID.UUID(), "test-tenant", "Test Tenant", "active", dbpkg.Now())
+	require.NoError(t, err)
+}
 
 func mustGenerateProjectID(t *testing.T) projectmodel.ProjectID {
 	t.Helper()
@@ -33,7 +47,7 @@ func mustGenerateProjectID(t *testing.T) projectmodel.ProjectID {
 
 func insertTestProject(t *testing.T, db *dbpkg.DB) projectmodel.Project {
 	t.Helper()
-	project, err := projectmodel.NewProject("test-project", "Test Project", "//test/...")
+	project, err := projectmodel.NewProject(testTenantID, "test-project", "Test Project", "//test/...")
 	require.NoError(t, err)
 	repo := projectpostgres.NewRepository(db)
 	require.NoError(t, repo.Save(context.Background(), project))
@@ -47,7 +61,7 @@ func newTestCaseFile(t *testing.T, projectID projectmodel.ProjectID, commitSHA, 
 
 func newCaseFileAt(t *testing.T, projectID projectmodel.ProjectID, commitSHA, branch string, startedAt time.Time) casefile.CaseFile {
 	t.Helper()
-	caseFile, err := casefile.NewCaseFile(projectID, commitSHA, branch, startedAt, startedAt)
+	caseFile, err := casefile.NewCaseFile(testTenantID, projectID, commitSHA, branch, startedAt, startedAt)
 	require.NoError(t, err)
 	return caseFile
 }

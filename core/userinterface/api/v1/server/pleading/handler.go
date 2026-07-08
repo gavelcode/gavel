@@ -11,6 +11,7 @@ import (
 	"github.com/usegavel/gavel/core/application/shared/apperr"
 	"github.com/usegavel/gavel/core/userinterface/api/v1/gen"
 	"github.com/usegavel/gavel/core/userinterface/api/v1/server/httpx"
+	auth "github.com/usegavel/gavel/core/userinterface/api/v1/server/httpx/auth"
 )
 
 type Deps struct {
@@ -95,7 +96,11 @@ func (h *Handler) ResolvePleading(ctx context.Context, req gen.ResolvePleadingRe
 }
 
 func (h *Handler) ListProjectPleadings(ctx context.Context, req gen.ListProjectPleadingsRequestObject) (gen.ListProjectPleadingsResponseObject, error) {
-	detail, err := h.fetchProjectDetail(ctx, string(req.Key))
+	principal, ok := auth.PrincipalFromContext(ctx)
+	if !ok {
+		return gen.ListProjectPleadings401JSONResponse{UnauthorizedJSONResponse: httpx.Unauthorized("unauthenticated")}, nil
+	}
+	detail, err := h.fetchProjectDetail(ctx, principal.TenantID, string(req.Key))
 	if err != nil {
 		if apperr.Of(err) == apperr.NotFound {
 			return gen.ListProjectPleadings404JSONResponse{NotFoundJSONResponse: httpx.NotFound("project not found")}, nil
@@ -123,10 +128,14 @@ func (h *Handler) ListProjectPleadings(ctx context.Context, req gen.ListProjectP
 }
 
 func (h *Handler) FileProjectPleading(ctx context.Context, req gen.FileProjectPleadingRequestObject) (gen.FileProjectPleadingResponseObject, error) {
+	principal, ok := auth.PrincipalFromContext(ctx)
+	if !ok {
+		return gen.FileProjectPleading401JSONResponse{UnauthorizedJSONResponse: httpx.Unauthorized("unauthenticated")}, nil
+	}
 	if req.Body == nil {
 		return gen.FileProjectPleading400JSONResponse{BadRequestJSONResponse: httpx.BadRequest("missing body")}, nil
 	}
-	detail, err := h.fetchProjectDetail(ctx, string(req.Key))
+	detail, err := h.fetchProjectDetail(ctx, principal.TenantID, string(req.Key))
 	if err != nil {
 		if apperr.Of(err) == apperr.NotFound {
 			return gen.FileProjectPleading404JSONResponse{NotFoundJSONResponse: httpx.NotFound("project not found")}, nil
@@ -159,8 +168,8 @@ func (h *Handler) FileProjectPleading(ctx context.Context, req gen.FileProjectPl
 	return gen.FileProjectPleading201JSONResponse{PleadingId: httpx.ParseUUIDOrZero(res.PleadingID)}, nil
 }
 
-func (h *Handler) fetchProjectDetail(ctx context.Context, key string) (*projectgetbykey.ProjectDetail, error) {
-	q, err := projectgetbykey.NewQuery(key)
+func (h *Handler) fetchProjectDetail(ctx context.Context, tenantID, key string) (*projectgetbykey.ProjectDetail, error) {
+	q, err := projectgetbykey.NewQuery(tenantID, key)
 	if err != nil {
 		return nil, err
 	}

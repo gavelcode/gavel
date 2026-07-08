@@ -6,11 +6,15 @@ import (
 )
 
 type Command struct {
+	tenantID      string
 	projectID     string
 	targetPattern string
 }
 
-func NewCommand(projectID, targetPattern string) (Command, error) {
+func NewCommand(tenantID, projectID, targetPattern string) (Command, error) {
+	if strings.TrimSpace(tenantID) == "" {
+		return Command{}, fmt.Errorf("%w: tenantID must not be empty", ErrInvalidCommand)
+	}
 	if strings.TrimSpace(projectID) == "" {
 		return Command{}, fmt.Errorf("%w: projectID must not be empty", ErrInvalidCommand)
 	}
@@ -18,10 +22,13 @@ func NewCommand(projectID, targetPattern string) (Command, error) {
 		return Command{}, fmt.Errorf("%w: targetPattern must not be empty", ErrInvalidCommand)
 	}
 	return Command{
+		tenantID:      tenantID,
 		projectID:     projectID,
 		targetPattern: targetPattern,
 	}, nil
 }
+
+func (c Command) TenantID() string { return c.tenantID }
 
 func (c Command) ProjectID() string { return c.projectID }
 

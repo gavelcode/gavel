@@ -22,6 +22,8 @@ import (
 	"github.com/usegavel/gavel/core/userinterface/cli/judge/pipeline"
 )
 
+const localTenantID = "11111111-1111-1111-1111-111111111111"
+
 var errHelper = errors.New("helper error")
 
 type failingSource struct {
@@ -218,7 +220,7 @@ func helperDeps() deps {
 func TestPrepareBaselines_EmptyProjectsReturnsEmpty(t *testing.T) {
 	dependencies := helperDeps()
 
-	result := prepareBaselines(context.Background(), dependencies, nil)
+	result := prepareBaselines(context.Background(), dependencies, localTenantID, nil)
 
 	assert.Empty(t, result.Baselines)
 }
@@ -229,7 +231,7 @@ func TestPrepareBaselines_ReturnsBaselines(t *testing.T) {
 		{Name: "core", DefaultBranch: "main"},
 	}
 
-	result := prepareBaselines(context.Background(), dependencies, projects)
+	result := prepareBaselines(context.Background(), dependencies, localTenantID, projects)
 
 	require.Len(t, result.Baselines, 1)
 	assert.Equal(t, "core", result.Baselines[0].ProjectName)
@@ -264,7 +266,7 @@ func TestPrepareBaselines_WithServerClient(t *testing.T) {
 		{Name: "core", DefaultBranch: "main"},
 	}
 
-	result := prepareBaselines(context.Background(), dependencies, projects)
+	result := prepareBaselines(context.Background(), dependencies, localTenantID, projects)
 
 	require.Len(t, result.Baselines, 1)
 	assert.True(t, baselineCalled)

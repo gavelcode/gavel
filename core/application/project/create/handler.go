@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/usegavel/gavel/core/application/shared/event"
+	"github.com/usegavel/gavel/core/domain/iam/model/tenant"
 	projectmodel "github.com/usegavel/gavel/core/domain/project/model"
 	projectservice "github.com/usegavel/gavel/core/domain/project/service"
 )
@@ -21,7 +22,12 @@ func NewHandler(projects projectservice.ProjectRepository) *Handler {
 }
 
 func (h *Handler) Execute(ctx context.Context, cmd Command) (Result, error) {
-	project, err := projectmodel.NewProject(cmd.Key(), cmd.Name(), cmd.TargetPattern())
+	tenantID, err := tenant.ParseTenantID(cmd.TenantID())
+	if err != nil {
+		return Result{}, fmt.Errorf("tenant id: %w", err)
+	}
+
+	project, err := projectmodel.NewProject(tenantID, cmd.Key(), cmd.Name(), cmd.TargetPattern())
 	if err != nil {
 		return Result{}, fmt.Errorf("new project: %w", err)
 	}

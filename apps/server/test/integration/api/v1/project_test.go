@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	projectview "github.com/usegavel/gavel/core/application/project/projectview"
+	"github.com/usegavel/gavel/core/domain/iam/model/tenant"
 )
 
 func seedProject(f *testFixture, key, name string) string {
@@ -149,7 +150,9 @@ func TestGetProjectBaseline_Success(t *testing.T) {
 	}
 	mustDecode(t, createRes.Body.Bytes(), &created)
 
-	p, err := fixture.projRepo.FindByName(context.Background(), "Core")
+	tenantID, err := tenant.ParseTenantID(fixture.defTenantID)
+	require.NoError(t, err)
+	p, err := fixture.projRepo.FindByName(context.Background(), tenantID, "Core")
 	require.NoError(t, err)
 	p.UpdateBaseline("main", []string{"fp1"}, []string{"a1"}, nil, nil)
 	require.NoError(t, fixture.projRepo.Save(context.Background(), p))

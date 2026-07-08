@@ -115,8 +115,8 @@ type repoBackedProjectFinder struct {
 	repo *memproject.ProjectRepository
 }
 
-func (finder *repoBackedProjectFinder) GetByKey(ctx context.Context, key string) (*projectview.ProjectDetail, error) {
-	project, err := finder.repo.FindByKey(ctx, key)
+func (finder *repoBackedProjectFinder) GetByKey(ctx context.Context, _ tenant.TenantID, key string) (*projectview.ProjectDetail, error) {
+	project, err := finder.repo.FindByKey(ctx, tenant.LocalTenantID, key)
 	if err != nil {
 		return nil, err
 	}
@@ -130,7 +130,7 @@ func (finder *repoBackedProjectFinder) GetByKey(ctx context.Context, key string)
 	}, nil
 }
 
-func (finder *repoBackedProjectFinder) List(_ context.Context, _, _ int) ([]projectlist.ProjectSummary, int, error) {
+func (finder *repoBackedProjectFinder) List(_ context.Context, _ tenant.TenantID, _, _ int) ([]projectlist.ProjectSummary, int, error) {
 	return nil, 0, nil
 }
 

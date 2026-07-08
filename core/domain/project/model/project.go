@@ -9,6 +9,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/usegavel/gavel/core/domain/casefile/model/evidence/coverage"
+	"github.com/usegavel/gavel/core/domain/iam/model/tenant"
 	"github.com/usegavel/gavel/core/domain/project/model/archpolicy"
 	"github.com/usegavel/gavel/core/domain/project/model/qualitygate"
 	"github.com/usegavel/gavel/core/domain/shared/event"
@@ -24,6 +25,7 @@ const keyMaxLength = 64
 
 type Project struct {
 	id                 ProjectID
+	tenantID           tenant.TenantID
 	key                string
 	name               string
 	targetPattern      string
@@ -37,7 +39,7 @@ type Project struct {
 	events             []event.DomainEvent
 }
 
-func NewProject(key, name, targetPattern string) (Project, error) {
+func NewProject(tenantID tenant.TenantID, key, name, targetPattern string) (Project, error) {
 	if err := validateKey(key); err != nil {
 		return Project{}, err
 	}
@@ -47,6 +49,7 @@ func NewProject(key, name, targetPattern string) (Project, error) {
 	id := NewProjectID(uuid.New())
 	return Project{
 		id:            id,
+		tenantID:      tenantID,
 		key:           key,
 		name:          name,
 		targetPattern: targetPattern,
@@ -55,7 +58,7 @@ func NewProject(key, name, targetPattern string) (Project, error) {
 }
 
 func ReconstituteProject(
-	projectID ProjectID, key, name, targetPattern, branch string,
+	projectID ProjectID, tenantID tenant.TenantID, key, name, targetPattern, branch string,
 	languages []coverage.Language,
 	qualityGate qualitygate.Gate,
 	architecturePolicy *archpolicy.Policy,
@@ -81,6 +84,7 @@ func ReconstituteProject(
 	}
 	return Project{
 		id:                 projectID,
+		tenantID:           tenantID,
 		key:                key,
 		name:               name,
 		targetPattern:      targetPattern,
@@ -185,6 +189,10 @@ func validateExcludePatterns(targetPattern string, excludePatterns []string) err
 
 func (p Project) ID() ProjectID {
 	return p.id
+}
+
+func (p Project) TenantID() tenant.TenantID {
+	return p.tenantID
 }
 
 func (p Project) Key() string {

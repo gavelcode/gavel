@@ -12,6 +12,7 @@ import (
 	projectlist "github.com/usegavel/gavel/core/application/project/list"
 	updatelanguages "github.com/usegavel/gavel/core/application/project/updatelanguages"
 	updatequalitygate "github.com/usegavel/gavel/core/application/project/updatequalitygate"
+	"github.com/usegavel/gavel/core/domain/iam/model/tenant"
 	domainproject "github.com/usegavel/gavel/core/domain/project/model"
 	memproject "github.com/usegavel/gavel/core/infrastructure/project/memory"
 	"github.com/usegavel/gavel/core/userinterface/api/v1/gen"
@@ -34,7 +35,7 @@ func TestListProjects_ReturnsItems(t *testing.T) {
 	listFinder := &fakeListFinder{items: []projectlist.ProjectSummary{summary}, total: 1}
 	handler := newTestHandler(listFinder, &fakeGetByKeyFinder{})
 
-	resp, err := handler.ListProjects(context.Background(), gen.ListProjectsRequestObject{})
+	resp, err := handler.ListProjects(authContext(), gen.ListProjectsRequestObject{})
 
 	require.NoError(t, err)
 	jsonResp, ok := resp.(gen.ListProjects200JSONResponse)
@@ -51,7 +52,7 @@ func TestListProjects_EmptyList(t *testing.T) {
 	listFinder := &fakeListFinder{items: nil, total: 0}
 	handler := newTestHandler(listFinder, &fakeGetByKeyFinder{})
 
-	resp, err := handler.ListProjects(context.Background(), gen.ListProjectsRequestObject{})
+	resp, err := handler.ListProjects(authContext(), gen.ListProjectsRequestObject{})
 
 	require.NoError(t, err)
 	jsonResp, ok := resp.(gen.ListProjects200JSONResponse)
@@ -69,7 +70,7 @@ func TestListProjects_WithPagination(t *testing.T) {
 	handler := newTestHandler(listFinder, &fakeGetByKeyFinder{})
 
 	limit := gen.Limit(20)
-	resp, err := handler.ListProjects(context.Background(), gen.ListProjectsRequestObject{
+	resp, err := handler.ListProjects(authContext(), gen.ListProjectsRequestObject{
 		Params: gen.ListProjectsParams{Limit: &limit},
 	})
 
@@ -85,7 +86,7 @@ func TestGetProject_ReturnsDetail(t *testing.T) {
 	getByKeyFinder := &fakeGetByKeyFinder{detail: detail}
 	handler := newTestHandler(&fakeListFinder{}, getByKeyFinder)
 
-	resp, err := handler.GetProject(context.Background(), gen.GetProjectRequestObject{Key: "core"})
+	resp, err := handler.GetProject(authContext(), gen.GetProjectRequestObject{Key: "core"})
 
 	require.NoError(t, err)
 	jsonResp, ok := resp.(gen.GetProject200JSONResponse)
@@ -106,7 +107,7 @@ func TestGetProject_NotFound(t *testing.T) {
 	getByKeyFinder := &fakeGetByKeyFinder{err: errFake}
 	handler := newTestHandler(&fakeListFinder{}, getByKeyFinder)
 
-	resp, err := handler.GetProject(context.Background(), gen.GetProjectRequestObject{Key: "missing"})
+	resp, err := handler.GetProject(authContext(), gen.GetProjectRequestObject{Key: "missing"})
 
 	require.Error(t, err)
 	assert.Nil(t, resp)
@@ -128,7 +129,7 @@ func TestCreateProject_Success(t *testing.T) {
 		Name:          "New Project",
 		TargetPattern: &tp,
 	}
-	resp, err := handler.CreateProject(context.Background(), gen.CreateProjectRequestObject{Body: &body})
+	resp, err := handler.CreateProject(authContext(), gen.CreateProjectRequestObject{Body: &body})
 
 	require.NoError(t, err)
 	jsonResp, ok := resp.(gen.CreateProject201JSONResponse)
@@ -139,7 +140,7 @@ func TestCreateProject_Success(t *testing.T) {
 func TestCreateProject_NilBody(t *testing.T) {
 	handler := newTestHandler(&fakeListFinder{}, &fakeGetByKeyFinder{})
 
-	resp, err := handler.CreateProject(context.Background(), gen.CreateProjectRequestObject{Body: nil})
+	resp, err := handler.CreateProject(authContext(), gen.CreateProjectRequestObject{Body: nil})
 
 	require.NoError(t, err)
 	_, ok := resp.(gen.CreateProject400JSONResponse)
@@ -150,7 +151,7 @@ func TestCreateProject_InvalidKey(t *testing.T) {
 	handler := newTestHandler(&fakeListFinder{}, &fakeGetByKeyFinder{})
 
 	body := gen.CreateProjectRequest{Key: "", Name: "Unnamed"}
-	resp, err := handler.CreateProject(context.Background(), gen.CreateProjectRequestObject{Body: &body})
+	resp, err := handler.CreateProject(authContext(), gen.CreateProjectRequestObject{Body: &body})
 
 	require.NoError(t, err)
 	_, ok := resp.(gen.CreateProject400JSONResponse)
@@ -169,7 +170,7 @@ func TestCreateProject_ConflictOnDuplicate(t *testing.T) {
 
 	tp := "//dup/..."
 	body := gen.CreateProjectRequest{Key: "dup", Name: "Dup", TargetPattern: &tp}
-	resp, err := handler.CreateProject(context.Background(), gen.CreateProjectRequestObject{Body: &body})
+	resp, err := handler.CreateProject(authContext(), gen.CreateProjectRequestObject{Body: &body})
 
 	require.NoError(t, err)
 	_, ok := resp.(gen.CreateProject409JSONResponse)
@@ -180,7 +181,7 @@ func TestGetProject_NotFoundReturns404(t *testing.T) {
 	getByKeyFinder := &fakeGetByKeyFinder{err: errNotFound}
 	handler := newTestHandler(&fakeListFinder{}, getByKeyFinder)
 
-	resp, err := handler.GetProject(context.Background(), gen.GetProjectRequestObject{Key: "missing"})
+	resp, err := handler.GetProject(authContext(), gen.GetProjectRequestObject{Key: "missing"})
 
 	require.NoError(t, err)
 	_, ok := resp.(gen.GetProject404JSONResponse)
@@ -190,7 +191,7 @@ func TestGetProject_NotFoundReturns404(t *testing.T) {
 func TestUpdateProjectQualityGate_NilBody(t *testing.T) {
 	handler := newTestHandler(&fakeListFinder{}, &fakeGetByKeyFinder{detail: testProjectDetail()})
 
-	resp, err := handler.UpdateProjectQualityGate(context.Background(), gen.UpdateProjectQualityGateRequestObject{
+	resp, err := handler.UpdateProjectQualityGate(authContext(), gen.UpdateProjectQualityGateRequestObject{
 		Key:  "core",
 		Body: nil,
 	})
@@ -205,7 +206,7 @@ func TestUpdateProjectQualityGate_NotFoundReturns404(t *testing.T) {
 	handler := newTestHandler(&fakeListFinder{}, getByKeyFinder)
 
 	body := gen.QualityGate{Rules: []gen.QualityGateRule{}}
-	resp, err := handler.UpdateProjectQualityGate(context.Background(), gen.UpdateProjectQualityGateRequestObject{
+	resp, err := handler.UpdateProjectQualityGate(authContext(), gen.UpdateProjectQualityGateRequestObject{
 		Key:  "missing",
 		Body: &body,
 	})
@@ -218,7 +219,9 @@ func TestUpdateProjectQualityGate_NotFoundReturns404(t *testing.T) {
 func TestUpdateProjectQualityGate_Success(t *testing.T) {
 	detail := testProjectDetail()
 	repo := memproject.NewProjectRepository()
-	proj, err := domainproject.NewProject(detail.Key, detail.Name, detail.TargetPattern)
+	tid, err := tenant.ParseTenantID(testTenant)
+	require.NoError(t, err)
+	proj, err := domainproject.NewProject(tid, detail.Key, detail.Name, detail.TargetPattern)
 	require.NoError(t, err)
 	require.NoError(t, repo.Save(context.Background(), proj))
 
@@ -259,7 +262,7 @@ func TestUpdateProjectQualityGate_Success(t *testing.T) {
 			},
 		},
 	}}
-	resp, err := handler.UpdateProjectQualityGate(context.Background(), gen.UpdateProjectQualityGateRequestObject{
+	resp, err := handler.UpdateProjectQualityGate(authContext(), gen.UpdateProjectQualityGateRequestObject{
 		Key:  "core",
 		Body: &body,
 	})
@@ -272,7 +275,7 @@ func TestUpdateProjectQualityGate_Success(t *testing.T) {
 func TestUpdateProjectLanguages_NilBody(t *testing.T) {
 	handler := newTestHandler(&fakeListFinder{}, &fakeGetByKeyFinder{detail: testProjectDetail()})
 
-	resp, err := handler.UpdateProjectLanguages(context.Background(), gen.UpdateProjectLanguagesRequestObject{
+	resp, err := handler.UpdateProjectLanguages(authContext(), gen.UpdateProjectLanguagesRequestObject{
 		Key:  "core",
 		Body: nil,
 	})
@@ -287,7 +290,7 @@ func TestUpdateProjectLanguages_NotFoundReturns404(t *testing.T) {
 	handler := newTestHandler(&fakeListFinder{}, getByKeyFinder)
 
 	body := gen.UpdateLanguagesRequest{Languages: []string{"go"}}
-	resp, err := handler.UpdateProjectLanguages(context.Background(), gen.UpdateProjectLanguagesRequestObject{
+	resp, err := handler.UpdateProjectLanguages(authContext(), gen.UpdateProjectLanguagesRequestObject{
 		Key:  "missing",
 		Body: &body,
 	})
@@ -300,7 +303,9 @@ func TestUpdateProjectLanguages_NotFoundReturns404(t *testing.T) {
 func TestUpdateProjectLanguages_Success(t *testing.T) {
 	detail := testProjectDetail()
 	repo := memproject.NewProjectRepository()
-	proj, err := domainproject.NewProject(detail.Key, detail.Name, detail.TargetPattern)
+	tid2, err := tenant.ParseTenantID(testTenant)
+	require.NoError(t, err)
+	proj, err := domainproject.NewProject(tid2, detail.Key, detail.Name, detail.TargetPattern)
 	require.NoError(t, err)
 	require.NoError(t, repo.Save(context.Background(), proj))
 
@@ -313,7 +318,7 @@ func TestUpdateProjectLanguages_Success(t *testing.T) {
 	})
 
 	body := gen.UpdateLanguagesRequest{Languages: []string{"go", "typescript"}}
-	resp, err := handler.UpdateProjectLanguages(context.Background(), gen.UpdateProjectLanguagesRequestObject{
+	resp, err := handler.UpdateProjectLanguages(authContext(), gen.UpdateProjectLanguagesRequestObject{
 		Key:  "core",
 		Body: &body,
 	})
@@ -327,7 +332,7 @@ func TestListProjects_FinderError(t *testing.T) {
 	listFinder := &fakeListFinder{err: errFake}
 	handler := newTestHandler(listFinder, &fakeGetByKeyFinder{})
 
-	resp, err := handler.ListProjects(context.Background(), gen.ListProjectsRequestObject{})
+	resp, err := handler.ListProjects(authContext(), gen.ListProjectsRequestObject{})
 
 	require.Error(t, err)
 	assert.Nil(t, resp)

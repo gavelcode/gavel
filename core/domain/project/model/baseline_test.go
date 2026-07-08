@@ -146,7 +146,7 @@ func TestRatchet_FullOverlap(t *testing.T) {
 }
 
 func TestProject_Baseline_DefaultEmpty(t *testing.T) {
-	project, err := model.NewProject("test", "test", "//test/...")
+	project, err := model.NewProject(testTenant, "test", "test", "//test/...")
 	assert.NoError(t, err)
 
 	baseline := project.Baseline("main")
@@ -155,7 +155,7 @@ func TestProject_Baseline_DefaultEmpty(t *testing.T) {
 }
 
 func TestProject_UpdateBaseline(t *testing.T) {
-	project, err := model.NewProject("test", "test", "//test/...")
+	project, err := model.NewProject(testTenant, "test", "test", "//test/...")
 	assert.NoError(t, err)
 
 	cov := 85.0
@@ -170,7 +170,7 @@ func TestProject_UpdateBaseline(t *testing.T) {
 }
 
 func TestProject_UpdateBaselineNilCoverage(t *testing.T) {
-	project, err := model.NewProject("test", "test", "//test/...")
+	project, err := model.NewProject(testTenant, "test", "test", "//test/...")
 	assert.NoError(t, err)
 
 	project.UpdateBaseline("main", []string{"fp1"}, nil, nil, nil)
@@ -180,7 +180,7 @@ func TestProject_UpdateBaselineNilCoverage(t *testing.T) {
 }
 
 func TestProject_UpdateBaseline_MultipleBranches(t *testing.T) {
-	project, err := model.NewProject("test", "test", "//test/...")
+	project, err := model.NewProject(testTenant, "test", "test", "//test/...")
 	assert.NoError(t, err)
 
 	project.UpdateBaseline("main", []string{"fp1"}, nil, nil, nil)
@@ -191,7 +191,7 @@ func TestProject_UpdateBaseline_MultipleBranches(t *testing.T) {
 }
 
 func TestProject_UpdateBaseline_Replaces(t *testing.T) {
-	project, err := model.NewProject("test", "test", "//test/...")
+	project, err := model.NewProject(testTenant, "test", "test", "//test/...")
 	assert.NoError(t, err)
 
 	project.UpdateBaseline("main", []string{"old"}, nil, nil, nil)
@@ -201,7 +201,7 @@ func TestProject_UpdateBaseline_Replaces(t *testing.T) {
 }
 
 func TestProject_RatchetBaseline(t *testing.T) {
-	project, err := model.NewProject("test", "test", "//test/...")
+	project, err := model.NewProject(testTenant, "test", "test", "//test/...")
 	require.NoError(t, err)
 
 	cov := 80.0
@@ -217,7 +217,7 @@ func TestProject_RatchetBaseline(t *testing.T) {
 }
 
 func TestProject_RatchetBaselineNoExistingBaseline(t *testing.T) {
-	project, err := model.NewProject("test", "test", "//test/...")
+	project, err := model.NewProject(testTenant, "test", "test", "//test/...")
 	require.NoError(t, err)
 
 	project.RatchetBaseline("main", []string{"fp1"}, []string{"a1"})
@@ -227,7 +227,7 @@ func TestProject_RatchetBaselineNoExistingBaseline(t *testing.T) {
 }
 
 func TestProject_SeedBaselineIfAbsent_SeedsWhenNone(t *testing.T) {
-	project, err := model.NewProject("test", "test", "//test/...")
+	project, err := model.NewProject(testTenant, "test", "test", "//test/...")
 	require.NoError(t, err)
 
 	cov := 57.5
@@ -243,7 +243,7 @@ func TestProject_SeedBaselineIfAbsent_SeedsWhenNone(t *testing.T) {
 }
 
 func TestProject_SeedBaselineIfAbsent_NoOpWhenExists(t *testing.T) {
-	project, err := model.NewProject("test", "test", "//test/...")
+	project, err := model.NewProject(testTenant, "test", "test", "//test/...")
 	require.NoError(t, err)
 
 	cov := 80.0
@@ -318,7 +318,7 @@ func TestNewBaseline_NilFileCoverage(t *testing.T) {
 }
 
 func TestProject_Baselines(t *testing.T) {
-	project, err := model.NewProject("test", "test", "//test/...")
+	project, err := model.NewProject(testTenant, "test", "test", "//test/...")
 	assert.NoError(t, err)
 
 	project.UpdateBaseline("main", []string{"fp1"}, nil, nil, nil)

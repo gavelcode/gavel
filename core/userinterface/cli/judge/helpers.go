@@ -67,12 +67,12 @@ func resolveConfigPath(explicit, workspace string) string {
 	return filepath.Join(workspace, ".gavel", "gavel.yaml")
 }
 
-func prepareBaselines(ctx context.Context, deps deps, projects []loadgavelspace.ProjectView) preparebaseline.Result {
+func prepareBaselines(ctx context.Context, deps deps, tenantID string, projects []loadgavelspace.ProjectView) preparebaseline.Result {
 	inputs := make([]preparebaseline.ProjectInput, 0, len(projects))
 	for _, p := range projects {
 		inputs = append(inputs, preparebaseline.ProjectInput{Name: p.Name, DefaultBranch: p.DefaultBranch})
 	}
-	cmd, err := preparebaseline.NewCommand(inputs)
+	cmd, err := preparebaseline.NewCommand(tenantID, inputs)
 	if err != nil {
 		return preparebaseline.Result{}
 	}

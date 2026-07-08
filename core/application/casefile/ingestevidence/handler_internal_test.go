@@ -13,9 +13,12 @@ import (
 	"github.com/usegavel/gavel/core/application/casefile/evidencedto"
 	casefile "github.com/usegavel/gavel/core/domain/casefile/model"
 	"github.com/usegavel/gavel/core/domain/casefile/model/evidence/finding"
+	"github.com/usegavel/gavel/core/domain/iam/model/tenant"
 	projectmodel "github.com/usegavel/gavel/core/domain/project/model"
 	"github.com/usegavel/gavel/core/domain/project/model/qualitygate"
 )
+
+var testTenant = tenant.NewTenantID(uuid.MustParse("22222222-2222-2222-2222-222222222222"))
 
 type stubCaseFileRepo struct {
 	cf      casefile.CaseFile
@@ -59,7 +62,7 @@ func TestExecuteParseCaseFileIDError(t *testing.T) {
 func TestExecuteEvidenceToDomainError(t *testing.T) {
 	now := time.Now().UTC()
 	projectID := projectmodel.NewProjectID(uuid.New())
-	cf, err := casefile.NewCaseFile(projectID, "sha", "main", now, now)
+	cf, err := casefile.NewCaseFile(testTenant, projectID, "sha", "main", now, now)
 	require.NoError(t, err)
 
 	handler := &Handler{caseFiles: &stubCaseFileRepo{cf: cf}}
@@ -76,7 +79,7 @@ func TestExecuteEvidenceToDomainError(t *testing.T) {
 func TestExecuteAddEvidenceErrorAlreadyJudged(t *testing.T) {
 	now := time.Now().UTC()
 	projectID := projectmodel.NewProjectID(uuid.New())
-	caseFile, err := casefile.NewCaseFile(projectID, "sha", "main", now, now)
+	caseFile, err := casefile.NewCaseFile(testTenant, projectID, "sha", "main", now, now)
 	require.NoError(t, err)
 
 	_, err = caseFile.Judge(qualitygate.Gate{}, nil, now, nil)
@@ -102,7 +105,7 @@ func TestExecuteAddEvidenceErrorAlreadyJudged(t *testing.T) {
 func TestExecuteSaveError(t *testing.T) {
 	now := time.Now().UTC()
 	projectID := projectmodel.NewProjectID(uuid.New())
-	cf, err := casefile.NewCaseFile(projectID, "sha", "main", now, now)
+	cf, err := casefile.NewCaseFile(testTenant, projectID, "sha", "main", now, now)
 	require.NoError(t, err)
 
 	handler := &Handler{caseFiles: &stubCaseFileRepo{cf: cf, saveErr: errors.New("disk full")}}

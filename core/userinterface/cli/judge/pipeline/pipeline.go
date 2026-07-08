@@ -12,12 +12,12 @@ func RunProject(
 	deps Deps,
 	workspace string,
 	collected collectevidence.Result,
-	projectID, projectName, commitSHA, branch string,
+	tenantID, projectID, projectName, commitSHA, branch string,
 	startedAt time.Time,
 	opts Options,
 ) (Result, error) {
 	if deps.ServerClient != nil {
-		return RunServer(ctx, deps, workspace, collected, projectID, projectName, commitSHA, branch, startedAt, opts)
+		return RunServer(ctx, deps, workspace, collected, tenantID, projectID, projectName, commitSHA, branch, startedAt, opts)
 	}
-	return RunLocal(ctx, deps, workspace, collected, projectID, projectName, commitSHA, branch, startedAt, opts)
+	return RunLocal(ctx, deps, workspace, collected, tenantID, projectID, projectName, commitSHA, branch, startedAt, opts)
 }

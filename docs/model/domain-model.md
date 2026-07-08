@@ -154,6 +154,11 @@ and emits a verdict when judged.
 - `startedAt` not zero
 - Cannot judge twice (`ErrAlreadyJudged` — judged is a terminal state)
 - Cannot add evidence after judging
+- **Incomplete analysis always fails the verdict.** Any analyzer that did not run
+  to completion is recorded as tool-execution evidence (which tool, and why); if
+  present, `Judge()` appends a failing ruling *unconditionally* — it is a domain
+  invariant, never a configurable gate rule, because a verdict cannot be trusted
+  for a target whose analysis was incomplete. A clean run shows the ruling passing.
 
 **Lifecycle:**
 ```

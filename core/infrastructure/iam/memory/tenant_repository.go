@@ -36,8 +36,6 @@ func (r *TenantRepository) Save(_ context.Context, tenant tenantmodel.Tenant) er
 	return nil
 }
 
-// remove drops a tenant, letting the in-memory Provisioner roll back a
-// half-applied provision so the fake stays all-or-nothing like Postgres.
 func (r *TenantRepository) remove(tenantID tenantmodel.TenantID) {
 	r.mu.Lock()
 	defer r.mu.Unlock()

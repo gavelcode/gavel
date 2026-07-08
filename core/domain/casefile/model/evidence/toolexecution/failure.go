@@ -5,9 +5,6 @@ import (
 	"strings"
 )
 
-// Failure records that one analyzer could not run to completion: which tool and
-// why. It is the unit of tool-execution evidence — the verdict cannot be trusted
-// for a target whose analysis was incomplete.
 type Failure struct {
 	tool   string
 	reason string

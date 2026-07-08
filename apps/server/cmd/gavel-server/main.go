@@ -79,9 +79,6 @@ import (
 )
 
 const (
-	// seedAdvisoryLock serializes first-boot seeding across replicas so only the
-	// winner checks and seeds — the others wait, then see the admin and no-op,
-	// without each paying the Argon2 hash.
 	seedAdvisoryLock = 8723452
 
 	readHeaderTimeout = 10 * time.Second
@@ -163,15 +160,6 @@ func openAndMigrateDB(ctx context.Context, cfg *config.Config) (*database.DB, er
 	return dbConn, nil
 }
 
-// seedFirstAdmin makes sure the default tenant and its admin exist. Only serve
-// does this — migrate stays schema-only, so a migration job never logs a
-// credential. It holds a Postgres advisory lock so replicas booting a fresh
-// database serialize: the winner seeds, the rest see the admin and no-op without
-// paying the Argon2 hash. The admin is (re)created whenever it is missing — a
-// fresh database is provisioned tenant+admin atomically; a database whose admin
-// was deleted gets the admin recreated in the existing tenant, so an operator is
-// never permanently locked out. A generated password is logged once, after the
-// write.
 func seedFirstAdmin(ctx context.Context, dbConn *database.DB, cfg *config.Config, logger *slog.Logger) error {
 	release, err := acquireSeedLock(ctx, dbConn)
 	if err != nil {
@@ -209,8 +197,6 @@ func seedFirstAdmin(ctx context.Context, dbConn *database.DB, cfg *config.Config
 	}
 }
 
-// acquireSeedLock takes a session-level Postgres advisory lock on a dedicated
-// connection, returning a release func that unlocks and closes it.
 func acquireSeedLock(ctx context.Context, dbConn *database.DB) (func(), error) {
 	seedConn, err := dbConn.Conn(ctx)
 	if err != nil {

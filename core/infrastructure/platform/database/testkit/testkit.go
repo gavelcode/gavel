@@ -23,8 +23,6 @@ import (
 	"github.com/usegavel/gavel/core/infrastructure/platform/database"
 )
 
-// SeedAdminPassword is the plaintext the seeded admin is given in tests, so
-// suites that exercise login can authenticate with a known credential.
 const SeedAdminPassword = "changeme"
 
 var (
@@ -36,15 +34,8 @@ var (
 	seedTime      = time.Date(2026, time.January, 1, 0, 0, 0, 0, time.UTC)
 )
 
-// errRuntimeUnavailable marks the one init failure that is legitimately a skip:
-// no container runtime (Podman/Docker) is reachable, so a developer without one
-// can still run non-integration tests. Every other init failure — a broken
-// migration, a bad DSN, a seed error — is a real defect and must fail loudly
-// instead of silently dropping the whole suite (and its coverage) to a skip.
 var errRuntimeUnavailable = errors.New("container runtime unavailable")
 
-// skipOrFail turns a stored init error into the right test outcome: skip only
-// when the runtime is genuinely absent, otherwise fail.
 func skipOrFail(t *testing.T) {
 	t.Helper()
 	if errors.Is(initErr, errRuntimeUnavailable) {
@@ -57,15 +48,9 @@ const (
 	pgReadyLogOccurrences = 2
 	containerStartTimeout = 30 * time.Second
 
-	// testIsolationAdvisoryLock serializes per-test truncate+seed on the reused
-	// container so parallel test packages don't race the shared schema.
 	testIsolationAdvisoryLock = 8723451
 )
 
-// cachedHasher hands provision the Argon2 hash of SeedAdminPassword computed once
-// at startup, so seeding a fresh database per test doesn't pay the deliberately
-// slow Argon2 cost on every TestDB call. Verify still uses real Argon2, so a
-// login test authenticates against a genuine hash.
 type cachedHasher struct{ hash usermodel.PasswordHash }
 
 func (h cachedHasher) Hash(string) (usermodel.PasswordHash, error) { return h.hash, nil }

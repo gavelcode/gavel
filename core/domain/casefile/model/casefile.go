@@ -110,10 +110,6 @@ func (cf *CaseFile) Judge(qualityGate qualitygate.Gate, tracking *tracking.Resul
 	return result, nil
 }
 
-// toolExecutionRuling enforces the invariant that any analyzer which did not run
-// to completion fails the verdict — always, regardless of gate configuration. It
-// is appended on every Judge: a clean run shows it passing, a degraded run shows
-// it failing with the concrete reason.
 func (cf *CaseFile) toolExecutionRuling(grouped map[evidence.Subtype]evidence.Content) verdict.Ruling {
 	failures := toolExecutionFailures(grouped)
 	if len(failures) == 0 {

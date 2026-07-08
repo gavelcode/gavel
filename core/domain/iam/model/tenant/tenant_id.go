@@ -10,9 +10,6 @@ type TenantID struct {
 	value uuid.UUID
 }
 
-// LocalTenantID is the fixed tenant under which the CLI runs single-tenant,
-// local judgements with in-memory repositories. It is a well-known, non-nil
-// sentinel so that aggregates minted locally are never persisted tenant-less.
 var LocalTenantID = TenantID{value: uuid.MustParse("11111111-1111-1111-1111-111111111111")}
 
 func NewTenantID(value uuid.UUID) TenantID {

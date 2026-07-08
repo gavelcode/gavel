@@ -383,8 +383,6 @@ func toInt32Slice(ints []int) []int32 {
 }
 
 func mustUUID(s string) gen.CaseFileID {
-	// The gen types use openapi_types.UUID which is just a wrapper
-	// We parse it; if invalid the server will reject it
 	var id gen.CaseFileID
 	_ = id.UnmarshalText([]byte(s))
 	return id

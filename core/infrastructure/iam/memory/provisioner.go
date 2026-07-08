@@ -8,10 +8,6 @@ import (
 	"github.com/usegavel/gavel/core/domain/iam/service"
 )
 
-// Provisioner is the in-memory TenantProvisioner for tests. It gives the same
-// all-or-nothing contract as the Postgres provisioner's transaction: if the
-// admin save fails after the tenant was saved, the tenant is rolled back, so the
-// fake never leaves a phantom tenant that a real run would not.
 type Provisioner struct {
 	tenants *TenantRepository
 	users   *UserRepository

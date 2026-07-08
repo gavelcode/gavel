@@ -7,6 +7,7 @@ import (
 
 	casefileget "github.com/usegavel/gavel/core/application/casefile/get"
 	casefilelist "github.com/usegavel/gavel/core/application/casefile/list"
+	"github.com/usegavel/gavel/core/domain/iam/model/tenant"
 	"github.com/usegavel/gavel/core/infrastructure/platform/database"
 )
 
@@ -18,7 +19,7 @@ func NewCaseFileFinder(db *database.DB) *CaseFileFinder {
 	return &CaseFileFinder{db: db}
 }
 
-func (q *CaseFileFinder) ListByProject(ctx context.Context, tenantID, projectID, gavelspace string, limit, offset int) ([]casefilelist.CaseFileSummary, int, error) {
+func (q *CaseFileFinder) ListByProject(ctx context.Context, tenantID tenant.TenantID, projectID, gavelspace string, limit, offset int) ([]casefilelist.CaseFileSummary, int, error) {
 	join, where, args := buildCaseFileFilter(tenantID, projectID, gavelspace)
 
 	var total int
@@ -57,9 +58,9 @@ func (q *CaseFileFinder) ListByProject(ctx context.Context, tenantID, projectID,
 	return items, total, rows.Err()
 }
 
-func buildCaseFileFilter(tenantID, projectID, gavelspace string) (join, where string, args []any) {
+func buildCaseFileFilter(tenantID tenant.TenantID, projectID, gavelspace string) (join, where string, args []any) {
 	conditions := []string{"c.tenant_id = ?"}
-	args = []any{tenantID}
+	args = []any{tenantID.UUID()}
 	if gavelspace != "" {
 		join = " INNER JOIN gavelspace_projects gp ON gp.project_id = c.project_id"
 		conditions = append(conditions, "gp.gavelspace_name = ?")
@@ -76,7 +77,7 @@ func buildCaseFileFilter(tenantID, projectID, gavelspace string) (join, where st
 	return join, where, args
 }
 
-func (q *CaseFileFinder) GetByID(ctx context.Context, tenantID, caseFileID string) (*casefileget.CaseFileDetail, error) {
+func (q *CaseFileFinder) GetByID(ctx context.Context, tenantID tenant.TenantID, caseFileID string) (*casefileget.CaseFileDetail, error) {
 	var detail casefileget.CaseFileDetail
 	var verdictOutcome sql.NullString
 	var coveragePct sql.NullFloat64
@@ -94,7 +95,7 @@ func (q *CaseFileFinder) GetByID(ctx context.Context, tenantID, caseFileID strin
 		LEFT JOIN evidences e ON e.casefile_id = c.id AND e.subtype = 'coverage'
 		LEFT JOIN coverage_data cd ON cd.evidence_id = e.id
 		WHERE c.id = ? AND c.tenant_id = ?
-	`, caseFileID, tenantID).Scan(&detail.ID, &detail.ProjectID, &detail.CommitSHA, &detail.Branch, &startedAtStr,
+	`, caseFileID, tenantID.UUID()).Scan(&detail.ID, &detail.ProjectID, &detail.CommitSHA, &detail.Branch, &startedAtStr,
 		&verdictOutcome, &detail.TotalFindings, &detail.NewFindings, &detail.ExistingFindings,
 		&detail.ResolvedFindings, &coveragePct, &createdAtStr)
 	if err != nil {

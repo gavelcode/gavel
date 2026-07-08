@@ -383,7 +383,7 @@ func TestFindingFinderListReturnsErrorOnDataQueryFailure(t *testing.T) {
 	})
 
 	filters := findinglist.Filters{ProjectID: project.ID().String()}
-	_, _, err = finder.List(ctx, testTenantID.String(), filters, 10, 0)
+	_, _, err = finder.List(ctx, testTenantID, filters, 10, 0)
 	assert.Error(t, err)
 }
 
@@ -423,7 +423,7 @@ func TestCaseFileFinderListByProjectReturnsErrorOnQueryFailure(t *testing.T) {
 			"ALTER TABLE casefiles RENAME COLUMN commit_sha_corrupted TO commit_sha")
 	})
 
-	_, _, err = finder.ListByProject(ctx, testTenantID.String(), project.ID().String(), "", 10, 0)
+	_, _, err = finder.ListByProject(ctx, testTenantID, project.ID().String(), "", 10, 0)
 	assert.Error(t, err)
 }
 
@@ -447,7 +447,7 @@ func TestCaseFileFinderGetByIDReturnsErrorOnEvidenceQueryFailure(t *testing.T) {
 			"ALTER TABLE evidences RENAME COLUMN subtype_corrupted TO subtype")
 	})
 
-	_, err = finder.GetByID(ctx, testTenantID.String(), caseFile.ID().String())
+	_, err = finder.GetByID(ctx, testTenantID, caseFile.ID().String())
 	assert.Error(t, err)
 }
 
@@ -515,7 +515,7 @@ func TestFindingFinderListReturnsErrorOnCountFailure(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 
-	_, _, err := finder.List(ctx, testTenantID.String(), findinglist.Filters{}, 10, 0)
+	_, _, err := finder.List(ctx, testTenantID, findinglist.Filters{}, 10, 0)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "count findings")
 }
@@ -645,7 +645,7 @@ func TestCaseFileFinderListByProjectWithNoFiltersCoversEmptyConditions(t *testin
 	caseFile := newTestCaseFile(t, project.ID(), "no-filter", "main")
 	require.NoError(t, cfRepo.Save(ctx, caseFile))
 
-	items, total, err := finder.ListByProject(ctx, testTenantID.String(), "", "", 10, 0)
+	items, total, err := finder.ListByProject(ctx, testTenantID, "", "", 10, 0)
 	require.NoError(t, err)
 	assert.GreaterOrEqual(t, total, 1)
 	assert.GreaterOrEqual(t, len(items), 1)
@@ -662,7 +662,7 @@ func TestCaseFileFinderListByProjectWithGavelspaceFilter(t *testing.T) {
 	caseFile := newTestCaseFile(t, project.ID(), "gs-filter", "main")
 	require.NoError(t, cfRepo.Save(ctx, caseFile))
 
-	items, total, err := finder.ListByProject(ctx, testTenantID.String(), project.ID().String(), "test-gs", 10, 0)
+	items, total, err := finder.ListByProject(ctx, testTenantID, project.ID().String(), "test-gs", 10, 0)
 	require.NoError(t, err)
 	assert.GreaterOrEqual(t, total, 1)
 	assert.GreaterOrEqual(t, len(items), 1)
@@ -680,7 +680,7 @@ func TestCaseFileFinderListByProjectShowsCoveragePercent(t *testing.T) {
 	require.NoError(t, caseFile.AddEvidence(ev, time.Now().UTC()))
 	require.NoError(t, cfRepo.Save(ctx, caseFile))
 
-	items, _, err := finder.ListByProject(ctx, testTenantID.String(), project.ID().String(), "", 10, 0)
+	items, _, err := finder.ListByProject(ctx, testTenantID, project.ID().String(), "", 10, 0)
 	require.NoError(t, err)
 	require.NotEmpty(t, items)
 	assert.NotNil(t, items[0].CoveragePercent)
@@ -701,7 +701,7 @@ func TestCaseFileFinderListByProjectReturnsErrorOnCorruptedStartedAt(t *testing.
 		caseFile.ID().UUID())
 	require.NoError(t, err)
 
-	_, _, err = finder.ListByProject(ctx, testTenantID.String(), project.ID().String(), "", 10, 0)
+	_, _, err = finder.ListByProject(ctx, testTenantID, project.ID().String(), "", 10, 0)
 	assert.Error(t, err)
 }
 
@@ -720,7 +720,7 @@ func TestCaseFileFinderGetByIDReturnsErrorOnCorruptedStartedAt(t *testing.T) {
 		caseFile.ID().UUID())
 	require.NoError(t, err)
 
-	_, err = finder.GetByID(ctx, testTenantID.String(), caseFile.ID().String())
+	_, err = finder.GetByID(ctx, testTenantID, caseFile.ID().String())
 	assert.Error(t, err)
 }
 
@@ -739,7 +739,7 @@ func TestCaseFileFinderGetByIDReturnsErrorOnCorruptedCreatedAt(t *testing.T) {
 		caseFile.ID().UUID())
 	require.NoError(t, err)
 
-	_, err = finder.GetByID(ctx, testTenantID.String(), caseFile.ID().String())
+	_, err = finder.GetByID(ctx, testTenantID, caseFile.ID().String())
 	assert.Error(t, err)
 }
 
@@ -767,7 +767,7 @@ func TestCaseFileFinderGetByIDReturnsErrorOnRulingsQueryFailure(t *testing.T) {
 			"ALTER TABLE rulings_corrupted RENAME TO rulings")
 	})
 
-	_, err = finder.GetByID(ctx, testTenantID.String(), caseFile.ID().String())
+	_, err = finder.GetByID(ctx, testTenantID, caseFile.ID().String())
 	assert.Error(t, err)
 }
 
@@ -788,7 +788,7 @@ func TestCaseFileFinderGetByIDReturnsErrorOnEvidenceCollectedAtCorruption(t *tes
 		caseFile.ID().UUID())
 	require.NoError(t, err)
 
-	_, err = finder.GetByID(ctx, testTenantID.String(), caseFile.ID().String())
+	_, err = finder.GetByID(ctx, testTenantID, caseFile.ID().String())
 	assert.Error(t, err)
 }
 
@@ -823,7 +823,7 @@ func TestCaseFileFinderGetByIDReturnsNotFoundForMissingCaseFile(t *testing.T) {
 	finder := casefilepostgres.NewCaseFileFinder(testDB)
 	ctx := context.Background()
 
-	_, err := finder.GetByID(ctx, testTenantID.String(), "00000000-0000-0000-0000-999999999999")
+	_, err := finder.GetByID(ctx, testTenantID, "00000000-0000-0000-0000-999999999999")
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "not found")
 }
@@ -848,7 +848,7 @@ func TestCaseFileFinderGetByIDReturnsErrorOnEvidenceSourceCorruption(t *testing.
 			"ALTER TABLE evidences RENAME COLUMN source_corrupted TO source")
 	})
 
-	_, err = finder.GetByID(ctx, testTenantID.String(), caseFile.ID().String())
+	_, err = finder.GetByID(ctx, testTenantID, caseFile.ID().String())
 	assert.Error(t, err)
 }
 
@@ -876,7 +876,7 @@ func TestCaseFileFinderGetByIDReturnsErrorOnRulingsScanCorruption(t *testing.T) 
 			"ALTER TABLE rulings RENAME COLUMN detail_corrupted TO detail")
 	})
 
-	_, err = finder.GetByID(ctx, testTenantID.String(), caseFile.ID().String())
+	_, err = finder.GetByID(ctx, testTenantID, caseFile.ID().String())
 	assert.Error(t, err)
 }
 
@@ -898,7 +898,7 @@ func TestCaseFileFinderListByProjectReturnsErrorOnScanCorruption(t *testing.T) {
 			"ALTER TABLE casefiles RENAME COLUMN verdict_outcome_corrupted TO verdict_outcome")
 	})
 
-	_, _, err = finder.ListByProject(ctx, testTenantID.String(), project.ID().String(), "", 10, 0)
+	_, _, err = finder.ListByProject(ctx, testTenantID, project.ID().String(), "", 10, 0)
 	assert.Error(t, err)
 }
 
@@ -909,7 +909,7 @@ func TestCaseFileFinderListByProjectReturnsErrorOnCountFailure(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 
-	_, _, err := finder.ListByProject(ctx, testTenantID.String(), "", "", 10, 0)
+	_, _, err := finder.ListByProject(ctx, testTenantID, "", "", 10, 0)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "count casefiles")
 }
@@ -921,7 +921,7 @@ func TestCaseFileFinderGetByIDReturnsErrorOnCancelledContext(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 
-	_, err := finder.GetByID(ctx, testTenantID.String(), "00000000-0000-0000-0000-000000000000")
+	_, err := finder.GetByID(ctx, testTenantID, "00000000-0000-0000-0000-000000000000")
 	assert.Error(t, err)
 }
 

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"sync"
 
+	"github.com/usegavel/gavel/core/domain/iam/model/tenant"
 	"github.com/usegavel/gavel/core/domain/pleading/model"
 )
 
@@ -30,7 +31,7 @@ func (r *fakePleadingRepo) Save(_ context.Context, pleading model.Pleading) erro
 	return nil
 }
 
-func (r *fakePleadingRepo) FindByID(_ context.Context, pleadingID model.PleadingID) (model.Pleading, error) {
+func (r *fakePleadingRepo) FindByID(_ context.Context, _ tenant.TenantID, pleadingID model.PleadingID) (model.Pleading, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	pleading, ok := r.store[pleadingID.String()]

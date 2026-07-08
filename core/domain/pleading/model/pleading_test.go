@@ -8,12 +8,14 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/usegavel/gavel/core/domain/iam/model/tenant"
 	"github.com/usegavel/gavel/core/domain/pleading/model"
 	projectmodel "github.com/usegavel/gavel/core/domain/project/model"
 )
 
 var (
-	testTime = time.Date(2026, 5, 21, 12, 0, 0, 0, time.UTC)
+	testTime   = time.Date(2026, 5, 21, 12, 0, 0, 0, time.UTC)
+	testTenant = tenant.NewTenantID(uuid.MustParse("22222222-2222-2222-2222-222222222222"))
 )
 
 func validProjectID(t *testing.T) projectmodel.ProjectID {
@@ -129,8 +131,7 @@ func TestFilePleading(t *testing.T) {
 
 	for _, tcase := range tests {
 		t.Run(tcase.name, func(t *testing.T) {
-			plea, err := model.FilePleading(
-
+			plea, err := model.FilePleading(testTenant,
 				projectID, tcase.number, tcase.title, tcase.petitioner,
 				tcase.sourceBranch, tcase.targetBranch, tcase.commitSHA,
 			)
@@ -142,6 +143,7 @@ func TestFilePleading(t *testing.T) {
 			}
 
 			require.NoError(t, err)
+			assert.True(t, testTenant.Equal(plea.TenantID()))
 			assert.True(t, plea.ProjectID().Equal(projectID))
 			assert.Equal(t, tcase.number, plea.Number())
 			assert.Equal(t, tcase.title, plea.Title())
@@ -157,10 +159,10 @@ func TestFilePleading(t *testing.T) {
 func TestFilePleadingGeneratesUniqueIDs(t *testing.T) {
 	projectID := validProjectID(t)
 
-	pleadA, err := model.FilePleading(projectID, 1, "t1", "alice", "find1", "main", "sha1")
+	pleadA, err := model.FilePleading(testTenant, projectID, 1, "t1", "alice", "find1", "main", "sha1")
 	require.NoError(t, err)
 
-	pleadB, err := model.FilePleading(projectID, 2, "t2", "alice", "find2", "main", "sha2")
+	pleadB, err := model.FilePleading(testTenant, projectID, 2, "t2", "alice", "find2", "main", "sha2")
 	require.NoError(t, err)
 
 	assert.False(t, pleadA.ID().Equal(pleadB.ID()))
@@ -168,7 +170,7 @@ func TestFilePleadingGeneratesUniqueIDs(t *testing.T) {
 
 func TestPleadingMarkMerged(t *testing.T) {
 	projectID := validProjectID(t)
-	plea, err := model.FilePleading(projectID, 7, "t", "alice", "src", "dst", "sha")
+	plea, err := model.FilePleading(testTenant, projectID, 7, "t", "alice", "src", "dst", "sha")
 	require.NoError(t, err)
 
 	require.NoError(t, plea.MarkMerged(testTime))
@@ -186,7 +188,7 @@ func TestPleadingMarkMerged(t *testing.T) {
 
 func TestPleadingMarkClosed(t *testing.T) {
 	projectID := validProjectID(t)
-	plea, err := model.FilePleading(projectID, 7, "t", "alice", "src", "dst", "sha")
+	plea, err := model.FilePleading(testTenant, projectID, 7, "t", "alice", "src", "dst", "sha")
 	require.NoError(t, err)
 
 	require.NoError(t, plea.MarkClosed(testTime))
@@ -234,7 +236,7 @@ func TestPleadingRejectsIllegalTransitions(t *testing.T) {
 
 	for _, tcase := range tests {
 		t.Run(tcase.name, func(t *testing.T) {
-			plea, err := model.FilePleading(projectID, 1, "t", "alice", "src", "dst", "sha")
+			plea, err := model.FilePleading(testTenant, projectID, 1, "t", "alice", "src", "dst", "sha")
 			require.NoError(t, err)
 
 			require.NoError(t, tcase.setup(&plea))
@@ -309,7 +311,7 @@ func TestReconstitutePleading(t *testing.T) {
 	for _, tcase := range tests {
 		t.Run(tcase.name, func(t *testing.T) {
 			plea, err := model.ReconstitutePleading(
-				tcase.id, tcase.projectID, tcase.number, tcase.title, tcase.petitioner,
+				tcase.id, testTenant, tcase.projectID, tcase.number, tcase.title, tcase.petitioner,
 				tcase.sourceBranch, tcase.targetBranch, tcase.commitSHA, tcase.status,
 			)
 
@@ -321,6 +323,7 @@ func TestReconstitutePleading(t *testing.T) {
 
 			require.NoError(t, err)
 			assert.True(t, tcase.id.Equal(plea.ID()))
+			assert.True(t, testTenant.Equal(plea.TenantID()))
 			assert.True(t, tcase.projectID.Equal(plea.ProjectID()))
 			assert.Equal(t, tcase.number, plea.Number())
 			assert.Equal(t, tcase.title, plea.Title())

@@ -20,8 +20,8 @@ func NewPleadingFinder(db *database.DB) *PleadingFinder {
 	return &PleadingFinder{db: db}
 }
 
-func (q *PleadingFinder) ListByProject(ctx context.Context, projectID, status, gavelspace string, limit, offset int) ([]prlist.PleadingSummary, int, error) {
-	where, args := buildPRWhere(projectID, status, gavelspace)
+func (q *PleadingFinder) ListByProject(ctx context.Context, tenantID, projectID, status, gavelspace string, limit, offset int) ([]prlist.PleadingSummary, int, error) {
+	where, args := buildPRWhere(tenantID, projectID, status, gavelspace)
 	join := ""
 	if gavelspace != "" {
 		join = " INNER JOIN gavelspace_projects gp ON gp.project_id = pr.project_id"
@@ -64,7 +64,7 @@ func (q *PleadingFinder) ListByProject(ctx context.Context, projectID, status, g
 	return items, total, rows.Err()
 }
 
-func (q *PleadingFinder) GetByID(ctx context.Context, pleadingID string) (*prget.PleadingDetail, error) {
+func (q *PleadingFinder) GetByID(ctx context.Context, tenantID, pleadingID string) (*prget.PleadingDetail, error) {
 	row := q.db.QueryRowContext(ctx, `
 		SELECT pr.id, pr.project_id, pr.number, pr.title, pr.petitioner,
 		       pr.source_branch, pr.target_branch, pr.commit_sha, pr.status,
@@ -76,8 +76,8 @@ func (q *PleadingFinder) GetByID(ctx context.Context, pleadingID string) (*prget
 			       ROW_NUMBER() OVER (PARTITION BY commit_sha ORDER BY created_at DESC) AS rn
 			FROM casefiles
 		) c ON c.commit_sha = pr.commit_sha AND c.rn = 1
-		WHERE pr.id = ?
-	`, pleadingID)
+		WHERE pr.id = ? AND pr.tenant_id = ?
+	`, pleadingID, tenantID)
 
 	var detail prget.PleadingDetail
 	var createdAtStr, updatedAtStr string
@@ -178,9 +178,9 @@ func formatSubtypeLabel(subtype string) string {
 	return s
 }
 
-func buildPRWhere(projectID, status, gavelspace string) (string, []any) {
-	var conditions []string
-	var args []any
+func buildPRWhere(tenantID, projectID, status, gavelspace string) (string, []any) {
+	conditions := []string{"pr.tenant_id = ?"}
+	args := []any{tenantID}
 
 	if projectID != "" {
 		conditions = append(conditions, "pr.project_id = ?")
@@ -195,9 +195,6 @@ func buildPRWhere(projectID, status, gavelspace string) (string, []any) {
 		args = append(args, gavelspace)
 	}
 
-	if len(conditions) == 0 {
-		return "", nil
-	}
 	return " WHERE " + strings.Join(conditions, " AND "), args
 }
 

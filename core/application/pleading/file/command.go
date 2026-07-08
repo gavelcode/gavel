@@ -6,6 +6,7 @@ import (
 )
 
 type Command struct {
+	tenantID     string
 	projectID    string
 	number       int
 	title        string
@@ -15,7 +16,10 @@ type Command struct {
 	commitSHA    string
 }
 
-func NewCommand(projectID string, number int, title, petitioner, sourceBranch, targetBranch, commitSHA string) (Command, error) {
+func NewCommand(tenantID, projectID string, number int, title, petitioner, sourceBranch, targetBranch, commitSHA string) (Command, error) {
+	if strings.TrimSpace(tenantID) == "" {
+		return Command{}, fmt.Errorf("%w: tenantID must not be empty", ErrInvalidCommand)
+	}
 	if strings.TrimSpace(projectID) == "" {
 		return Command{}, fmt.Errorf("%w: projectID must not be empty", ErrInvalidCommand)
 	}
@@ -35,6 +39,7 @@ func NewCommand(projectID string, number int, title, petitioner, sourceBranch, t
 		return Command{}, fmt.Errorf("%w: commitSHA must not be empty", ErrInvalidCommand)
 	}
 	return Command{
+		tenantID:     tenantID,
 		projectID:    projectID,
 		number:       number,
 		title:        title,
@@ -45,6 +50,7 @@ func NewCommand(projectID string, number int, title, petitioner, sourceBranch, t
 	}, nil
 }
 
+func (c Command) TenantID() string     { return c.tenantID }
 func (c Command) ProjectID() string    { return c.projectID }
 func (c Command) Number() int          { return c.number }
 func (c Command) Title() string        { return c.title }

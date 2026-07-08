@@ -7,12 +7,14 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/usegavel/gavel/core/domain/iam/model/tenant"
 	projectmodel "github.com/usegavel/gavel/core/domain/project/model"
 	"github.com/usegavel/gavel/core/domain/shared/event"
 )
 
 type Pleading struct {
 	id           PleadingID
+	tenantID     tenant.TenantID
 	projectID    projectmodel.ProjectID
 	number       int
 	title        string
@@ -25,6 +27,7 @@ type Pleading struct {
 }
 
 func FilePleading(
+	tenantID tenant.TenantID,
 	projectID projectmodel.ProjectID,
 	number int,
 	title, petitioner, sourceBranch, targetBranch, commitSHA string,
@@ -35,6 +38,7 @@ func FilePleading(
 	pleadingID := NewPleadingID(uuid.New())
 	return Pleading{
 		id:           pleadingID,
+		tenantID:     tenantID,
 		projectID:    projectID,
 		number:       number,
 		title:        title,
@@ -48,6 +52,7 @@ func FilePleading(
 
 func ReconstitutePleading(
 	pleadingID PleadingID,
+	tenantID tenant.TenantID,
 	projectID projectmodel.ProjectID,
 	number int,
 	title, petitioner, sourceBranch, targetBranch, commitSHA string,
@@ -58,6 +63,7 @@ func ReconstitutePleading(
 	}
 	return Pleading{
 		id:           pleadingID,
+		tenantID:     tenantID,
 		projectID:    projectID,
 		number:       number,
 		title:        title,
@@ -107,6 +113,7 @@ func (p *Pleading) MarkClosed(occurredAt time.Time) error {
 }
 
 func (p Pleading) ID() PleadingID                    { return p.id }
+func (p Pleading) TenantID() tenant.TenantID         { return p.tenantID }
 func (p Pleading) ProjectID() projectmodel.ProjectID { return p.projectID }
 func (p Pleading) Number() int                       { return p.number }
 func (p Pleading) Title() string                     { return p.title }

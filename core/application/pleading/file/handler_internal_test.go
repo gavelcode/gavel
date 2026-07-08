@@ -7,6 +7,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 
+	"github.com/usegavel/gavel/core/domain/iam/model/tenant"
 	pleadingmodel "github.com/usegavel/gavel/core/domain/pleading/model"
 	projectmodel "github.com/usegavel/gavel/core/domain/project/model"
 )
@@ -14,7 +15,7 @@ import (
 type stubRepo struct{}
 
 func (s *stubRepo) Save(_ context.Context, _ pleadingmodel.Pleading) error { return nil }
-func (s *stubRepo) FindByID(_ context.Context, _ pleadingmodel.PleadingID) (pleadingmodel.Pleading, error) {
+func (s *stubRepo) FindByID(_ context.Context, _ tenant.TenantID, _ pleadingmodel.PleadingID) (pleadingmodel.Pleading, error) {
 	return pleadingmodel.Pleading{}, nil
 }
 

@@ -47,7 +47,8 @@ This generates:
 
 It also appends `try-import` and `include` lines to your `.bazelrc` and
 `MODULE.bazel`, and adds `common --registry=https://gavelcode.github.io/registry`
-to your `.bazelrc` so Bazel can resolve `gavel_tools`.
+to your `.bazelrc` so Bazel can resolve `gavel_tools`. To move that pin later,
+see [Upgrading gavel_tools](upgrading.md).
 
 ## 3. Verify
 

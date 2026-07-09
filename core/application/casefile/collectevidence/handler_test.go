@@ -202,6 +202,30 @@ func TestExecute_WithArchitectureFiltersToNewViolations(t *testing.T) {
 	assert.Equal(t, 0, result.ArchDelta.FixedCount)
 }
 
+func TestExecute_ArchIDsCarryAllCurrentViolationsForRatchet(t *testing.T) {
+	archEv := &evidencedto.Evidence{
+		Subtype: "architecture",
+		Architecture: &evidencedto.Architecture{
+			Violations: []evidencedto.Violation{
+				{Rule: "layer", SourcePkg: "api", TargetPkg: "domain", Message: "forbidden"},
+				{Rule: "layer", SourcePkg: "web", TargetPkg: "domain", Message: "forbidden"},
+				{Rule: "layer", SourcePkg: "ui", TargetPkg: "infra", Message: "forbidden"},
+			},
+		},
+	}
+
+	handler := newHandler(&fakeFindingsCollector{}, &fakeCoverageCollector{}, &fakeArchCollector{evidence: archEv, docs: [][]byte{[]byte("{}")}})
+
+	baselineArchIDs := []string{"layer:api:domain", "layer:web:domain"}
+	cmd, err := collectevidence.NewCommand("/ws", "//core/...", "core", "main", []string{"go"}, false, false, baselineArchIDs)
+	require.NoError(t, err)
+
+	result, err := handler.Execute(context.Background(), cmd)
+
+	require.NoError(t, err)
+	assert.ElementsMatch(t, []string{"layer:api:domain", "layer:web:domain", "layer:ui:infra"}, result.ArchIDs)
+}
+
 func TestExecute_WithArchitectureNoBaselineReportsAllNew(t *testing.T) {
 	archEv := &evidencedto.Evidence{
 		Subtype: "architecture",

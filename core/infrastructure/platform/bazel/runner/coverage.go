@@ -71,6 +71,9 @@ func collectIndividualCoverageFiles(ctx context.Context, workspace string) ([]by
 	if err != nil {
 		return nil, 0, fmt.Errorf("resolve testlogs dir: %w", err)
 	}
+	if resolved, evalErr := filepath.EvalSymlinks(testlogsDir); evalErr == nil {
+		testlogsDir = resolved
+	}
 
 	var merged bytes.Buffer
 	var count int

@@ -86,6 +86,16 @@ func TestBuildBazelArgs_CoverageMode(t *testing.T) {
 	}
 }
 
+func TestBuildBazelArgs_CoverageBoundsMemory(t *testing.T) {
+	cov := buildBazelArgs(AnalysisConfig{Targets: []string{"//..."}, IncludeCoverage: true})
+	assert.Contains(t, cov, "--local_resources=memory=HOST_RAM*0.67")
+
+	build := buildBazelArgs(AnalysisConfig{Targets: []string{"//..."}, IncludeCoverage: false})
+	for _, a := range build {
+		assert.NotContains(t, a, "local_resources")
+	}
+}
+
 func TestBuildBazelArgs_BuildMode(t *testing.T) {
 	config := AnalysisConfig{
 		Targets:         []string{"//..."},

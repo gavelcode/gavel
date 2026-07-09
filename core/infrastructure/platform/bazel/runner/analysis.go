@@ -100,7 +100,6 @@ func buildBazelArgs(config AnalysisConfig) []string {
 		}
 		args = append(args,
 			"--test_size_filters="+sizeFilters,
-			"--combined_report=lcov",
 			"--local_resources="+coverageRAMBudget,
 		)
 	}
@@ -166,33 +165,24 @@ func SARIFReportsFromResult(result *AnalysisResult, aspects []catalog.Aspect) []
 	return reports
 }
 
-func collectCoverageDataWith(ctx context.Context, cmd CommandRunner, workspace string, runErr error) ([]byte, error) {
-	reportPath, err := findCombinedReportWith(ctx, cmd, workspace)
+func collectCoverageDataWith(ctx context.Context, _ CommandRunner, workspace string, runErr error) ([]byte, error) {
+	data, count, err := collectIndividualCoverageFiles(ctx, workspace)
 	if err != nil {
-		return nil, fmt.Errorf("find combined report: %w", err)
+		if runErr != nil {
+			return nil, fmt.Errorf("bazel coverage failed and coverage collection failed: %w", runErr)
+		}
+		return nil, fmt.Errorf("collect coverage: %w", err)
 	}
 
-	data, err := os.ReadFile(reportPath)
-	if err == nil && len(data) > 0 {
+	if count == 0 {
 		if runErr != nil {
-			return data, fmt.Errorf("bazel coverage had partial failures (report still collected): %w", runErr)
+			return nil, fmt.Errorf("bazel coverage failed and produced no coverage files: %w", runErr)
 		}
-		return data, nil
-	}
-
-	fallbackData, count, fallbackErr := collectIndividualCoverageFiles(ctx, workspace)
-	if fallbackErr != nil {
-		if runErr != nil {
-			return nil, fmt.Errorf("bazel coverage failed and fallback failed: %w", runErr)
-		}
-		return nil, fmt.Errorf("coverage fallback: %w", fallbackErr)
-	}
-	if count > 0 {
-		return fallbackData, fmt.Errorf("combined report unavailable; collected %d individual coverage files", count)
+		return nil, nil
 	}
 
 	if runErr != nil {
-		return nil, fmt.Errorf("bazel coverage failed and produced no report: %w", runErr)
+		return data, fmt.Errorf("bazel coverage had partial failures (coverage still collected): %w", runErr)
 	}
-	return nil, nil
+	return data, nil
 }

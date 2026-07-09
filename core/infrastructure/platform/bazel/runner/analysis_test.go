@@ -79,9 +79,9 @@ func TestBuildBazelArgs_CoverageMode(t *testing.T) {
 	args := buildBazelArgs(config)
 
 	assert.Equal(t, "coverage", args[0])
-	assert.Contains(t, args, "--combined_report=lcov")
 	assert.Contains(t, args, "--test_size_filters=small,medium")
 	for _, a := range args {
+		assert.NotContains(t, a, "combined_report")
 		assert.NotContains(t, a, "instrumentation_filter")
 	}
 }
@@ -373,19 +373,16 @@ func TestRunAnalysis_BuildErrorWithSARIF(t *testing.T) {
 }
 
 func TestRunAnalysis_WithCoverage(t *testing.T) {
+	workspace := t.TempDir()
 	binDir := t.TempDir()
-	outputPath := t.TempDir()
-	coverageDir := filepath.Join(outputPath, "_coverage")
-	require.NoError(t, os.MkdirAll(coverageDir, 0o755))
-	require.NoError(t, os.WriteFile(filepath.Join(coverageDir, "_coverage_report.dat"), []byte("SF:main.go\nend_of_record\n"), 0o644))
+	createCoverageFile(t, filepath.Join(workspace, "bazel-testlogs"), "pkg/main_test", "SF:main.go\nDA:1,1\nend_of_record\n")
 
 	fake := &fakeRunner{results: []fakeResult{
 		{Stdout: []byte("coverage ok\n")},
 		{Stdout: []byte(binDir + "\n")},
-		{Stdout: []byte(outputPath + "\n")},
 	}}
 	config := AnalysisConfig{
-		Workspace:       "/ws",
+		Workspace:       workspace,
 		Targets:         []string{"//..."},
 		Aspects:         []catalog.Aspect{{Name: "golangci", SARIFSuffix: ".golangci.sarif"}},
 		IncludeCoverage: true,

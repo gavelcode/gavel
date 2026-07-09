@@ -194,7 +194,7 @@ func TestResolveTestlogsDirWith_BazelInfoError(t *testing.T) {
 	assert.Contains(t, err.Error(), "bazel info output_path")
 }
 
-func TestCollectCoverageDataWith_FallbackToIndividual(t *testing.T) {
+func TestCollectCoverageDataWith_CollectsIndividual(t *testing.T) {
 	workspace := t.TempDir()
 	outputPath := t.TempDir()
 	testlogsDir := filepath.Join(workspace, "bazel-testlogs")
@@ -208,8 +208,24 @@ func TestCollectCoverageDataWith_FallbackToIndividual(t *testing.T) {
 
 	require.NotNil(t, data)
 	assert.Contains(t, string(data), "SF:foo.go")
+	assert.Nil(t, warning)
+}
+
+func TestCollectCoverageDataWith_CollectsIndividualWithRunErr(t *testing.T) {
+	workspace := t.TempDir()
+	outputPath := t.TempDir()
+	testlogsDir := filepath.Join(workspace, "bazel-testlogs")
+	createCoverageFile(t, testlogsDir, "pkg/foo_test", "SF:foo.go\nDA:1,1\nend_of_record\n")
+
+	fake := &fakeRunner{results: []fakeResult{
+		{Stdout: []byte(outputPath + "\n")},
+	}}
+
+	data, warning := collectCoverageDataWith(t.Context(), fake, workspace, fmt.Errorf("coverage failed"))
+
+	require.NotNil(t, data)
 	require.NotNil(t, warning)
-	assert.Contains(t, warning.Error(), "individual coverage files")
+	assert.Contains(t, warning.Error(), "partial failures")
 }
 
 func TestCollectCoverageDataWith_NoDataNoRunErr(t *testing.T) {
@@ -244,7 +260,7 @@ func TestCollectCoverageDataWith_NoDataWithRunErr(t *testing.T) {
 	assert.Contains(t, warning.Error(), "coverage failed")
 }
 
-func TestCollectCoverageDataWith_FindReportError(t *testing.T) {
+func TestCollectCoverageDataWith_ResolveTestlogsError(t *testing.T) {
 	fake := &fakeRunner{results: []fakeResult{
 		{Stderr: []byte("fail"), Err: fmt.Errorf("info error")},
 	}}
@@ -253,7 +269,7 @@ func TestCollectCoverageDataWith_FindReportError(t *testing.T) {
 
 	assert.Nil(t, data)
 	require.NotNil(t, warning)
-	assert.Contains(t, warning.Error(), "find combined report")
+	assert.Contains(t, warning.Error(), "collect coverage")
 }
 
 func TestCollectCoverageDataWith_FallbackErrorWithRunErr(t *testing.T) {
@@ -270,21 +286,6 @@ func TestCollectCoverageDataWith_FallbackErrorWithRunErr(t *testing.T) {
 	assert.Nil(t, data)
 	require.NotNil(t, warning)
 	assert.Contains(t, warning.Error(), "coverage failed")
-}
-
-func TestCollectCoverageDataWith_FallbackErrorWithoutRunErr(t *testing.T) {
-	workspace := t.TempDir()
-	outputPath := t.TempDir()
-
-	fake := &fakeRunner{results: []fakeResult{
-		{Stdout: []byte(outputPath + "\n")},
-	}}
-
-	data, warning := collectCoverageDataWith(t.Context(), fake, workspace, nil)
-
-	assert.Nil(t, data)
-	require.NotNil(t, warning)
-	assert.Contains(t, warning.Error(), "coverage fallback")
 }
 
 func createCoverageFile(t *testing.T, testlogsDir, testPath, content string) {

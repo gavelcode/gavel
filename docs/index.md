@@ -28,6 +28,7 @@ this index maps them. Start here and follow the links.
 ## Guides — get a task done
 
 * [CI integration](ci.md) — Running `gavel judge` and `gavel report` in CI pipelines.
+* [Upgrading gavel_tools](upgrading.md) — Moving a workspace between `gavel_tools` versions in 0.x, and why the pin tracks your gavel release.
 * [Server deployment](deployment.md) — Building, configuring, and running `gavel-server`.
 * [IDE integration](ide/vscode.md) — View findings inline: [VS Code](ide/vscode.md) · [IntelliJ IDEA](ide/intellij.md) · [MCP for agents](ide/mcp.md).
 

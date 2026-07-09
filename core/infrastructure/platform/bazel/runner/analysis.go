@@ -12,6 +12,8 @@ import (
 
 const defaultTestSizeFilters = "small,medium"
 
+const coverageRAMBudget = "memory=HOST_RAM*0.67"
+
 type AnalysisConfig struct {
 	Workspace       string
 	Targets         []string
@@ -99,6 +101,7 @@ func buildBazelArgs(config AnalysisConfig) []string {
 		args = append(args,
 			"--test_size_filters="+sizeFilters,
 			"--combined_report=lcov",
+			"--local_resources="+coverageRAMBudget,
 		)
 	}
 	if config.TestTagFilters != "" {

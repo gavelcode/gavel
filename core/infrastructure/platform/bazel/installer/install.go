@@ -135,11 +135,22 @@ const lintConfigFilegroup = `filegroup(
     visibility = ["//visibility:public"],
 )`
 
+func rootBuildFile(root string) string {
+	bazelStyle := filepath.Join(root, "BUILD.bazel")
+	if _, err := os.Stat(bazelStyle); err == nil {
+		return bazelStyle
+	}
+	if _, err := os.Stat(filepath.Join(root, "BUILD")); err == nil {
+		return filepath.Join(root, "BUILD")
+	}
+	return bazelStyle
+}
+
 func installLintConfigFilegroup(root string) (bool, error) {
-	path := filepath.Join(root, "BUILD.bazel")
+	path := rootBuildFile(root)
 	existing, err := os.ReadFile(path)
 	if err != nil && !os.IsNotExist(err) {
-		return false, fmt.Errorf("read BUILD.bazel: %w", err)
+		return false, fmt.Errorf("read %s: %w", filepath.Base(path), err)
 	}
 
 	if strings.Contains(string(existing), "gavel_lint_config") {

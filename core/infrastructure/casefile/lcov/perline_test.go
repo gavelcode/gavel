@@ -9,6 +9,32 @@ import (
 	"github.com/usegavel/gavel/core/infrastructure/casefile/lcov"
 )
 
+func TestParsePerLine_ConcatenatedEquivalentToBazelMerge(t *testing.T) {
+	merged := "SF:pkg/a.go\nDA:1,4\nDA:2,0\nDA:3,1\nend_of_record\n"
+	concatenated := "SF:pkg/a.go\nDA:1,2\nDA:2,0\nDA:3,0\nend_of_record\n" +
+		"SF:pkg/a.go\nDA:1,2\nDA:2,0\nDA:3,1\nend_of_record\n"
+
+	fromMerged, err := lcov.ParsePerLine([]byte(merged))
+	require.NoError(t, err)
+	fromConcatenated, err := lcov.ParsePerLine([]byte(concatenated))
+	require.NoError(t, err)
+
+	assert.Equal(t, coveredAndTotal(fromMerged), coveredAndTotal(fromConcatenated))
+}
+
+func coveredAndTotal(perLine map[string]map[int]int) [2]int {
+	var covered, total int
+	for _, lines := range perLine {
+		for _, hits := range lines {
+			total++
+			if hits > 0 {
+				covered++
+			}
+		}
+	}
+	return [2]int{covered, total}
+}
+
 func TestParsePerLineSingleFile(t *testing.T) {
 	result, err := lcov.ParsePerLine(readFixture(t, "single_lang.lcov"))
 

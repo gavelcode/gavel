@@ -217,3 +217,33 @@ jobs:
           jq -e '([.projects[].rulings[] | select(.subtype == "tool_execution")]) as $te
                  | ($te | length > 0) and ($te | all(.passed == true))' result.json > /dev/null \
             || { echo "::error::an analyzer failed to run (tool_execution) in ${{ matrix.example }} on ${{ matrix.os }}"; exit 1; }
+
+      # New-vs-baseline proof: go-repo commits a fixture (baseline_probe.go) that
+      # is deliberately kept out of the baseline, so judge must report a known,
+      # exact delta across all three signals. Asserting *known values* — not just
+      # "zero new" — is what catches a silent regression (a stray exclude, an
+      # analyzer that stopped running): a zero would pass for the wrong reason.
+      # The linux+darwin legs together prove the verdict reproduces off the
+      # author's machine. These golden values change only when the fixture does;
+      # update them in the same PR.
+      - name: Assert the new-vs-baseline delta (fixture proof)
+        if: matrix.example == 'go-repo'
+        working-directory: examples/go-repo
+        run: |
+          fail() { echo "::error::$1 on ${{ matrix.os }}"; exit 1; }
+          jq -e '.projects[] as $p
+            | ($p.delta.new_count == 4)
+              and ([$p.findings[] | select(.status == "new")] | length == 4)
+              and ([$p.findings[] | select(.status == "new") | .file_path]
+                    | all(test("baseline_probe.go")))' result.json > /dev/null \
+            || fail "findings delta not reproducible (expected 4 new, all in baseline_probe.go)"
+          jq -e '.projects[] as $p
+            | ($p.delta.new_violations_count == 1)
+              and ([$p.violations[]? | select(.status == "new")
+                    | "\(.rule):\(.source_pkg):\(.target_pkg)"]
+                    == ["domain-imports-nothing:domain:infrastructure"])' result.json > /dev/null \
+            || fail "architecture delta not reproducible (expected 1 new domain->infrastructure violation)"
+          jq -e '[.projects[].coverage_by_file[]? | select(.file_path | test("baseline_probe.go"))] as $probe
+            | ($probe | length == 1) and ($probe[0].is_new == true) and ($probe[0].covered_lines == 0)' result.json > /dev/null \
+            || fail "coverage delta not reproducible (expected baseline_probe.go new and fully uncovered)"
+          echo "new-vs-baseline delta reproduced: 4 new findings, 1 new arch violation, 1 new uncovered file"

@@ -114,6 +114,35 @@ func TestInstall_DoesNotDuplicateFilegroup(t *testing.T) {
 		"filegroup must not be duplicated on repeated installs")
 }
 
+func TestInstall_ExistingRootBuild_AppendsWithoutShadowing(t *testing.T) {
+	root := setupWorkspace(t, `module(name = "consumer-app", version = "1.0.0")`+"\n")
+	original := "config_setting(\n    name = \"fastbuild\",\n    values = {\"compilation_mode\": \"fastbuild\"},\n)\n"
+	require.NoError(t, os.WriteFile(filepath.Join(root, "BUILD"), []byte(original), 0o644))
+
+	_, err := installer.NewInstaller().Install(root, []string{"go"})
+	require.NoError(t, err)
+
+	_, statErr := os.Stat(filepath.Join(root, "BUILD.bazel"))
+	assert.True(t, os.IsNotExist(statErr), "must not create a BUILD.bazel that shadows the existing root BUILD")
+
+	build := readFile(t, filepath.Join(root, "BUILD"))
+	assert.Contains(t, build, "gavel_lint_config", "filegroup must land in the existing root BUILD")
+	assert.Contains(t, build, "fastbuild", "the existing root package must be preserved")
+}
+
+func TestInstall_BothRootBuildFiles_PrefersBuildBazel(t *testing.T) {
+	root := setupWorkspace(t, `module(name = "consumer-app", version = "1.0.0")`+"\n")
+	require.NoError(t, os.WriteFile(filepath.Join(root, "BUILD"), []byte("# legacy\n"), 0o644))
+	require.NoError(t, os.WriteFile(filepath.Join(root, "BUILD.bazel"), []byte("# active\n"), 0o644))
+
+	_, err := installer.NewInstaller().Install(root, []string{"go"})
+	require.NoError(t, err)
+
+	assert.Contains(t, readFile(t, filepath.Join(root, "BUILD.bazel")), "gavel_lint_config",
+		"when both exist, Bazel uses BUILD.bazel, so the filegroup belongs there")
+	assert.NotContains(t, readFile(t, filepath.Join(root, "BUILD")), "gavel_lint_config")
+}
+
 func TestInstall_AddsGavelRegistry(t *testing.T) {
 	root := setupWorkspace(t, `module(name = "consumer-app", version = "1.0.0")`+"\n")
 

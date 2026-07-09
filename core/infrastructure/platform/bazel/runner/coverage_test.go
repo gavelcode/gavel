@@ -68,6 +68,20 @@ func TestCollectIndividualCoverageFiles_ConcatenatesValidLCOV(t *testing.T) {
 	assert.Contains(t, string(data), "SF:b.go")
 }
 
+func TestCollectIndividualCoverageFiles_FollowsTestlogsSymlink(t *testing.T) {
+	realTestlogs := t.TempDir()
+	createCoverageFile(t, realTestlogs, "pkg/foo_test", "SF:pkg/foo.go\nDA:1,1\nend_of_record\n")
+
+	workspace := t.TempDir()
+	require.NoError(t, os.Symlink(realTestlogs, filepath.Join(workspace, "bazel-testlogs")))
+
+	data, count, err := collectIndividualCoverageFiles(t.Context(), workspace)
+
+	require.NoError(t, err)
+	assert.Equal(t, 1, count)
+	assert.Contains(t, string(data), "SF:pkg/foo.go")
+}
+
 func TestResolveTestlogsDir_PrefersSymlink(t *testing.T) {
 	dir := t.TempDir()
 	testlogsDir := filepath.Join(dir, "bazel-testlogs")

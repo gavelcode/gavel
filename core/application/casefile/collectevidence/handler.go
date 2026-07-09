@@ -97,6 +97,7 @@ func (h *Handler) Execute(ctx context.Context, cmd Command) (Result, error) {
 	var rawLCOV []byte
 	var archEvidence *evidencedto.Evidence
 	var archCount int
+	var archIDs []string
 	var archDelta classifyarch.Result
 
 	if !cmd.Quick() {
@@ -105,7 +106,7 @@ func (h *Handler) Execute(ctx context.Context, cmd Command) (Result, error) {
 			return Result{}, err
 		}
 
-		archEvidence, archCount, archDelta, err = h.collectArchitecture(ctx, cmd, targets, &evidences)
+		archEvidence, archCount, archIDs, archDelta, err = h.collectArchitecture(ctx, cmd, targets, &evidences)
 		if err != nil {
 			return Result{}, err
 		}
@@ -115,8 +116,6 @@ func (h *Handler) Execute(ctx context.Context, cmd Command) (Result, error) {
 	if err != nil {
 		return Result{}, err
 	}
-
-	archIDs := evidencedto.ExtractArchIDs(evidencedto.ExtractViolations(archEvidence))
 
 	var nccPercent float64
 	if !cmd.Quick() && rawLCOV != nil && h.ingestNCC != nil && h.changedLines != nil {
@@ -226,19 +225,19 @@ func (h *Handler) coverageByFile(rawLCOV []byte) ([]evidencedto.FileCoverage, er
 	return evidencedto.FileCoverageFromPerLine(perLine), nil
 }
 
-func (h *Handler) collectArchitecture(ctx context.Context, cmd Command, targets []string, evidences *[]evidencedto.Evidence) (*evidencedto.Evidence, int, classifyarch.Result, error) {
+func (h *Handler) collectArchitecture(ctx context.Context, cmd Command, targets []string, evidences *[]evidencedto.Evidence) (*evidencedto.Evidence, int, []string, classifyarch.Result, error) {
 	if h.architecture == nil {
-		return nil, 0, classifyarch.Result{}, nil
+		return nil, 0, nil, classifyarch.Result{}, nil
 	}
 	archEv, archDocs, err := h.architecture.CollectViolations(ctx, cmd.Workspace(), targets, cmd.ToolSelection())
 	if err != nil {
-		return nil, 0, classifyarch.Result{}, fmt.Errorf("architecture: %w", err)
+		return nil, 0, nil, classifyarch.Result{}, fmt.Errorf("architecture: %w", err)
 	}
 
 	_ = archDocs
 
 	if archEv == nil {
-		return nil, 0, classifyarch.Result{}, nil
+		return nil, 0, nil, classifyarch.Result{}, nil
 	}
 
 	violations := evidencedto.ExtractViolations(archEv)
@@ -251,9 +250,9 @@ func (h *Handler) collectArchitecture(ctx context.Context, cmd Command, targets 
 		archEv = evidencedto.FilterNewViolations(archEv, classified.NewIDs)
 		archCount = len(classified.NewIDs)
 		*evidences = append(*evidences, *archEv)
-		return archEv, archCount, classified, nil
+		return archEv, archCount, archIDs, classified, nil
 	}
 
 	*evidences = append(*evidences, *archEv)
-	return archEv, archCount, classifyarch.Result{}, nil
+	return archEv, archCount, archIDs, classifyarch.Result{}, nil
 }

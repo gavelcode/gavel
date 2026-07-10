@@ -3,7 +3,7 @@ module(
     version = "0.0.0",
 )
 
-bazel_dep(name = "gavel_tools", version = "0.3.6")
+bazel_dep(name = "gavel_tools", version = "0.3.7")
 bazel_dep(name = "rules_go", version = "0.60.0")
 bazel_dep(name = "gazelle", version = "0.50.0")
 

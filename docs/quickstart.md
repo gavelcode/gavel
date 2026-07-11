@@ -7,9 +7,29 @@ tags: [quickstart, getting-started]
 
 # Quickstart
 
-From zero to first quality report in 5 minutes. Requires a Bazel workspace
-with `MODULE.bazel` (bzlmod). Runs on Linux and macOS (amd64/arm64);
-Windows is not supported.
+From zero to first quality report in 5 minutes.
+
+## Requirements
+
+| Requirement | Supported |
+|-------------|-----------|
+| Bazel       | **8.0 or newer**, bzlmod (`MODULE.bazel`) |
+| OS          | Linux, macOS (amd64 / arm64) — Windows is not supported |
+
+Bazel **8.0** is the floor: gavel's Go analyzer references `rules_go` by the
+canonical repository name Bazel 8 mints (`rules_go+`), and Bazel 7 uses a
+different scheme (`rules_go~`) that cannot resolve it, so `gavel judge` fails at
+repository resolution before any build runs. Non-Go repos may still work on
+Bazel 7, but 7.x is unsupported. The flag itself lives in
+[`catalog.yaml`](../core/infrastructure/platform/bazel/catalog/catalog.yaml).
+
+**Restricted / hermetic networks.** `gavel init` adds the gavel module registry
+(`gavelcode.github.io`) to your `.bazelrc`, and `gavel_tools` fetches its
+analyzer binaries from `github.com` and `repo1.maven.org`. A repo with a
+locked-down `--downloader_config` (an allowlist plus `block *` mirror) must
+allowlist those hosts, or vendor `gavel_tools` into its own mirror — gavel
+cannot bypass a hermetic download policy, by design. The authoritative host
+list is `gavel_tools`' `lint/lang/*/*/repositories.bzl`.
 
 ## 1. Install
 

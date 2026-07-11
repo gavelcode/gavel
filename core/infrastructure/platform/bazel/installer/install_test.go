@@ -165,6 +165,21 @@ func TestInstall_KeepsBcrAlongsideGavelRegistry(t *testing.T) {
 		"declaring any registry drops Bazel's BCR default, so BCR must be added explicitly")
 }
 
+func TestInstall_BcrRegistryOrderedBeforeGavel(t *testing.T) {
+	root := setupWorkspace(t, `module(name = "consumer-app", version = "1.0.0")`+"\n")
+
+	_, err := installer.NewInstaller().Install(root, []string{"go"})
+	require.NoError(t, err)
+
+	bazelrc := readFile(t, filepath.Join(root, ".bazelrc"))
+	bcrAt := strings.Index(bazelrc, bcrRegistryLine)
+	gavelAt := strings.Index(bazelrc, gavelRegistryLine)
+	require.NotEqual(t, -1, bcrAt)
+	require.NotEqual(t, -1, gavelAt)
+	assert.Less(t, bcrAt, gavelAt,
+		"BCR must precede the gavel registry so the consumer's own BCR modules keep resolving from BCR with unchanged checksums; listing gavel first re-resolves every module through it and breaks repos with lockfile_mode=error")
+}
+
 func TestInstall_ExistingBcr_NotDuplicated(t *testing.T) {
 	root := setupWorkspace(t, `module(name = "consumer-app", version = "1.0.0")`+"\n")
 	require.NoError(t, os.WriteFile(filepath.Join(root, ".bazelrc"), []byte(bcrRegistryLine+"\n"), 0o644))

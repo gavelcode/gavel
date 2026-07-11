@@ -7,7 +7,7 @@ import (
 )
 
 type FindingsCollector interface {
-	CollectFindings(ctx context.Context, workspace string, targets []string, selection map[string][]string) ([]evidencedto.Evidence, []RawFile, string, error)
+	CollectFindings(ctx context.Context, workspace string, targets []string, selection map[string][]string) ([]evidencedto.Evidence, []RawFile, string, []string, error)
 }
 
 type CoverageCollector interface {

@@ -301,6 +301,11 @@ func emitResults(writer io.Writer, results []pipeline.Result, opts Options, star
 				return err
 			}
 		}
+		if len(projResult.UnanalyzedTools) > 0 {
+			if _, err := fmt.Fprint(writer, ui.MissingTargetsWarning(projResult.Name, projResult.UnanalyzedTools)); err != nil {
+				return err
+			}
+		}
 	}
 	return nil
 }

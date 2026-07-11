@@ -21,6 +21,7 @@ type Result struct {
 	ArchIDs         []string
 	ArchDelta       classifyarch.Result
 	BuildWarning    string
+	UnanalyzedTools []string
 }
 
 type RawFile struct {

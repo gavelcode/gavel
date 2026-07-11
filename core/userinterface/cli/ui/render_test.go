@@ -204,10 +204,10 @@ func TestBuildWarning(t *testing.T) {
 }
 
 func TestMissingTargetsWarning(t *testing.T) {
-	got := ui.MissingTargetsWarning("web", "typescript", "//apps/web/...")
+	got := ui.MissingTargetsWarning("web", []string{"eslint", "archtest"})
 	assert.Contains(t, got, "web")
-	assert.Contains(t, got, "typescript")
-	assert.Contains(t, got, "//apps/web/...")
+	assert.Contains(t, got, "eslint")
+	assert.Contains(t, got, "archtest")
 	assert.Contains(t, got, "zero findings")
 }
 

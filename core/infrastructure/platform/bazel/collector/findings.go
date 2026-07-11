@@ -28,10 +28,10 @@ func NewBazelFindingsCollector(r AnalysisRunner, p FindingsParser) *BazelFinding
 	return &BazelFindingsCollector{runner: r, parser: p}
 }
 
-func (c *BazelFindingsCollector) CollectFindings(ctx context.Context, workspace string, targets []string, selection map[string][]string) ([]evidencedto.Evidence, []collectevidence.RawFile, string, error) {
+func (c *BazelFindingsCollector) CollectFindings(ctx context.Context, workspace string, targets []string, selection map[string][]string) ([]evidencedto.Evidence, []collectevidence.RawFile, string, []string, error) {
 	selected, err := catalog.SelectedAspects(selection)
 	if err != nil {
-		return nil, nil, "", err
+		return nil, nil, "", nil, err
 	}
 	lintAspects := make([]catalog.Aspect, 0, len(selected))
 	for _, aspect := range selected {
@@ -40,7 +40,7 @@ func (c *BazelFindingsCollector) CollectFindings(ctx context.Context, workspace 
 		}
 	}
 	if len(lintAspects) == 0 {
-		return nil, nil, "", nil
+		return nil, nil, "", nil, nil
 	}
 
 	config := runner.AnalysisConfig{
@@ -51,7 +51,7 @@ func (c *BazelFindingsCollector) CollectFindings(ctx context.Context, workspace 
 
 	result, err := c.runner.RunAnalysis(ctx, config)
 	if err != nil {
-		return nil, nil, "", fmt.Errorf("run analysis: %w", err)
+		return nil, nil, "", nil, fmt.Errorf("run analysis: %w", err)
 	}
 
 	reports := runner.SARIFReportsFromResult(result, lintAspects)
@@ -61,11 +61,11 @@ func (c *BazelFindingsCollector) CollectFindings(ctx context.Context, workspace 
 	for _, report := range reports {
 		cmd, err := ingestfind.NewCommand(report.Data, "sarif", report.Source, "code_quality")
 		if err != nil {
-			return nil, nil, "", err
+			return nil, nil, "", nil, err
 		}
 		res, err := c.parser.Execute(ctx, cmd)
 		if err != nil {
-			return nil, nil, "", err
+			return nil, nil, "", nil, err
 		}
 		evidences = append(evidences, res.Evidence)
 		rawFiles = append(rawFiles, collectevidence.RawFile{
@@ -79,5 +79,5 @@ func (c *BazelFindingsCollector) CollectFindings(ctx context.Context, workspace 
 	if result.BuildWarning != nil {
 		buildWarning = result.BuildWarning.Error()
 	}
-	return evidences, rawFiles, buildWarning, nil
+	return evidences, rawFiles, buildWarning, runner.ToolsWithoutSubmissions(result, lintAspects), nil
 }

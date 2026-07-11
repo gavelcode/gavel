@@ -28,4 +28,5 @@ type Result struct {
 	RawSARIFDocs           [][]byte
 	ServerFailed           bool
 	BuildWarning           string
+	UnanalyzedTools        []string
 }

@@ -165,6 +165,16 @@ func SARIFReportsFromResult(result *AnalysisResult, aspects []catalog.Aspect) []
 	return reports
 }
 
+func ToolsWithoutSubmissions(result *AnalysisResult, aspects []catalog.Aspect) []string {
+	var out []string
+	for _, asp := range aspects {
+		if len(result.SARIFFiles[asp.Name]) == 0 {
+			out = append(out, asp.Name)
+		}
+	}
+	return out
+}
+
 func collectCoverageDataWith(ctx context.Context, _ CommandRunner, workspace string, runErr error) ([]byte, error) {
 	data, count, err := collectIndividualCoverageFiles(ctx, workspace)
 	if err != nil {

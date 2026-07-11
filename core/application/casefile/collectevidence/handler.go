@@ -76,7 +76,7 @@ func (h *Handler) Execute(ctx context.Context, cmd Command) (Result, error) {
 		}
 	}
 
-	findingsEvidences, rawSARIF, buildWarning, err := h.collectFindings(ctx, cmd, targets)
+	findingsEvidences, rawSARIF, buildWarning, unanalyzedTools, err := h.collectFindings(ctx, cmd, targets)
 	if err != nil {
 		return Result{}, fmt.Errorf("findings: %w", err)
 	}
@@ -148,6 +148,7 @@ func (h *Handler) Execute(ctx context.Context, cmd Command) (Result, error) {
 		ArchIDs:         archIDs,
 		ArchDelta:       archDelta,
 		BuildWarning:    buildWarning,
+		UnanalyzedTools: unanalyzedTools,
 	}, nil
 }
 
@@ -174,9 +175,9 @@ func (h *Handler) appendToolExecutionEvidence(evidences []evidencedto.Evidence, 
 	})
 }
 
-func (h *Handler) collectFindings(ctx context.Context, cmd Command, targets []string) ([]evidencedto.Evidence, []RawFile, string, error) {
+func (h *Handler) collectFindings(ctx context.Context, cmd Command, targets []string) ([]evidencedto.Evidence, []RawFile, string, []string, error) {
 	if h.findings == nil {
-		return nil, nil, "", nil
+		return nil, nil, "", nil, nil
 	}
 	return h.findings.CollectFindings(ctx, cmd.Workspace(), targets, cmd.ToolSelection())
 }

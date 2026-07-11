@@ -175,7 +175,11 @@ const (
 	registryLineCount = 2
 )
 
-// Bazel drops its implicit BCR default once any --registry is set, so both must be listed.
+// Bazel drops its implicit BCR default once any --registry is set, so both must
+// be listed. Registries are consulted in order, so BCR goes first: the consumer's
+// own modules keep resolving from BCR with the checksums already in their lockfile,
+// and the gavel registry serves only as the fallback for gavel_tools. Listing gavel
+// first re-resolves every module through it and breaks repos with lockfile_mode=error.
 func ensureRegistryLines(root string) (bool, error) {
 	path := filepath.Join(root, ".bazelrc")
 	existing, err := os.ReadFile(path)
@@ -185,11 +189,11 @@ func ensureRegistryLines(root string) (bool, error) {
 	content := string(existing)
 
 	missing := make([]string, 0, registryLineCount)
-	if !strings.Contains(content, gavelRegistryLine) {
-		missing = append(missing, gavelRegistryLine)
-	}
 	if !strings.Contains(content, bcrRegistryLine) {
 		missing = append(missing, bcrRegistryLine)
+	}
+	if !strings.Contains(content, gavelRegistryLine) {
+		missing = append(missing, gavelRegistryLine)
 	}
 	if len(missing) == 0 {
 		return false, nil

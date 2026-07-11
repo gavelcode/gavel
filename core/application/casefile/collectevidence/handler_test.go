@@ -19,14 +19,15 @@ import (
 )
 
 type fakeFindingsCollector struct {
-	evidences    []evidencedto.Evidence
-	rawFiles     []collectevidence.RawFile
-	buildWarning string
-	err          error
+	evidences       []evidencedto.Evidence
+	rawFiles        []collectevidence.RawFile
+	buildWarning    string
+	unanalyzedTools []string
+	err             error
 }
 
-func (f *fakeFindingsCollector) CollectFindings(_ context.Context, _ string, _ []string, _ map[string][]string) ([]evidencedto.Evidence, []collectevidence.RawFile, string, error) {
-	return f.evidences, f.rawFiles, f.buildWarning, f.err
+func (f *fakeFindingsCollector) CollectFindings(_ context.Context, _ string, _ []string, _ map[string][]string) ([]evidencedto.Evidence, []collectevidence.RawFile, string, []string, error) {
+	return f.evidences, f.rawFiles, f.buildWarning, f.unanalyzedTools, f.err
 }
 
 type fakeCoverageCollector struct {
@@ -63,9 +64,9 @@ type capturingFindingsCollector struct {
 	rawFiles        []collectevidence.RawFile
 }
 
-func (c *capturingFindingsCollector) CollectFindings(_ context.Context, _ string, targets []string, _ map[string][]string) ([]evidencedto.Evidence, []collectevidence.RawFile, string, error) {
+func (c *capturingFindingsCollector) CollectFindings(_ context.Context, _ string, targets []string, _ map[string][]string) ([]evidencedto.Evidence, []collectevidence.RawFile, string, []string, error) {
 	c.capturedTargets = targets
-	return c.evidences, c.rawFiles, "", nil
+	return c.evidences, c.rawFiles, "", nil, nil
 }
 
 func newHandler(findings *fakeFindingsCollector, coverage *fakeCoverageCollector, arch *fakeArchCollector) *collectevidence.Handler {
@@ -119,6 +120,23 @@ func TestExecute_PropagatesBuildWarning(t *testing.T) {
 
 	require.NoError(t, err)
 	assert.Equal(t, "bazel build had failures", result.BuildWarning)
+}
+
+func TestExecute_PropagatesUnanalyzedTools(t *testing.T) {
+	findings := &fakeFindingsCollector{
+		evidences:       []evidencedto.Evidence{{Subtype: "code_quality"}},
+		unanalyzedTools: []string{"typescript_eslint_submission_aspect"},
+	}
+
+	handler := newHandler(findings, &fakeCoverageCollector{}, &fakeArchCollector{})
+
+	cmd, err := collectevidence.NewCommand("/ws", "//core/...", "core", "main", []string{"go"}, true, false, nil)
+	require.NoError(t, err)
+
+	result, err := handler.Execute(context.Background(), cmd)
+
+	require.NoError(t, err)
+	assert.Equal(t, []string{"typescript_eslint_submission_aspect"}, result.UnanalyzedTools)
 }
 
 func TestExecute_NoBuildWarning_WhenCleanBuild(t *testing.T) {

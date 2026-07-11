@@ -13,6 +13,35 @@ import (
 	"github.com/usegavel/gavel/core/infrastructure/platform/bazel/catalog"
 )
 
+func TestToolsWithoutSubmissions_FlagsConfiguredAspectThatProducedNoSarif(t *testing.T) {
+	result := &AnalysisResult{
+		SARIFFiles: map[string][][]byte{
+			"clippy": {[]byte("{}")},
+		},
+	}
+	aspects := []catalog.Aspect{
+		{Name: "clippy"},
+		{Name: "eslint"},
+	}
+
+	got := ToolsWithoutSubmissions(result, aspects)
+
+	assert.Equal(t, []string{"eslint"}, got,
+		"an enabled aspect that emitted no SARIF attached to zero targets; surfacing it keeps a 0-findings verdict from silently implying the tool ran")
+}
+
+func TestToolsWithoutSubmissions_EmptyWhenEveryAspectProducedSarif(t *testing.T) {
+	result := &AnalysisResult{
+		SARIFFiles: map[string][][]byte{
+			"clippy": {[]byte("{}")},
+			"eslint": {[]byte("{}")},
+		},
+	}
+	aspects := []catalog.Aspect{{Name: "clippy"}, {Name: "eslint"}}
+
+	assert.Empty(t, ToolsWithoutSubmissions(result, aspects))
+}
+
 func TestBuildBazelArgs_TargetsAfterOptionsMarker(t *testing.T) {
 	config := AnalysisConfig{
 		Targets: []string{"//core/...", "-//core/gen/..."},

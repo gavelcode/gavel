@@ -2,6 +2,7 @@ package ui
 
 import (
 	"fmt"
+	"strings"
 	"time"
 )
 
@@ -111,9 +112,9 @@ func BuildWarning() string {
 	return GoldBar.Render("  ⚠ bazel build had failures — results may be incomplete; verdict is unreliable") + "\n"
 }
 
-func MissingTargetsWarning(project, language, pattern string) string {
-	msg := fmt.Sprintf("  ⚠ project %s declares tooling: %s, but no matching targets exist under %s; aspects will produce zero findings",
-		project, language, pattern)
+func MissingTargetsWarning(project string, tools []string) string {
+	msg := fmt.Sprintf("  ⚠ project %s enables %s, but no analyzable targets were found — those tools produced zero findings and are not covered by this verdict",
+		project, strings.Join(tools, ", "))
 	return GoldBar.Render(msg) + "\n"
 }
 

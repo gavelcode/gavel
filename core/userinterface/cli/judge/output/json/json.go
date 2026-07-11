@@ -80,6 +80,7 @@ type projectDTO struct {
 	Violations             []violationDTO     `json:"violations,omitempty"`
 	Delta                  *deltaDTO          `json:"delta,omitempty"`
 	BuildWarning           string             `json:"build_warning,omitempty"`
+	UnanalyzedTools        []string           `json:"unanalyzed_tools,omitempty"`
 }
 
 type responseDTO struct {
@@ -124,6 +125,7 @@ func toProjectDTO(result pipeline.Result) projectDTO {
 		Violations:             toViolationDTOs(result),
 		Delta:                  toDeltaDTO(result),
 		BuildWarning:           result.BuildWarning,
+		UnanalyzedTools:        result.UnanalyzedTools,
 	}
 }
 

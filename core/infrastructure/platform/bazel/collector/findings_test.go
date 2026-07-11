@@ -19,12 +19,14 @@ func TestBazelFindingsCollector_NoReports_ReturnsEmpty(t *testing.T) {
 	parser := &fakeFindingsParser{}
 	c := collector.NewBazelFindingsCollector(runner, parser)
 
-	evidences, rawFiles, buildWarning, err := c.CollectFindings(context.Background(), t.TempDir(), []string{"//pkg:lib"}, map[string][]string{"go": {"golangci-lint"}})
+	evidences, rawFiles, buildWarning, unanalyzed, err := c.CollectFindings(context.Background(), t.TempDir(), []string{"//pkg:lib"}, map[string][]string{"go": {"golangci-lint"}})
 
 	require.NoError(t, err)
 	assert.Empty(t, evidences)
 	assert.Empty(t, rawFiles)
 	assert.Empty(t, buildWarning)
+	assert.NotEmpty(t, unanalyzed,
+		"a configured tool that produced no SARIF must be reported as having analyzed nothing, not silently omitted")
 }
 
 func TestBazelFindingsCollector_ParsesReports(t *testing.T) {
@@ -33,7 +35,7 @@ func TestBazelFindingsCollector_ParsesReports(t *testing.T) {
 	parser := &fakeFindingsParser{returnEmpty: true}
 	c := collector.NewBazelFindingsCollector(runner, parser)
 
-	evidences, rawFiles, buildWarning, err := c.CollectFindings(context.Background(), t.TempDir(), []string{"//pkg:lib"}, map[string][]string{"go": {"golangci-lint"}})
+	evidences, rawFiles, buildWarning, _, err := c.CollectFindings(context.Background(), t.TempDir(), []string{"//pkg:lib"}, map[string][]string{"go": {"golangci-lint"}})
 
 	require.NoError(t, err)
 	assert.Len(t, evidences, 1)
@@ -47,7 +49,7 @@ func TestBazelFindingsCollector_NoAspectsForEmptySelection(t *testing.T) {
 	parser := &fakeFindingsParser{}
 	c := collector.NewBazelFindingsCollector(r, parser)
 
-	evidences, rawFiles, buildWarning, err := c.CollectFindings(context.Background(), t.TempDir(), []string{"//pkg:lib"}, map[string][]string{})
+	evidences, rawFiles, buildWarning, _, err := c.CollectFindings(context.Background(), t.TempDir(), []string{"//pkg:lib"}, map[string][]string{})
 
 	require.NoError(t, err)
 	assert.Nil(t, evidences)
@@ -60,7 +62,7 @@ func TestBazelFindingsCollector_RunnerError(t *testing.T) {
 	parser := &fakeFindingsParser{}
 	c := collector.NewBazelFindingsCollector(r, parser)
 
-	_, _, _, err := c.CollectFindings(context.Background(), t.TempDir(), []string{"//pkg:lib"}, map[string][]string{"go": {"golangci-lint"}})
+	_, _, _, _, err := c.CollectFindings(context.Background(), t.TempDir(), []string{"//pkg:lib"}, map[string][]string{"go": {"golangci-lint"}})
 
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "run analysis")
@@ -72,7 +74,7 @@ func TestBazelFindingsCollector_ParserError(t *testing.T) {
 	parser := &fakeFindingsParser{err: fmt.Errorf("parse failed")}
 	c := collector.NewBazelFindingsCollector(r, parser)
 
-	_, _, _, err := c.CollectFindings(context.Background(), t.TempDir(), []string{"//pkg:lib"}, map[string][]string{"go": {"golangci-lint"}})
+	_, _, _, _, err := c.CollectFindings(context.Background(), t.TempDir(), []string{"//pkg:lib"}, map[string][]string{"go": {"golangci-lint"}})
 
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "parse failed")
@@ -83,7 +85,7 @@ func TestBazelFindingsCollector_EmptySARIFData(t *testing.T) {
 	parser := &fakeFindingsParser{}
 	c := collector.NewBazelFindingsCollector(r, parser)
 
-	_, _, _, err := c.CollectFindings(context.Background(), t.TempDir(), []string{"//pkg:lib"}, map[string][]string{"go": {"golangci-lint"}})
+	_, _, _, _, err := c.CollectFindings(context.Background(), t.TempDir(), []string{"//pkg:lib"}, map[string][]string{"go": {"golangci-lint"}})
 
 	require.Error(t, err)
 }
@@ -97,7 +99,7 @@ func TestBazelFindingsCollector_PropagatesBuildWarning(t *testing.T) {
 	parser := &fakeFindingsParser{returnEmpty: true}
 	c := collector.NewBazelFindingsCollector(runner, parser)
 
-	evidences, rawFiles, buildWarning, err := c.CollectFindings(context.Background(), t.TempDir(), []string{"//pkg:lib"}, map[string][]string{"go": {"golangci-lint"}})
+	evidences, rawFiles, buildWarning, _, err := c.CollectFindings(context.Background(), t.TempDir(), []string{"//pkg:lib"}, map[string][]string{"go": {"golangci-lint"}})
 
 	require.NoError(t, err)
 	assert.Len(t, evidences, 1)

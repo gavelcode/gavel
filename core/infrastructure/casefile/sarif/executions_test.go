@@ -27,6 +27,28 @@ func TestParseToolExecutionsSuccess(t *testing.T) {
 	assert.Empty(t, failures)
 }
 
+func TestParseToolExecutionsDegradedOnSuccessfulWarning(t *testing.T) {
+	data := []byte(`{"runs":[{"tool":{"driver":{"name":"ErrorProne"}},"results":[],"invocations":[{"executionSuccessful":true,"toolExecutionNotifications":[{"level":"warning","message":{"text":"13 javac compilation error(s) prevented complete Error Prone analysis; results are incomplete"}}]}]}]}`)
+
+	failures, err := NewParser().ParseToolExecutions(data)
+
+	require.NoError(t, err)
+	require.Len(t, failures, 1)
+	assert.True(t, failures[0].Degraded,
+		"a successful run carrying a warning-level notification is incomplete, not failed, and must not gate the verdict")
+	assert.Contains(t, failures[0].Reason, "results are incomplete")
+}
+
+func TestParseToolExecutionsHardFailureIsNotDegraded(t *testing.T) {
+	data := []byte(`{"runs":[{"tool":{"driver":{"name":"ErrorProne"}},"results":[],"invocations":[{"executionSuccessful":false,"toolExecutionNotifications":[{"level":"error","message":{"text":"Error Prone could not run javac"}}]}]}]}`)
+
+	failures, err := NewParser().ParseToolExecutions(data)
+
+	require.NoError(t, err)
+	require.Len(t, failures, 1)
+	assert.False(t, failures[0].Degraded)
+}
+
 func TestParseToolExecutionsNoInvocations(t *testing.T) {
 	data := []byte(`{"runs":[{"tool":{"driver":{"name":"pmd"}},"results":[]}]}`)
 

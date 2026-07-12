@@ -114,15 +114,29 @@ func (cf *CaseFile) Judge(qualityGate qualitygate.Gate, tracking *tracking.Resul
 }
 
 func (cf *CaseFile) toolExecutionRuling(grouped map[evidence.Subtype]evidence.Content) verdict.Ruling {
-	failures := toolExecutionFailures(grouped)
-	if len(failures) == 0 {
-		return verdict.NewRuling(evidence.SubtypeToolExecution, true, "")
+	var hard, degraded []toolexecution.Failure
+	for _, failed := range toolExecutionFailures(grouped) {
+		if failed.Degraded() {
+			degraded = append(degraded, failed)
+		} else {
+			hard = append(hard, failed)
+		}
 	}
+	if len(hard) > 0 {
+		return verdict.NewRuling(evidence.SubtypeToolExecution, false, toolExecutionReasons(hard))
+	}
+	if len(degraded) > 0 {
+		return verdict.NewRuling(evidence.SubtypeToolExecution, true, "incomplete analysis — "+toolExecutionReasons(degraded))
+	}
+	return verdict.NewRuling(evidence.SubtypeToolExecution, true, "")
+}
+
+func toolExecutionReasons(failures []toolexecution.Failure) string {
 	reasons := make([]string, 0, len(failures))
 	for _, failed := range failures {
 		reasons = append(reasons, fmt.Sprintf("%s: %s", failed.Tool(), failed.Reason()))
 	}
-	return verdict.NewRuling(evidence.SubtypeToolExecution, false, strings.Join(reasons, "; "))
+	return strings.Join(reasons, "; ")
 }
 
 func toolExecutionFailures(grouped map[evidence.Subtype]evidence.Content) []toolexecution.Failure {

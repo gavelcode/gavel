@@ -334,9 +334,54 @@ func TestCaseFileJudgeToolExecutionRulingAlwaysPresent(t *testing.T) {
 	assert.True(t, ruling.Passed())
 }
 
+func TestCaseFileJudgeDoesNotFailOnDegradedToolExecution(t *testing.T) {
+	caseF := mustNewCaseFile(t)
+	require.NoError(t, caseF.AddEvidence(mustCodeQualityEvidenceWithFindings(t, "pmd", testTime, nil), testTime))
+	degraded := mustDegradedFailure(t, "ErrorProne", "13 javac compilation error(s); results are incomplete")
+	require.NoError(t, caseF.AddEvidence(mustToolExecutionEvidence(t, "ErrorProne", testTime, []toolexecution.Failure{degraded}), testTime))
+
+	qGate := mustQualityGate(t, qualitygate.NewZeroTolerance())
+
+	result, err := caseF.Judge(qGate, nil, testTime, nil)
+
+	require.NoError(t, err)
+	assert.Equal(t, "pass", result.Outcome().String(), "an incomplete analysis must not fail the verdict")
+	ruling := findRuling(t, result, evidence.SubtypeToolExecution)
+	assert.True(t, ruling.Passed())
+	assert.Contains(t, ruling.Detail(), "incomplete analysis")
+	assert.Contains(t, ruling.Detail(), "ErrorProne")
+}
+
+func TestCaseFileJudgeFailsWhenHardFailureAccompaniesDegraded(t *testing.T) {
+	caseF := mustNewCaseFile(t)
+	require.NoError(t, caseF.AddEvidence(mustCodeQualityEvidenceWithFindings(t, "pmd", testTime, nil), testTime))
+	failures := []toolexecution.Failure{
+		mustDegradedFailure(t, "ErrorProne", "results are incomplete"),
+		mustFailure(t, "pmd", "could not launch"),
+	}
+	require.NoError(t, caseF.AddEvidence(mustToolExecutionEvidence(t, "java", testTime, failures), testTime))
+
+	qGate := mustQualityGate(t, qualitygate.NewZeroTolerance())
+
+	result, err := caseF.Judge(qGate, nil, testTime, nil)
+
+	require.NoError(t, err)
+	assert.Equal(t, "fail", result.Outcome().String(), "a genuine hard failure must still fail even when a degraded run is present")
+	ruling := findRuling(t, result, evidence.SubtypeToolExecution)
+	assert.False(t, ruling.Passed())
+	assert.Contains(t, ruling.Detail(), "pmd")
+}
+
 func mustFailure(t *testing.T, tool, reason string) toolexecution.Failure {
 	t.Helper()
 	failed, err := toolexecution.NewFailure(tool, reason)
+	require.NoError(t, err)
+	return failed
+}
+
+func mustDegradedFailure(t *testing.T, tool, reason string) toolexecution.Failure {
+	t.Helper()
+	failed, err := toolexecution.NewDegradedFailure(tool, reason)
 	require.NoError(t, err)
 	return failed
 }

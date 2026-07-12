@@ -9,8 +9,9 @@ import (
 )
 
 const (
-	unknownTool = "unknown"
-	errorLevel  = "error"
+	unknownTool  = "unknown"
+	errorLevel   = "error"
+	warningLevel = "warning"
 )
 
 func (*Parser) ParseToolExecutions(data []byte) ([]evidencedto.ToolFailure, error) {
@@ -30,7 +31,17 @@ func (*Parser) ParseToolExecutions(data []byte) ([]evidencedto.ToolFailure, erro
 			toolName = unknownTool
 		}
 		for _, inv := range currentRun.Invocations {
-			if inv.ExecutionSuccessful || isConfigurationOnly(inv) {
+			if inv.ExecutionSuccessful {
+				if reason := degradedReason(inv); reason != "" {
+					failures = append(failures, evidencedto.ToolFailure{
+						Tool:     toolName,
+						Reason:   reason,
+						Degraded: true,
+					})
+				}
+				continue
+			}
+			if isConfigurationOnly(inv) {
 				continue
 			}
 			failures = append(failures, evidencedto.ToolFailure{
@@ -40,6 +51,23 @@ func (*Parser) ParseToolExecutions(data []byte) ([]evidencedto.ToolFailure, erro
 		}
 	}
 	return failures, nil
+}
+
+// degradedReason collects the warning-level execution notifications a tool
+// attaches to a *successful* run — its way of saying "I ran but could only
+// analyze part of this" (e.g. Error Prone on a target whose annotation
+// processors it could not replay). Returns "" when the run was clean.
+func degradedReason(inv invocation) string {
+	var texts []string
+	for _, note := range inv.ToolExecutionNotifications {
+		if !strings.EqualFold(strings.TrimSpace(note.Level), warningLevel) {
+			continue
+		}
+		if text := strings.TrimSpace(note.Message.Text); text != "" {
+			texts = append(texts, text)
+		}
+	}
+	return strings.Join(texts, "; ")
 }
 
 func isConfigurationOnly(inv invocation) bool {

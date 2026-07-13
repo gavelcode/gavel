@@ -1,0 +1,22 @@
+name: Bug report
+description: Something Gavel did wrong on a Bazel workspace.
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you ran, what you expected, what you got.
+    validations: { required: true }
+  - type: textarea
+    id: repro
+    attributes:
+      label: Reproduction
+      description: The `gavel` command, and the relevant `gavel.yaml` / `architecture.yml`.
+      render: shell
+  - type: input
+    id: versions
+    attributes:
+      label: Versions
+      description: "`gavel --version`, Bazel version, OS."
+    validations: { required: true }

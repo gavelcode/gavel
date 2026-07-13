@@ -1,0 +1,46 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 1280px; height: 640px; }
+  body {
+    background: radial-gradient(1200px 720px at 80% -12%, #16223f 0%, #0F1115 56%);
+    color: #F5F7FA;
+    font-family: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+    display: flex; flex-direction: column; justify-content: center;
+    padding: 84px 96px; position: relative; overflow: hidden;
+  }
+  .brand { display: flex; align-items: center; gap: 24px; margin-bottom: 40px; }
+  .brand img { width: 92px; height: 92px; border-radius: 18px; }
+  .brand .name { font-size: 60px; font-weight: 800; letter-spacing: -1px; }
+  h1 { font-size: 78px; line-height: 1.03; font-weight: 800; letter-spacing: -2.5px; }
+  h1 .blue { color: #2F6BFF; }
+  .sub { margin-top: 30px; font-size: 31px; color: #8F989F; font-weight: 500; }
+  .sub .accent { color: #2F6BFF; font-weight: 700; }
+  .chip {
+    position: absolute; top: 74px; right: 96px;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 25px; color: #3fb950;
+    border: 1px solid #21402a; background: #0e2417;
+    padding: 12px 20px; border-radius: 12px; letter-spacing: 0.5px;
+  }
+  .url {
+    position: absolute; bottom: 60px; right: 96px;
+    font-size: 23px; color: #5b6673;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  }
+</style>
+</head>
+<body>
+  <div class="chip">⚖ VERDICT: PASS</div>
+  <div class="brand">
+    <img src="logo/logo-small-dark.svg" alt="" />
+    <span class="name">Gavel</span>
+  </div>
+  <h1>Bazel builds it.<br /><span class="blue">Gavel judges it.</span></h1>
+  <div class="sub">The quality gate for Bazel monorepos — <span class="accent">order in the codebase.</span></div>
+  <div class="url">github.com/gavelcode/gavel</div>
+</body>
+</html>

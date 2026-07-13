@@ -147,6 +147,20 @@ Working today:
 - Analyzers: golangci-lint, PMD, CPD, SpotBugs, Error Prone, Ruff, Bandit, ESLint, Clippy
 - Server (optional): web dashboard, centralized history, team baselines, API-token auth
 
+## Documentation
+
+- [Quickstart](docs/quickstart.md) — from zero to a first verdict in five minutes
+- [Configuration](docs/configuration.md) — `gavel.yaml` and `architecture.yml`, field by field
+- [Baseline & delta](docs/baseline.md) — how new / fixed / existing is decided
+- [Server deployment](docs/deployment.md) — running `gavel-server`
+- [Full documentation index](docs/index.md)
+
+## Contributing
+
+Issues and pull requests are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) and
+our [Code of Conduct](CODE_OF_CONDUCT.md). Security reports go through
+[SECURITY.md](SECURITY.md).
+
 ## License
 
 [Apache License 2.0](LICENSE)

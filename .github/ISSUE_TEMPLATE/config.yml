@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Question or discussion
+    url: https://github.com/gavelcode/gavel/discussions
+    about: Ask how to use Gavel, or propose an idea before filing an issue.
+  - name: Security vulnerability
+    url: https://github.com/gavelcode/gavel/security/advisories/new
+    about: Report privately — please do not open a public issue.

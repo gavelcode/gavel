@@ -1219,3 +1219,21 @@ func TestRun_JudgeHeaderWriteError(t *testing.T) {
 
 	require.Error(t, err)
 }
+
+func TestEmitResults_SummaryOmitsFindingList(t *testing.T) {
+	result := pipeline.Result{
+		Name:    "api",
+		Verdict: "fail",
+		Findings: []evidencedto.Finding{
+			{FilePath: "internal/foo.go", Line: 10, Severity: "error", Message: "boom", Tool: "golangci-lint", RuleID: "errcheck"},
+		},
+	}
+
+	var full, summary bytes.Buffer
+	require.NoError(t, emitResults(&full, []pipeline.Result{result}, Options{}, time.Now()))
+	require.NoError(t, emitResults(&summary, []pipeline.Result{result}, Options{Summary: true}, time.Now()))
+
+	assert.Contains(t, full.String(), "internal/foo.go", "default output lists each finding")
+	assert.NotContains(t, summary.String(), "internal/foo.go", "summary omits the per-finding list")
+	assert.Contains(t, summary.String(), "VERDICT", "summary still shows the verdict")
+}

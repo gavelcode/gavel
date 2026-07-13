@@ -268,11 +268,13 @@ func emitResults(writer io.Writer, results []pipeline.Result, opts Options, star
 	}
 	elapsed := time.Since(startedAt)
 	for _, projResult := range results {
-		if _, err := fmt.Fprint(writer, render.Findings(projResult)); err != nil {
-			return err
-		}
-		if _, err := fmt.Fprint(writer, render.CoverageSummary(projResult)); err != nil {
-			return err
+		if !opts.Summary {
+			if _, err := fmt.Fprint(writer, render.Findings(projResult)); err != nil {
+				return err
+			}
+			if _, err := fmt.Fprint(writer, render.CoverageSummary(projResult)); err != nil {
+				return err
+			}
 		}
 		if _, err := fmt.Fprint(writer, ui.JudgeVerdict(projResult.Verdict, projResult.Name, projResult.FindingsCount, projResult.ViolationsCount, projResult.CoveragePercent, projResult.CoverageSkipped, elapsed)); err != nil {
 			return err

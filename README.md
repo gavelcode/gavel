@@ -5,22 +5,22 @@
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 ![Bazel](https://img.shields.io/badge/bazel-bzlmod-43A047.svg)
 
-**Order in the codebase.** Quality governance for Bazel monorepos.
+**Bazel builds your monorepo. Gavel judges it. Order in the codebase!**
 
-Your monorepo has 12,000 targets across Go, Java, Python, and TypeScript.
-SonarQube doesn't understand the build graph. Worktrees cost 14 GB. You have
-no idea which packages are healthy and which are rotting.
+The quality gate for Bazel monorepos — build-graph-native, local, agent-ready.
 
-Gavel runs static analyzers as Bazel aspects, evaluates quality gates defined
-as code, and tracks progress run over run — per project, per package, across
-the entire monorepo.
+Your monorepo builds green. That's not the same as innocent. Gavel gathers the
+evidence as Bazel aspects, holds every change to the law you set in `gavel.yaml`,
+and returns a verdict: the regression you just introduced stands charged, while a
+decade of existing debt is not on trial. One verdict, handed to your CI, your
+terminal, and your coding agent alike.
 
 ```bash
-gavel init
-gavel judge
+gavel init      # open the case
+gavel judge     # hear it
 ```
 
-![Gavel judging a Bazel monorepo — new findings are blocked while existing debt stays baselined](docs/assets/demo.gif)
+![Gavel judging a Bazel monorepo — a new finding is blocked while a decade of existing debt stays baselined](docs/assets/demo.gif)
 
 ---
 
@@ -29,23 +29,16 @@ gavel judge
 ```sh
 # Homebrew — macOS & Linux
 brew install gavelcode/tap/gavel
-```
 
-```sh
-# Install script — Linux, CI, Docker
+# or the install script — Linux, CI, Docker
 curl -fsSL https://raw.githubusercontent.com/gavelcode/gavel/main/install.sh | sh
 ```
 
-Prebuilt binaries for every platform are on the
-[releases page](https://github.com/gavelcode/gavel/releases).
-
-> [!TIP]
-> Verify the install with `gavel --version`.
+Prebuilt binaries for every platform are on the [releases page](https://github.com/gavelcode/gavel/releases).
+Gavel needs a Bazel **8.0+** (bzlmod) workspace; verify with `gavel --version`.
 
 <details>
 <summary>Build from source</summary>
-
-Requires a Bazel (bzlmod) workspace.
 
 ```sh
 bazel build //apps/cli/cmd/gavel
@@ -54,20 +47,26 @@ bazel build //apps/cli/cmd/gavel
 
 </details>
 
-## What it does
+## How it works
 
-**Runs analysis inside Bazel.** Analyzers (PMD, SpotBugs, Error Prone,
-golangci-lint, Ruff, Bandit, ESLint) execute as build aspects — they see the
-same source tree, dependency graph, and configuration that Bazel sees.
+*Every change gets its day in court.*
 
-**Normalizes everything to SARIF.** Every analyzer produces findings in a
-single format. No more per-tool output parsing.
+### 1. The evidence comes from the build graph
 
-**Evaluates quality gates as code.** `gavel.yaml` defines thresholds
-per severity, coverage minimums, and architecture violation limits — all
-per project. Thresholds evaluate only **new** findings and violations
-compared to the baseline, so adopting Gavel on existing code never blocks
-on legacy debt:
+Analyzers — golangci-lint, PMD, CPD, SpotBugs, Error Prone, Ruff, Bandit,
+ESLint, Clippy — run as Bazel **aspects**. They see the exact source tree,
+dependency graph, and toolchains Bazel already resolves; no separate scanner, no
+second config to drift. SonarQube re-scans the world; Gavel looks only at the
+targets the graph says changed (`--affected`), so a run stays fast as the
+monorepo grows. Every tool, every language, normalized to one format: **SARIF**.
+
+### 2. You're only tried for what you changed
+
+`gavel.yaml` **is** the quality gate — code, reviewed and versioned with the
+repo, not clicked into a web UI. It evaluates only what you just added against a
+committed baseline: new findings, coverage regressions, new architecture
+violations. Adopt Gavel on ten years of debt and it blocks on today's diff,
+never on the backlog.
 
 ```yaml
 projects:
@@ -76,75 +75,77 @@ projects:
     tooling:
       go: [golangci-lint, archtest]
     quality_gate:
-      findings:
-        max_error: 0
-      coverage:
-        min: 80
-      architecture_violations:
-        max: 0
+      findings: { max_error: 0 }
+      coverage: { min: 80 }
+      architecture_violations: { max: 0 }
 ```
 
-**Shows what's wrong, not just that something is wrong.** Terminal output
-lists every finding grouped by file, sorted by line, with severity coloring
-and tool:rule references. Architecture violations shown separately.
-
-**Tracks progress.** Each run saves a fingerprint-based snapshot. Next run
-shows the delta: new findings, fixed findings, coverage trend. No server
-required — progress is visible from day one.
+Every run saves a fingerprint snapshot; the next shows the delta — new, fixed,
+existing — plus the coverage trend. No server required.
 
 ```
-  payments
-    src/api/handler.go
-        42  error    null check missing              PMD:NullCheck  NEW
-        18  warning  exposed field                   SpotBugs:EI_EXPOSE
+  payments/api/handler.go:42  error  null check missing  golangci-lint:nilerr  NEW
 
-  42 findings (↓5 since last run)
-  coverage: 73.5% (↑5.0%)
-  3 new · 8 fixed · 31 existing
+  ⚖  VERDICT: FAIL — code_quality
+     1 new · 8 fixed · 31 existing        coverage 73.5% (↑5.0%)        architecture PASS
 ```
 
-**Validates architecture.** Define layer/dependency rules in
-`.gavel/architecture.yml` and an archtest aspect enforces them on every
-`gavel judge` run — new violations block the gate just like findings.
+### 3. A verdict your coding agent can request
 
-## Why not SonarQube?
+Coding agents write code they can't see the consequences of — a lint regression,
+a coverage drop, a layering violation land three commits later in CI. `gavel mcp`
+starts a [Model Context Protocol](https://modelcontextprotocol.io) server that
+exposes `judge`, `lint_file`, `findings`, `coverage`, and `arch` as tools. Point
+Claude Code, Cursor, or Zed at it and the agent checks its own work against the
+same Bazel-aware gate **as it writes** — a quality conscience, inline.
+
+For editors and dashboards, `gavel watch` re-analyzes on every save and emits a
+JSONL event stream. Both run fully local — no server, no network.
+
+## Gavel vs SonarQube: the case
 
 | | SonarQube | Gavel |
 |---|---|---|
-| Build graph awareness | None | Bazel aspects understand target dependencies |
-| Monorepo support | Single project or branch-per-project | Hierarchical: per-package, per-project, whole repo |
+| Build-graph awareness | None | Bazel aspects understand target dependencies |
+| Monorepo model | One project, or a branch per project | Hierarchical: per-package, per-project, whole repo |
 | Analysis scope | Full scan or file diff | Bazel-aware: changed files + affected targets |
-| Local workflow | Requires server round-trip | Fully local, zero network |
-| Quality gate | Web UI configuration | Code (`gavel.yaml`), versioned with the repo |
-| Progress tracking | Requires server | Local snapshots, no infrastructure |
-| Setup | Java server + database + scanner | Single Go binary, runs inside Bazel |
+| Local workflow | Server round-trip | Fully local, zero network |
+| Coding-agent / editor loop | — | MCP server + `watch` event stream |
+| Quality gate | Web-UI config | Code (`gavel.yaml`), versioned with the repo |
+| Progress tracking | Server-backed | Local fingerprint snapshots, no infrastructure |
+| Footprint | Java server + database + scanner | One static Go binary, runs inside Bazel |
 
-Gavel is not a SonarQube replacement. SonarQube is a mature platform with
-15 years of rule development. Gavel solves the problem SonarQube cannot:
-health observability at Bazel monorepo scale, where the build graph is the
-unit of analysis.
+SonarQube is a mature platform with fifteen years of rules behind it, and Gavel
+isn't trying to replace it. Gavel answers a question SonarQube structurally
+can't: *which packages of my Bazel monorepo are healthy, and did this change
+make one of them worse* — where the build graph is the unit of analysis and the
+inner loop is where quality is actually won.
+
+> **Already running [aspect's rules_lint](https://github.com/aspect-build/rules_lint)?**
+> Keep it. Gavel reads the SARIF it drops in `bazel-bin/`
+> (`gavel judge --findings-source=rules_lint`) and turns those reports into a
+> gate — baseline delta, coverage, architecture, verdict — the layer rules_lint
+> deliberately leaves to you.
 
 ## Status
 
-> **Alpha — v0.1.0** — under active development. APIs and config formats may change.
+> **Alpha — v0.1.0.** Under active development; APIs and config formats may change.
+> Gavel gates its own repository on every commit — it is its own first user.
 
 Working today:
 
-- `gavel init` — scaffolds config + Bazel integration
-- `gavel judge` — runs analysis, evaluates quality gates, shows findings
-- `gavel judge --project <name>` — scoped to a single project
-- `gavel judge --json` — structured output for CI
+- `gavel init` — scaffold config + Bazel integration
+- `gavel judge` — analyze, evaluate the gate, show findings and the delta
+- `gavel judge --project <name>` · `--quick` · `--summary` · `--affected` — scope and shape the run
 - `gavel judge --absolute` — evaluate all findings (release gates, nightly)
-- `gavel judge --findings-source=rules_lint` — read pre-existing SARIF from `bazel-bin/` instead of running Gavel's own aspects (auto-detected when omitted)
-- `gavel judge --server URL --token TOKEN` — fetch baseline from server, submit results back
-- `gavel validate` — checks Bazel integration health
-- `gavel judge --affected` — scope analysis to targets affected by changed files
-- `gavel judge --output-sarif report.sarif` — export SARIF 2.1.0 for IDEs and GitHub Code Scanning
-- `gavel watch` — re-analyzes on file changes, emitting a JSONL event stream
-- `gavel mcp` — Model Context Protocol server for editor/agent integration
-- Baseline mode (default): fingerprint-based new/fixed/existing classification, committed to git for team sharing
+- `gavel judge --json` · `--output-sarif report.sarif` — structured output for CI, IDEs, GitHub Code Scanning
+- `gavel judge --server URL --token TOKEN` — shared team baseline: fetch and submit
+- `gavel watch` — re-analyze on change, emitting a JSONL event stream
+- `gavel mcp` — Model Context Protocol server for editor / agent integration
+- `gavel validate` — check Bazel integration health
+- Baseline mode (default): fingerprint-based new/fixed/existing classification, committed to git for the team
 - Analyzers: golangci-lint, PMD, CPD, SpotBugs, Error Prone, Ruff, Bandit, ESLint, Clippy
-- Server: web dashboard, centralized history, team baselines, API token auth
+- Server (optional): web dashboard, centralized history, team baselines, API-token auth
 
 ## License
 

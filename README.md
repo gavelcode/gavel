@@ -20,6 +20,8 @@ gavel init
 gavel judge
 ```
 
+![Gavel judging a Bazel monorepo — new findings are blocked while existing debt stays baselined](docs/assets/demo.gif)
+
 ---
 
 ## Install

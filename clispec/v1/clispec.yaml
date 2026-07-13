@@ -76,6 +76,10 @@ commands:
         short: q
         default: false
         description: Run findings only, skip coverage and architecture checks.
+      summary:
+        type: bool
+        default: false
+        description: Print only the verdict, delta, and rulings; omit the per-finding list.
       absolute:
         type: bool
         default: false

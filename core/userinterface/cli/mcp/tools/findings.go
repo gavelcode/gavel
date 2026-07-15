@@ -117,7 +117,7 @@ func renderFindings(filtered, shown []lintFinding, limit int) string {
 	}
 
 	if len(filtered) > limit {
-		fmt.Fprintf(&builder, "\nShowing %d of %d. Narrow with rule= or severity=, or raise limit=.\n", limit, len(filtered))
+		fmt.Fprintf(&builder, "\nShowing %d of %d — the counts above are complete; the list is a sample. Filter with rule=/severity=, raise limit=, or use gavel_judge for a per-directory breakdown.\n", limit, len(filtered))
 	}
 	return builder.String()
 }

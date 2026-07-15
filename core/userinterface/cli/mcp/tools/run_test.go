@@ -471,3 +471,45 @@ func TestFormatTrendsOutput_NoCoverage(t *testing.T) {
 	assert.NotContains(t, result, "Coverage:")
 	assert.Contains(t, result, "Findings:")
 }
+
+func fakeCLICapturingArgs(t *testing.T, jsonOutput string) (*executor.CLI, func() string) {
+	t.Helper()
+	tmpDir := t.TempDir()
+	argsFile := filepath.Join(tmpDir, "args")
+	script := filepath.Join(tmpDir, "fake-gavel")
+	content := "#!/bin/sh\necho \"$@\" > " + argsFile + "\ncat <<'ENDJSON'\n" + jsonOutput + "\nENDJSON\n"
+	require.NoError(t, os.WriteFile(script, []byte(content), 0o755))
+	read := func() string {
+		b, _ := os.ReadFile(argsFile)
+		return string(b)
+	}
+	return executor.NewWithBinary(script, tmpDir), read
+}
+
+func TestRunFindings_PassesNoBaselineUpdate(t *testing.T) {
+	cli, args := fakeCLICapturingArgs(t, `{"projects":[]}`)
+	_, err := runFindings(context.Background(), cli, FindingsInput{})
+	require.NoError(t, err)
+	assert.Contains(t, args(), "--no-baseline-update")
+}
+
+func TestRunLintFile_PassesNoBaselineUpdate(t *testing.T) {
+	cli, args := fakeCLICapturingArgs(t, `{"projects":[]}`)
+	_, err := runLintFile(context.Background(), cli, LintFileInput{File: "main.go"})
+	require.NoError(t, err)
+	assert.Contains(t, args(), "--no-baseline-update")
+}
+
+func TestRunCoverage_PassesNoBaselineUpdate(t *testing.T) {
+	cli, args := fakeCLICapturingArgs(t, `{"projects":[]}`)
+	_, err := runCoverage(context.Background(), cli, CoverageInput{})
+	require.NoError(t, err)
+	assert.Contains(t, args(), "--no-baseline-update")
+}
+
+func TestRunArch_PassesNoBaselineUpdate(t *testing.T) {
+	cli, args := fakeCLICapturingArgs(t, `{"projects":[]}`)
+	_, err := runArch(context.Background(), cli, ArchInput{})
+	require.NoError(t, err)
+	assert.Contains(t, args(), "--no-baseline-update")
+}

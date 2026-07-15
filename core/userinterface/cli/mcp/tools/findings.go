@@ -24,6 +24,7 @@ type FindingsInput struct {
 
 func RegisterFindings(server *mcp.Server, cli *executor.CLI) {
 	mcp.AddTool(server, &mcp.Tool{
+		Annotations: &mcp.ToolAnnotations{ReadOnlyHint: true},
 		Name:        "gavel_findings",
 		Description: "Discover every lint finding across a project in one call. Runs a quick analysis (findings only, no coverage), returns a by-rule summary plus a flat file:line list with gate-blocking NEW findings sorted first. Filter by project, rule, or severity.",
 	}, func(ctx context.Context, req *mcp.CallToolRequest, input FindingsInput) (*mcp.CallToolResult, any, error) {
@@ -36,7 +37,7 @@ func RegisterFindings(server *mcp.Server, cli *executor.CLI) {
 }
 
 func runFindings(ctx context.Context, cli *executor.CLI, input FindingsInput) (string, error) {
-	args := []string{"judge", "--quick"}
+	args := []string{"judge", "--quick", "--no-baseline-update"}
 	if input.Project != "" {
 		args = append(args, "--project", input.Project)
 	}

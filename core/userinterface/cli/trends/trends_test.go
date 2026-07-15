@@ -111,6 +111,24 @@ func sampleItems() []caseFileItem {
 	}
 }
 
+func TestTrends_ServerUnreachableGivesActionableError(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(http.ResponseWriter, *http.Request) {}))
+	unreachable := srv.URL
+	srv.Close()
+
+	cmd := trends.NewCommand()
+	var buf bytes.Buffer
+	cmd.SetOut(&buf)
+	cmd.SetErr(&buf)
+	cmd.SetArgs([]string{"--server", unreachable, "--project", "core", "--token", "test-token"})
+
+	err := cmd.Execute()
+
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "could not reach Gavel server")
+	assert.Contains(t, err.Error(), unreachable)
+}
+
 func TestTrends_TableOutput(t *testing.T) {
 	srv := trendServer(t, sampleItems())
 	defer srv.Close()

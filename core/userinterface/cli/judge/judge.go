@@ -402,44 +402,9 @@ func runProject(
 		return pipeline.Result{}, err
 	}
 
-	if interactive {
-		spinner := ui.NewSpinnerWithMessage(writer, "collecting evidence")
-		go spinner.Run()
-		collected, err := deps.collectEvH.Execute(ctx, collectCmd)
-		spinner.Stop()
-		if err != nil {
-			return pipeline.Result{}, err
-		}
-		if collected.BuildWarning != "" {
-			deps.log.Warn("bazel build had partial failures", "detail", collected.BuildWarning)
-		}
-
-		spinner = ui.NewSpinnerWithMessage(writer, "evaluating quality gate")
-		go spinner.Run()
-		result, err := pipeline.RunProject(ctx, pipeline.Deps{
-			Log:          deps.log,
-			Submit:       deps.submitH,
-			Findings:     deps.findings,
-			Coverage:     deps.coverage,
-			ServerClient: deps.serverClient,
-		}, workspace, collected, tenantID, project.ID, project.Name, commitSHA, branch, startedAt, pipeline.Options{
-			Quick:            opts.Quick,
-			Absolute:         opts.Absolute,
-			NoBaselineUpdate: opts.NoBaselineUpdate,
-			RequireSubmit:    opts.RequireSubmit,
-			PRNumber:         opts.PRNumber,
-			PRTitle:          opts.PRTitle,
-			PRAuthor:         opts.PRAuthor,
-			PRBranch:         opts.PRBranch,
-			Gavelspace:       opts.Gavelspace,
-			TargetPattern:    project.TargetPattern,
-			Workspace:        workspace,
-		})
-		spinner.Stop()
-		return result, err
-	}
-
-	collected, err := deps.collectEvH.Execute(ctx, collectCmd)
+	collected, err := withSpinner(writer, interactive, "collecting evidence", func() (collectevidence.Result, error) {
+		return deps.collectEvH.Execute(ctx, collectCmd)
+	})
 	if err != nil {
 		return pipeline.Result{}, err
 	}
@@ -447,13 +412,14 @@ func runProject(
 		deps.log.Warn("bazel build had partial failures", "detail", collected.BuildWarning)
 	}
 
-	return pipeline.RunProject(ctx, pipeline.Deps{
+	pipeDeps := pipeline.Deps{
 		Log:          deps.log,
 		Submit:       deps.submitH,
 		Findings:     deps.findings,
 		Coverage:     deps.coverage,
 		ServerClient: deps.serverClient,
-	}, workspace, collected, tenantID, project.ID, project.Name, commitSHA, branch, startedAt, pipeline.Options{
+	}
+	pipeOpts := pipeline.Options{
 		Quick:            opts.Quick,
 		Absolute:         opts.Absolute,
 		NoBaselineUpdate: opts.NoBaselineUpdate,
@@ -465,5 +431,19 @@ func runProject(
 		Gavelspace:       opts.Gavelspace,
 		TargetPattern:    project.TargetPattern,
 		Workspace:        workspace,
+	}
+	return withSpinner(writer, interactive, "evaluating quality gate", func() (pipeline.Result, error) {
+		return pipeline.RunProject(ctx, pipeDeps, workspace, collected, tenantID, project.ID, project.Name, commitSHA, branch, startedAt, pipeOpts)
 	})
+}
+
+func withSpinner[T any](writer io.Writer, interactive bool, message string, operation func() (T, error)) (T, error) {
+	if !interactive {
+		return operation()
+	}
+	spinner := ui.NewSpinnerWithMessage(writer, message)
+	go spinner.Run()
+	result, err := operation()
+	spinner.Stop()
+	return result, err
 }

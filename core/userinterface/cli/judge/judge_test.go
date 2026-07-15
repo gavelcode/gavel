@@ -91,6 +91,25 @@ func newTestDeps(findingsParser ingestfind.Parser, coverageParser ingestcov.Pars
 	}
 }
 
+func TestWithSpinner_NonInteractiveRunsFn(t *testing.T) {
+	got, err := withSpinner(io.Discard, false, "x", func() (int, error) { return 7, nil })
+	require.NoError(t, err)
+	assert.Equal(t, 7, got)
+}
+
+func TestWithSpinner_InteractiveRunsFnAndReturnsValue(t *testing.T) {
+	var buf bytes.Buffer
+	got, err := withSpinner(&buf, true, "working", func() (string, error) { return "ok", nil })
+	require.NoError(t, err)
+	assert.Equal(t, "ok", got)
+}
+
+func TestWithSpinner_PropagatesError(t *testing.T) {
+	_, err := withSpinner(io.Discard, false, "x", func() (int, error) { return 0, errors.New("boom") })
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "boom")
+}
+
 func TestResolveConfigPath_ExplicitOverride(t *testing.T) {
 	got := resolveConfigPath("/custom/gavel.yaml", "/some/workspace")
 	assert.Equal(t, "/custom/gavel.yaml", got)

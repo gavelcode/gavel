@@ -155,7 +155,9 @@ func (h *Handler) Execute(ctx context.Context, cmd Command) (Result, error) {
 	var delta Delta
 	if !cmd.Absolute() {
 		delta = computeDelta(project, caseFile.Branch(), fingerprints, cmd.ArchDelta())
-		updateBaseline(ctx, h.projects, project, caseFile.Branch(), verdictView.Outcome, fingerprints, archIDs, cmd.Quick(), coveragePercent, cmd.FileCoverage(), h.log)
+		if !cmd.NoBaselineUpdate() {
+			updateBaseline(ctx, h.projects, project, caseFile.Branch(), verdictView.Outcome, fingerprints, archIDs, cmd.Quick(), coveragePercent, cmd.FileCoverage(), h.log)
+		}
 	}
 
 	counters := buildCounters(caseFile.Evidences(), fingerprints, trackingPtr, delta)

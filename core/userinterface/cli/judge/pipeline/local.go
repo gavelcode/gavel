@@ -37,6 +37,7 @@ func RunLocal(
 	if err != nil {
 		return Result{}, err
 	}
+	cmd = cmd.WithoutBaselineUpdate(opts.NoBaselineUpdate)
 
 	res, err := deps.Submit.Execute(ctx, cmd)
 	if err != nil {

@@ -19,6 +19,7 @@ type Options struct {
 	FindingsSource string
 	Gavelspace string
 	JSONOutput bool
+	NoBaselineUpdate bool
 	OutputSARIF string
 	PRAuthor string
 	PRBranch string
@@ -45,6 +46,7 @@ func RegisterFlags(cmd *cobra.Command, opts *Options) {
 	cmd.Flags().StringVar(&opts.FindingsSource, "findings-source", "", "Findings source: auto, gavel, or rules_lint. Defaults to workspace config value if not set.")
 	cmd.Flags().StringVar(&opts.Gavelspace, "gavelspace", "", "Associate analysis with a gavelspace (multi-repo group).")
 	cmd.Flags().BoolVar(&opts.JSONOutput, "json", false, "Output results as JSON.")
+	cmd.Flags().BoolVar(&opts.NoBaselineUpdate, "no-baseline-update", false, "Evaluate the delta but do not persist any baseline changes. Used by read-only tooling; the normal gate still updates the baseline.")
 	cmd.Flags().StringVar(&opts.OutputSARIF, "output-sarif", "", "Write merged SARIF 2.1.0 report to the specified file path.")
 	cmd.Flags().StringVar(&opts.PRAuthor, "pr-author", "", "Pull request author.")
 	cmd.Flags().StringVar(&opts.PRBranch, "pr-branch", "", "Pull request source branch.")

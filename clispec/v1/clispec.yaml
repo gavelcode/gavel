@@ -84,6 +84,11 @@ commands:
         type: bool
         default: false
         description: Evaluate quality gate on total findings, ignoring baseline.
+      no-baseline-update:
+        type: bool
+        default: false
+        field: NoBaselineUpdate
+        description: Evaluate the delta but do not persist any baseline changes. Used by read-only tooling; the normal gate still updates the baseline.
       affected:
         type: bool
         default: false

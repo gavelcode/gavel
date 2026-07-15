@@ -10,18 +10,19 @@ import (
 )
 
 type Command struct {
-	tenantID     string
-	projectID    string
-	commitSHA    string
-	branch       string
-	evidences    []evidencedto.Evidence
-	fingerprints []string
-	archIDs      []string
-	archDelta    finalize.ArchDeltaInput
-	fileCoverage []evidencedto.FileCoverage
-	quick        bool
-	absolute     bool
-	startedAt    time.Time
+	tenantID         string
+	projectID        string
+	commitSHA        string
+	branch           string
+	evidences        []evidencedto.Evidence
+	fingerprints     []string
+	archIDs          []string
+	archDelta        finalize.ArchDeltaInput
+	fileCoverage     []evidencedto.FileCoverage
+	quick            bool
+	absolute         bool
+	noBaselineUpdate bool
+	startedAt        time.Time
 }
 
 func NewCommand(
@@ -72,4 +73,10 @@ func (c Command) ArchDelta() finalize.ArchDeltaInput       { return c.archDelta 
 func (c Command) FileCoverage() []evidencedto.FileCoverage { return c.fileCoverage }
 func (c Command) Quick() bool                              { return c.quick }
 func (c Command) Absolute() bool                           { return c.absolute }
-func (c Command) StartedAt() time.Time                     { return c.startedAt }
+func (c Command) NoBaselineUpdate() bool                   { return c.noBaselineUpdate }
+
+func (c Command) WithoutBaselineUpdate(skip bool) Command {
+	c.noBaselineUpdate = skip
+	return c
+}
+func (c Command) StartedAt() time.Time { return c.startedAt }

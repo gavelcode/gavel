@@ -40,7 +40,7 @@ func run(cmd *cobra.Command, resolveWorkspace WorkspaceResolver, verifier Struct
 
 	issues, err := verifier.VerifyStructure(workspace)
 	if err != nil {
-		return fmt.Errorf("verify structure: %writer", err)
+		return fmt.Errorf("verify structure: %w", err)
 	}
 
 	if len(issues) == 0 {

@@ -64,7 +64,7 @@ func (h *Handler) Execute(ctx context.Context, query Query) (Result, error) {
 	if query.ProjectFilter() != "" {
 		filtered := filterByName(projects, query.ProjectFilter())
 		if len(filtered) == 0 {
-			return Result{}, fmt.Errorf("%w: project %query not found in config", ErrInvalidQuery, query.ProjectFilter())
+			return Result{}, fmt.Errorf("%w: project %q not found in config", ErrInvalidQuery, query.ProjectFilter())
 		}
 		projects = filtered
 	}

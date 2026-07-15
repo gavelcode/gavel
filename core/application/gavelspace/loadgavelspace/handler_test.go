@@ -189,6 +189,8 @@ func TestExecute_FilterNotFoundReturnsError(t *testing.T) {
 
 	_, err = h.Execute(context.Background(), q)
 	assert.ErrorIs(t, err, loadgavelspace.ErrInvalidQuery)
+	assert.Contains(t, err.Error(), `project "nonexistent" not found in config`)
+	assert.NotContains(t, err.Error(), `"nonexistent"uery`)
 }
 
 func TestNewHandlerPanicsOnNilFinder(t *testing.T) {

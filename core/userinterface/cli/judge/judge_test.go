@@ -462,6 +462,7 @@ func TestRun_LoadConfigError(t *testing.T) {
 
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "load config")
+	assert.NotContains(t, err.Error(), "riter")
 }
 
 func TestRun_GitInfoError(t *testing.T) {
@@ -484,6 +485,7 @@ func TestRun_GitInfoError(t *testing.T) {
 
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "no git")
+	assert.NotContains(t, err.Error(), "riter")
 }
 
 func TestRun_OutputSARIF(t *testing.T) {
@@ -540,7 +542,7 @@ func TestRun_TargetFileResolvesOwner(t *testing.T) {
 	proj := newProject(t, "core", "//core/...")
 	gs := newGavelspace(t, "test")
 	dependencies := newRunDeps(t, fakeFinder{gavelspace: gs, projects: []projectmodel.Project{proj}})
-	dependencies.targetResolver = &stubTargetResolver{ownerTarget: "//core:lib"}
+	dependencies.targetResolver = &stubTargetResolver{ownerTarget: "//core/lib:lib"}
 
 	workspace := t.TempDir()
 	writeGavelConfig(t, workspace)
@@ -577,6 +579,34 @@ func TestRun_TargetFileResolverError(t *testing.T) {
 
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "find owner target")
+}
+
+func TestRun_TargetFileSkipsNonOwningProject(t *testing.T) {
+	core := newProject(t, "core", "//core/...")
+	web := newProject(t, "web", "//apps/web/...")
+	gs := newGavelspace(t, "test")
+	dependencies := newRunDeps(t, fakeFinder{gavelspace: gs, projects: []projectmodel.Project{core, web}})
+	dependencies.targetResolver = &stubTargetResolver{ownerTarget: "//core/foo:bar"}
+
+	workspace := t.TempDir()
+	writeGavelConfig(t, workspace)
+	dependencies.resolveWorkspace = func() (string, error) { return workspace, nil }
+
+	cmd := NewCommand(dependencies.findings, dependencies.coverage, dependencies.submitH, dependencies.collectEvH, dependencies.loadWorkspace,
+		dependencies.projectRepo, dependencies.fpSeeder, dependencies.resolveWorkspace, dependencies.source, dependencies.validate, dependencies.log, nil, dependencies.targetResolver)
+	var buf bytes.Buffer
+	cmd.SetOut(&buf)
+	cmd.SetErr(&buf)
+	cmd.SetArgs([]string{"--target-file=core/foo.go", "--json"})
+
+	err := cmd.Execute()
+	require.NoError(t, err)
+
+	var got map[string]any
+	require.NoError(t, json.Unmarshal(buf.Bytes(), &got))
+	projects := got["projects"].([]any)
+	require.Len(t, projects, 1)
+	assert.Equal(t, "core", projects[0].(map[string]any)["name"])
 }
 
 func TestRun_AffectedResolvesTargets(t *testing.T) {

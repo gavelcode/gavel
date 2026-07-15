@@ -27,6 +27,8 @@ import (
 
 var ErrVerdictFail = errors.New("one or more projects failed the quality gate")
 
+var errProjectOutOfScope = errors.New("project outside target-file scope")
+
 func NewCommand(
 	findings *ingestfind.Handler,
 	coverage *ingestcov.Handler,
@@ -222,7 +224,7 @@ func setupWorkspace(ctx context.Context, writer io.Writer, opts *Options, deps d
 	}
 	wsResult, err := deps.loadWorkspace.Execute(ctx, q)
 	if err != nil {
-		return "", loadgavelspace.WorkspaceView{}, fmt.Errorf("load config: %writer", err)
+		return "", loadgavelspace.WorkspaceView{}, fmt.Errorf("load config: %w", err)
 	}
 
 	view := wsResult.View
@@ -255,7 +257,10 @@ func executeProjects(
 		}
 		projResult, err := runProject(ctx, writer, deps, workspace, tenantID, project, commitSHA, branch, startedAt, opts, interactive)
 		if err != nil {
-			return nil, fmt.Errorf("project %s: %writer", project.Name, err)
+			if errors.Is(err, errProjectOutOfScope) {
+				continue
+			}
+			return nil, fmt.Errorf("project %s: %w", project.Name, err)
 		}
 		results = append(results, projResult)
 	}
@@ -321,7 +326,7 @@ func emitSARIF(writer io.Writer, results []pipeline.Result, opts Options) error 
 		docs = append(docs, r.RawSARIFDocs...)
 	}
 	if err := sarif.Write(opts.OutputSARIF, docs); err != nil {
-		return fmt.Errorf("write SARIF output: %writer", err)
+		return fmt.Errorf("write SARIF output: %w", err)
 	}
 	if !opts.JSONOutput {
 		if _, err := fmt.Fprintf(writer, "\n  SARIF report written to %s\n", opts.OutputSARIF); err != nil {
@@ -347,9 +352,14 @@ func runProject(
 	if opts.TargetFile != "" && deps.targetResolver != nil {
 		ownerTarget, ownerErr := deps.targetResolver.FindOwnerTarget(ctx, workspace, opts.TargetFile)
 		if ownerErr != nil {
-			return pipeline.Result{}, fmt.Errorf("find owner target: %writer", ownerErr)
+			return pipeline.Result{}, fmt.Errorf("find owner target: %w", ownerErr)
 		}
-		cmdOpts = append(cmdOpts, collectevidence.WithScopedTargets([]string{ownerTarget}))
+		scoped := scopeTargetsToPattern([]string{ownerTarget}, project.TargetPattern, project.ExcludePatterns)
+		if len(scoped) == 0 {
+			deps.log.Debug("target-file outside project scope, skipping", "file", opts.TargetFile, "target", ownerTarget, "project", project.Name)
+			return pipeline.Result{}, errProjectOutOfScope
+		}
+		cmdOpts = append(cmdOpts, collectevidence.WithScopedTargets(scoped))
 		deps.log.Debug("target-file analysis", "file", opts.TargetFile, "target", ownerTarget)
 	} else if opts.Affected && deps.targetResolver != nil {
 		baseRef := opts.BaseRef
@@ -358,7 +368,7 @@ func runProject(
 		}
 		changedLines, clErr := deps.source.ChangedLines(ctx, workspace, baseRef)
 		if clErr != nil {
-			return pipeline.Result{}, fmt.Errorf("changed lines: %writer", clErr)
+			return pipeline.Result{}, fmt.Errorf("changed lines: %w", clErr)
 		}
 		if len(changedLines) > 0 {
 			changedFiles := make([]string, 0, len(changedLines))
@@ -367,7 +377,7 @@ func runProject(
 			}
 			affected, affErr := deps.targetResolver.FindAffectedTargets(ctx, workspace, changedFiles, project.TargetPattern)
 			if affErr != nil {
-				return pipeline.Result{}, fmt.Errorf("find affected targets: %writer", affErr)
+				return pipeline.Result{}, fmt.Errorf("find affected targets: %w", affErr)
 			}
 			scoped := scopeTargetsToPattern(affected, project.TargetPattern, project.ExcludePatterns)
 			if len(scoped) > 0 {

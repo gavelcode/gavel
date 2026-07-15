@@ -151,6 +151,34 @@ func TestExecuteUpdatesBaselineWhenVerdictPasses(t *testing.T) {
 	assert.InDelta(t, 85.0, *baseline.CoveragePercent(), 0.001)
 }
 
+func TestExecuteWithoutBaselineUpdateSkipsPersistButKeepsDelta(t *testing.T) {
+	cfRepo := newFakeCaseFileRepo()
+	projRepo := newFakeProjectRepo()
+
+	project := mustProject(t, "test", "test", "//test/...")
+	prevPct := 80.0
+	project.UpdateBaseline("main", []string{"fp-old"}, nil, &prevPct, nil)
+	projRepo.seed(project)
+
+	caseF := mustCaseFileWithCoverage(t, project.ID(), "main", []string{"fp-1"}, 85.0)
+	require.NoError(t, cfRepo.Save(context.Background(), caseF))
+
+	handler := newHandler(cfRepo, projRepo)
+
+	cmd, err := finalize.NewCommand(testTenant.String(), caseF.ID().String(),
+		finalize.WithFingerprints([]string{"fp-1"}),
+		finalize.WithoutBaselineUpdate(true),
+	)
+	require.NoError(t, err)
+
+	result, err := handler.Execute(context.Background(), cmd)
+	require.NoError(t, err)
+
+	require.NotNil(t, result.Delta.PreviousCoveragePercent)
+	assert.InDelta(t, 80.0, *result.Delta.PreviousCoveragePercent, 0.001)
+	assert.Empty(t, projRepo.saved)
+}
+
 func TestExecuteSeedsBaselineOnFirstFailure(t *testing.T) {
 	cfRepo := newFakeCaseFileRepo()
 	projRepo := newFakeProjectRepo()

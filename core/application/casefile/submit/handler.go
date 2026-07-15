@@ -59,6 +59,7 @@ func (h *Handler) Execute(ctx context.Context, cmd Command) (Result, error) {
 		finalize.WithFileCoverage(toFileCoverageEntries(cmd.FileCoverage())),
 		finalize.WithQuick(cmd.Quick()),
 		finalize.WithAbsolute(cmd.Absolute()),
+		finalize.WithoutBaselineUpdate(cmd.NoBaselineUpdate()),
 	)
 	if err != nil {
 		return Result{}, fmt.Errorf("finalize: %w", err)

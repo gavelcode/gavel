@@ -28,6 +28,7 @@ type Command struct {
 	archDelta          ArchDeltaInput
 	quick              bool
 	absolute           bool
+	noBaselineUpdate   bool
 	precomputedVerdict *PrecomputedVerdict
 	fileCoverage       []projectmodel.FileCoverageEntry
 }
@@ -76,6 +77,10 @@ func WithAbsolute(a bool) Option {
 	return func(c *Command) { c.absolute = a }
 }
 
+func WithoutBaselineUpdate(skip bool) Option {
+	return func(c *Command) { c.noBaselineUpdate = skip }
+}
+
 func WithFileCoverage(fc []projectmodel.FileCoverageEntry) Option {
 	return func(c *Command) { c.fileCoverage = fc }
 }
@@ -91,5 +96,6 @@ func (c Command) ArchIDs() []string                              { return c.arch
 func (c Command) ArchDelta() ArchDeltaInput                      { return c.archDelta }
 func (c Command) Quick() bool                                    { return c.quick }
 func (c Command) Absolute() bool                                 { return c.absolute }
+func (c Command) NoBaselineUpdate() bool                         { return c.noBaselineUpdate }
 func (c Command) FileCoverage() []projectmodel.FileCoverageEntry { return c.fileCoverage }
 func (c Command) PrecomputedVerdict() *PrecomputedVerdict        { return c.precomputedVerdict }

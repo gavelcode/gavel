@@ -154,6 +154,9 @@ func formatJudgeOutput(output []byte, exitCode int) (string, error) {
 					marker = "  " + statusNewLabel
 				}
 				fmt.Fprintf(&builder, "  %s: %s → %s%s\n", violation.Rule, violation.SourcePkg, violation.TargetPkg, marker)
+				if violation.Message != "" {
+					fmt.Fprintf(&builder, "    %s\n", violation.Message)
+				}
 			}
 		}
 		if proj.CoveragePercent != nil {

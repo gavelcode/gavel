@@ -279,13 +279,18 @@ func updateBaseline(ctx context.Context, projects projectservice.ProjectReposito
 	}
 
 	effectiveArchIDs := archIDs
+	effectiveCoveragePercent := &coveragePercent
+	effectiveFileCoverage := fileCoverage
 	if quick {
-		effectiveArchIDs = project.Baseline(branch).ArchIDs()
+		existing := project.Baseline(branch)
+		effectiveArchIDs = existing.ArchIDs()
+		effectiveCoveragePercent = existing.CoveragePercent()
+		effectiveFileCoverage = existing.FileCoverage()
 	}
 
-	if project.SeedBaselineIfAbsent(branch, fingerprints, effectiveArchIDs, &coveragePercent, fileCoverage) {
+	if project.SeedBaselineIfAbsent(branch, fingerprints, effectiveArchIDs, effectiveCoveragePercent, effectiveFileCoverage) {
 		if branch != project.DefaultBranch() && !project.Baseline(project.DefaultBranch()).HasPrevious() {
-			project.SeedBaselineIfAbsent(project.DefaultBranch(), fingerprints, effectiveArchIDs, &coveragePercent, fileCoverage)
+			project.SeedBaselineIfAbsent(project.DefaultBranch(), fingerprints, effectiveArchIDs, effectiveCoveragePercent, effectiveFileCoverage)
 			log.Info("seeded default branch baseline from feature branch analysis",
 				"branch", branch, "defaultBranch", project.DefaultBranch())
 		}
@@ -296,7 +301,7 @@ func updateBaseline(ctx context.Context, projects projectservice.ProjectReposito
 	}
 
 	if outcome.ShouldRecordAsBaseline() {
-		project.UpdateBaseline(branch, fingerprints, effectiveArchIDs, &coveragePercent, fileCoverage)
+		project.UpdateBaseline(branch, fingerprints, effectiveArchIDs, effectiveCoveragePercent, effectiveFileCoverage)
 	} else {
 		project.RatchetBaseline(branch, fingerprints, effectiveArchIDs)
 	}

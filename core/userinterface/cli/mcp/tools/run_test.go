@@ -409,6 +409,7 @@ func TestRunJudge_ShowsViolationDetails(t *testing.T) {
 	require.NoError(t, err)
 	assert.Contains(t, result, "no_infra_in_domain: domain/foo → infra/bar")
 	assert.Contains(t, result, "no_ui_in_app: application/baz → userinterface/qux")
+	assert.Contains(t, result, "forbidden import")
 }
 
 func TestRunJudge_ShowsNewViolationMarker(t *testing.T) {
@@ -443,6 +444,8 @@ func TestRunArch_WithViolations(t *testing.T) {
 	assert.Contains(t, result, "no_infra_in_domain: domain/foo → infra/bar")
 	assert.Contains(t, result, "no_ui_in_app: application/baz → userinterface/qux")
 	assert.Contains(t, result, "NEW")
+	assert.Contains(t, result, "forbidden import")
+	assert.Contains(t, result, "layer violation")
 }
 
 func TestRunArch_WithProjectFilter(t *testing.T) {

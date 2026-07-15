@@ -277,6 +277,39 @@ func TestExecuteQuickSkipsArchBaseline(t *testing.T) {
 	assert.Equal(t, []string{"fp-1"}, baseline.Fingerprints())
 }
 
+func TestExecuteQuickPreservesCoverageBaseline(t *testing.T) {
+	cfRepo := newFakeCaseFileRepo()
+	projRepo := newFakeProjectRepo()
+
+	project := mustProject(t, "test", "test", "//test/...")
+	prevPct := 94.6
+	entry, err := projectmodel.NewFileCoverageEntry("a.go", []int{1, 2, 3}, []int{4})
+	require.NoError(t, err)
+	project.UpdateBaseline("main", []string{"fp-existing"}, nil, &prevPct, []projectmodel.FileCoverageEntry{entry})
+	projRepo.seed(project)
+
+	caseF := mustCaseFileWithFindings(t, project.ID(), "main", nil)
+	require.NoError(t, cfRepo.Save(context.Background(), caseF))
+
+	handler := newHandler(cfRepo, projRepo)
+
+	cmd, err := finalize.NewCommand(testTenant.String(), caseF.ID().String(),
+		finalize.WithFingerprints([]string{"fp-1"}),
+		finalize.WithQuick(true),
+	)
+	require.NoError(t, err)
+
+	result, err := handler.Execute(context.Background(), cmd)
+	require.NoError(t, err)
+	assert.Equal(t, "pass", result.Verdict.Outcome)
+
+	saved := projRepo.lastSaved()
+	baseline := saved.Baseline("main")
+	require.NotNil(t, baseline.CoveragePercent())
+	assert.InDelta(t, prevPct, *baseline.CoveragePercent(), 0.001)
+	assert.Len(t, baseline.FileCoverage(), 1)
+}
+
 func TestExecuteAbsoluteSkipsDeltaAndBaseline(t *testing.T) {
 	cfRepo := newFakeCaseFileRepo()
 	projRepo := newFakeProjectRepo()

@@ -2,9 +2,11 @@ package trends
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"math"
+	"net/url"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -52,6 +54,10 @@ func run(cmd *cobra.Command, opts Options) error {
 
 	entries, err := client.ListProjectCaseFiles(cmd.Context(), opts.Project, opts.Limit)
 	if err != nil {
+		var urlErr *url.Error
+		if errors.As(err, &urlErr) {
+			return fmt.Errorf("could not reach Gavel server at %s (is it running?): %w", opts.ServerURL, err)
+		}
 		return fmt.Errorf("fetch trends: %w", err)
 	}
 

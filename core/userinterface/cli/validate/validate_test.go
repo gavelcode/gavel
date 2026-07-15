@@ -92,6 +92,7 @@ func TestValidateReturnsVerifierError(t *testing.T) {
 
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "verify structure")
+	assert.NotContains(t, err.Error(), "riter")
 }
 
 func TestValidateReturnsWorkspaceResolverError(t *testing.T) {

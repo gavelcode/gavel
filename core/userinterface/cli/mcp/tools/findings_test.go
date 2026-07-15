@@ -97,6 +97,8 @@ func TestRunFindings_LimitTruncatesListButNotCounts(t *testing.T) {
 	assert.Contains(t, result, "# Findings (3)")
 	assert.Contains(t, result, "3 errcheck")
 	assert.Contains(t, result, "Showing 2 of 3")
+	assert.Contains(t, result, "counts above are complete")
+	assert.Contains(t, result, "gavel_judge")
 }
 
 func TestRunFindings_NoFindings(t *testing.T) {

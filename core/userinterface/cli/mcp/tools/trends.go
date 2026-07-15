@@ -27,8 +27,11 @@ type TrendsInput struct {
 	Branch     string `json:"branch,omitempty"      jsonschema:"Filter to a specific branch"`
 }
 
+var openWorld = true
+
 func RegisterTrends(server *mcp.Server, cli *executor.CLI) {
 	mcp.AddTool(server, &mcp.Tool{
+		Annotations: &mcp.ToolAnnotations{ReadOnlyHint: true, OpenWorldHint: &openWorld},
 		Name:        "gavel_trends",
 		Description: "Show quality trends for a project — coverage, findings, and verdict history over recent analysis runs. Requires a Gavel server (GAVEL_SERVER_URL).",
 	}, func(ctx context.Context, req *mcp.CallToolRequest, input TrendsInput) (*mcp.CallToolResult, any, error) {

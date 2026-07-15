@@ -31,6 +31,7 @@ type CoverageInput struct {
 
 func RegisterCoverage(server *mcp.Server, cli *executor.CLI) {
 	mcp.AddTool(server, &mcp.Tool{
+		Annotations: &mcp.ToolAnnotations{ReadOnlyHint: true},
 		Name:        "gavel_coverage",
 		Description: "Get code coverage for a project. Runs a full analysis and reports the overall percentage plus a per-file breakdown. Pass 'files' to focus on specific files and see their uncovered line ranges.",
 	}, func(ctx context.Context, req *mcp.CallToolRequest, input CoverageInput) (*mcp.CallToolResult, any, error) {
@@ -47,7 +48,7 @@ func runCoverage(ctx context.Context, cli *executor.CLI, input CoverageInput) (s
 		return "", err
 	}
 
-	args := []string{"judge"}
+	args := []string{"judge", "--no-baseline-update"}
 	if input.Project != "" {
 		args = append(args, "--project", input.Project)
 	}

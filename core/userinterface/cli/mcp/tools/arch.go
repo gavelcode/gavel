@@ -18,6 +18,7 @@ type ArchInput struct {
 
 func RegisterArch(server *mcp.Server, cli *executor.CLI) {
 	mcp.AddTool(server, &mcp.Tool{
+		Annotations: &mcp.ToolAnnotations{ReadOnlyHint: true},
 		Name:        "gavel_arch",
 		Description: "Check architecture layer violations (DDD layer rules). Returns per-project violations with rule, source and target packages. Runs a full analysis (not --quick) because architecture checks are skipped in quick mode.",
 	}, func(ctx context.Context, req *mcp.CallToolRequest, input ArchInput) (*mcp.CallToolResult, any, error) {
@@ -30,7 +31,7 @@ func RegisterArch(server *mcp.Server, cli *executor.CLI) {
 }
 
 func runArch(ctx context.Context, cli *executor.CLI, input ArchInput) (string, error) {
-	args := []string{"judge"}
+	args := []string{"judge", "--no-baseline-update"}
 	if input.Project != "" {
 		args = append(args, "--project", input.Project)
 	}

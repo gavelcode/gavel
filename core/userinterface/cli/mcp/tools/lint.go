@@ -19,6 +19,7 @@ type LintFileInput struct {
 
 func RegisterLintFile(server *mcp.Server, cli *executor.CLI) {
 	mcp.AddTool(server, &mcp.Tool{
+		Annotations: &mcp.ToolAnnotations{ReadOnlyHint: true},
 		Name:        "gavel_lint_file",
 		Description: "Get lint findings for a specific file. Runs a quick analysis (findings only, no coverage) and returns findings filtered to the requested file path.",
 	}, func(ctx context.Context, req *mcp.CallToolRequest, input LintFileInput) (*mcp.CallToolResult, any, error) {
@@ -51,7 +52,7 @@ type lintProject struct {
 }
 
 func runLintFile(ctx context.Context, cli *executor.CLI, input LintFileInput) (string, error) {
-	args := []string{"judge", "--quick", "--target-file", input.File}
+	args := []string{"judge", "--quick", "--no-baseline-update", "--target-file", input.File}
 	if input.Project != "" {
 		args = append(args, "--project", input.Project)
 	}

@@ -16,6 +16,7 @@ type ValidateInput struct {
 
 func RegisterValidate(server *mcp.Server, cli *executor.CLI) {
 	mcp.AddTool(server, &mcp.Tool{
+		Annotations: &mcp.ToolAnnotations{ReadOnlyHint: true},
 		Name:        "gavel_validate",
 		Description: "Validate Gavel structural setup — checks that required files exist, .bazelrc includes are in place, and MODULE.bazel has the expected entries.",
 	}, func(ctx context.Context, req *mcp.CallToolRequest, input ValidateInput) (*mcp.CallToolResult, any, error) {

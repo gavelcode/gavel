@@ -9,7 +9,12 @@ updates:
     directory: /apps/web
     schedule: { interval: weekly }
     groups:
-      web: { patterns: ["*"] }
+      web:
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
+      web-major:
+        patterns: ["*"]
+        update-types: ["major"]
   - package-ecosystem: github-actions
     directory: /
     schedule: { interval: weekly }

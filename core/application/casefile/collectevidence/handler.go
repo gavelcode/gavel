@@ -179,14 +179,14 @@ func (h *Handler) collectFindings(ctx context.Context, cmd Command, targets []st
 	if h.findings == nil {
 		return nil, nil, "", nil, nil
 	}
-	return h.findings.CollectFindings(ctx, cmd.Workspace(), targets, cmd.ToolSelection())
+	return h.findings.CollectFindings(ctx, cmd.Workspace(), targets, cmd.ToolSelection(), cmd.BazelConfigs())
 }
 
 func (h *Handler) collectCoverage(ctx context.Context, cmd Command, targets []string, evidences *[]evidencedto.Evidence) (float64, []byte, error) {
 	if h.coverage == nil {
 		return 0, nil, nil
 	}
-	data, err := h.coverage.CollectCoverage(ctx, cmd.Workspace(), targets, cmd.Languages())
+	data, err := h.coverage.CollectCoverage(ctx, cmd.Workspace(), targets, cmd.Languages(), cmd.BazelConfigs())
 	if err != nil {
 		return 0, nil, fmt.Errorf("coverage: %w", err)
 	}
@@ -230,7 +230,7 @@ func (h *Handler) collectArchitecture(ctx context.Context, cmd Command, targets 
 	if h.architecture == nil {
 		return nil, 0, nil, classifyarch.Result{}, nil
 	}
-	archEv, archDocs, err := h.architecture.CollectViolations(ctx, cmd.Workspace(), targets, cmd.ToolSelection())
+	archEv, archDocs, err := h.architecture.CollectViolations(ctx, cmd.Workspace(), targets, cmd.ToolSelection(), cmd.BazelConfigs())
 	if err != nil {
 		return nil, 0, nil, classifyarch.Result{}, fmt.Errorf("architecture: %w", err)
 	}

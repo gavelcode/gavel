@@ -5,4 +5,5 @@ type configDTO struct {
 	Projects       []projectDTO `yaml:"projects"`
 	Server         serverDTO    `yaml:"server,omitempty"`
 	FindingsSource string       `yaml:"findings_source,omitempty"`
+	BazelConfig    []string     `yaml:"bazel_config,omitempty"`
 }

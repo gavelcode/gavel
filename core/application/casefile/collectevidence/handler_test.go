@@ -26,7 +26,7 @@ type fakeFindingsCollector struct {
 	err             error
 }
 
-func (f *fakeFindingsCollector) CollectFindings(_ context.Context, _ string, _ []string, _ map[string][]string) ([]evidencedto.Evidence, []collectevidence.RawFile, string, []string, error) {
+func (f *fakeFindingsCollector) CollectFindings(_ context.Context, _ string, _ []string, _ map[string][]string, _ []string) ([]evidencedto.Evidence, []collectevidence.RawFile, string, []string, error) {
 	return f.evidences, f.rawFiles, f.buildWarning, f.unanalyzedTools, f.err
 }
 
@@ -35,7 +35,7 @@ type fakeCoverageCollector struct {
 	err  error
 }
 
-func (f *fakeCoverageCollector) CollectCoverage(_ context.Context, _ string, _ []string, _ []string) ([]byte, error) {
+func (f *fakeCoverageCollector) CollectCoverage(_ context.Context, _ string, _ []string, _ []string, _ []string) ([]byte, error) {
 	return f.data, f.err
 }
 
@@ -45,7 +45,7 @@ type fakeArchCollector struct {
 	err      error
 }
 
-func (f *fakeArchCollector) CollectViolations(_ context.Context, _ string, _ []string, _ map[string][]string) (*evidencedto.Evidence, [][]byte, error) {
+func (f *fakeArchCollector) CollectViolations(_ context.Context, _ string, _ []string, _ map[string][]string, _ []string) (*evidencedto.Evidence, [][]byte, error) {
 	return f.evidence, f.docs, f.err
 }
 
@@ -59,13 +59,15 @@ func (f *fakeChangedLinesSource) ChangedLines(_ context.Context, _, _ string) (m
 }
 
 type capturingFindingsCollector struct {
-	capturedTargets []string
-	evidences       []evidencedto.Evidence
-	rawFiles        []collectevidence.RawFile
+	capturedTargets      []string
+	capturedBazelConfigs []string
+	evidences            []evidencedto.Evidence
+	rawFiles             []collectevidence.RawFile
 }
 
-func (c *capturingFindingsCollector) CollectFindings(_ context.Context, _ string, targets []string, _ map[string][]string) ([]evidencedto.Evidence, []collectevidence.RawFile, string, []string, error) {
+func (c *capturingFindingsCollector) CollectFindings(_ context.Context, _ string, targets []string, _ map[string][]string, bazelConfigs []string) ([]evidencedto.Evidence, []collectevidence.RawFile, string, []string, error) {
 	c.capturedTargets = targets
+	c.capturedBazelConfigs = bazelConfigs
 	return c.evidences, c.rawFiles, "", nil, nil
 }
 
@@ -290,6 +292,29 @@ func TestExecute_WithScopedTargets_PassesToCollectors(t *testing.T) {
 
 	require.NoError(t, err)
 	assert.Equal(t, scoped, capturing.capturedTargets)
+}
+
+func TestExecute_WithBazelConfigs_PassesToCollectors(t *testing.T) {
+	capturing := &capturingFindingsCollector{}
+
+	sarifParser := sarif.NewParser()
+	lcovParser := lcov.NewParser()
+	handler := collectevidence.NewHandler(
+		capturing, &fakeCoverageCollector{}, &fakeArchCollector{},
+		ingestfind.NewHandler(map[string]ingestfind.Parser{"sarif": sarifParser}),
+		ingestcov.NewHandler(map[string]ingestcov.Parser{"lcov": lcovParser}),
+		classifyarch.NewHandler(), ingestncc.NewHandler(lcovParser),
+	)
+
+	cmd, err := collectevidence.NewCommand("/ws", "//core/...", "core", "main", []string{"go"}, true, false, nil,
+		collectevidence.WithBazelConfigs([]string{"remote", "ci"}),
+	)
+	require.NoError(t, err)
+
+	_, err = handler.Execute(context.Background(), cmd)
+
+	require.NoError(t, err)
+	assert.Equal(t, []string{"remote", "ci"}, capturing.capturedBazelConfigs)
 }
 
 func TestExecute_WithChangedLinesSource_InvokesNCC(t *testing.T) {

@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -48,7 +49,8 @@ func TestBuildBazelArgs_TargetsAfterOptionsMarker(t *testing.T) {
 		Aspects: []catalog.Aspect{{Path: "p"}},
 	}
 
-	args := buildBazelArgs(config)
+	args, err := buildBazelArgs(config)
+	require.NoError(t, err)
 
 	marker := slices.Index(args, "--")
 	require.GreaterOrEqual(t, marker, 0, "args must contain the -- options-end marker")
@@ -70,7 +72,8 @@ func TestBuildBazelArgs_IncludesAspectBuildFlagsBeforeMarker(t *testing.T) {
 		},
 	}
 
-	args := buildBazelArgs(config)
+	args, err := buildBazelArgs(config)
+	require.NoError(t, err)
 
 	idx := slices.Index(args, "--@rules_go//go/config:export_stdlib=True")
 	require.GreaterOrEqual(t, idx, 0, "golangci's build flag must reach the combined invocation")
@@ -87,7 +90,8 @@ func TestBuildBazelArgs_DeduplicatesSharedBuildFlags(t *testing.T) {
 		},
 	}
 
-	args := buildBazelArgs(config)
+	args, err := buildBazelArgs(config)
+	require.NoError(t, err)
 
 	count := 0
 	for _, arg := range args {
@@ -105,7 +109,8 @@ func TestBuildBazelArgs_CoverageMode(t *testing.T) {
 		IncludeCoverage: true,
 	}
 
-	args := buildBazelArgs(config)
+	args, err := buildBazelArgs(config)
+	require.NoError(t, err)
 
 	assert.Equal(t, "coverage", args[0])
 	assert.Contains(t, args, "--test_size_filters=small,medium")
@@ -116,10 +121,12 @@ func TestBuildBazelArgs_CoverageMode(t *testing.T) {
 }
 
 func TestBuildBazelArgs_CoverageBoundsMemory(t *testing.T) {
-	cov := buildBazelArgs(AnalysisConfig{Targets: []string{"//..."}, IncludeCoverage: true})
+	cov, err := buildBazelArgs(AnalysisConfig{Targets: []string{"//..."}, IncludeCoverage: true})
+	require.NoError(t, err)
 	assert.Contains(t, cov, "--local_resources=memory=HOST_RAM*0.67")
 
-	build := buildBazelArgs(AnalysisConfig{Targets: []string{"//..."}, IncludeCoverage: false})
+	build, err := buildBazelArgs(AnalysisConfig{Targets: []string{"//..."}, IncludeCoverage: false})
+	require.NoError(t, err)
 	for _, a := range build {
 		assert.NotContains(t, a, "local_resources")
 	}
@@ -132,7 +139,8 @@ func TestBuildBazelArgs_BuildMode(t *testing.T) {
 		IncludeCoverage: false,
 	}
 
-	args := buildBazelArgs(config)
+	args, err := buildBazelArgs(config)
+	require.NoError(t, err)
 
 	assert.Equal(t, "build", args[0])
 	for _, a := range args {
@@ -148,7 +156,8 @@ func TestBuildBazelArgs_DefaultTestSizeFilters(t *testing.T) {
 		IncludeCoverage: true,
 	}
 
-	args := buildBazelArgs(config)
+	args, err := buildBazelArgs(config)
+	require.NoError(t, err)
 
 	assert.Contains(t, args, "--test_size_filters=small,medium")
 }
@@ -161,7 +170,8 @@ func TestBuildBazelArgs_CustomTestSizeFilters(t *testing.T) {
 		TestSizeFilters: "small",
 	}
 
-	args := buildBazelArgs(config)
+	args, err := buildBazelArgs(config)
+	require.NoError(t, err)
 
 	assert.Contains(t, args, "--test_size_filters=small")
 	assert.NotContains(t, args, "--test_size_filters=small,medium")
@@ -174,9 +184,69 @@ func TestBuildBazelArgs_TestTagFilters(t *testing.T) {
 		TestTagFilters: "-integration,-manual",
 	}
 
-	args := buildBazelArgs(config)
+	args, err := buildBazelArgs(config)
+	require.NoError(t, err)
 
 	assert.Contains(t, args, "--test_tag_filters=-integration,-manual")
+}
+
+func TestBuildBazelArgs_BazelConfigsAfterVerbBeforeGavelFlags(t *testing.T) {
+	config := AnalysisConfig{
+		Targets:      []string{"//..."},
+		Aspects:      []catalog.Aspect{{Path: "p"}},
+		BazelConfigs: []string{"remote", "ci"},
+	}
+
+	args, err := buildBazelArgs(config)
+
+	require.NoError(t, err)
+	verbIdx := slices.Index(args, "build")
+	require.GreaterOrEqual(t, verbIdx, 0, "args must start with the bazel verb")
+
+	remoteIdx := slices.Index(args, "--config=remote")
+	ciIdx := slices.Index(args, "--config=ci")
+	require.GreaterOrEqual(t, remoteIdx, 0, "expected --config=remote in args")
+	require.GreaterOrEqual(t, ciIdx, 0, "expected --config=ci in args")
+	assert.Greater(t, remoteIdx, verbIdx, "--config=remote must come after the bazel verb")
+	assert.Greater(t, ciIdx, verbIdx, "--config=ci must come after the bazel verb")
+
+	aspectsIdx := slices.IndexFunc(args, func(a string) bool { return strings.HasPrefix(a, "--aspects=") })
+	require.GreaterOrEqual(t, aspectsIdx, 0)
+	assert.Less(t, remoteIdx, aspectsIdx, "--config flags must come before gavel's own --aspects flag")
+	assert.Less(t, ciIdx, aspectsIdx, "--config flags must come before gavel's own --aspects flag")
+
+	outputGroupsIdx := slices.Index(args, "--output_groups=gavel_submissions")
+	keepGoingIdx := slices.Index(args, "--keep_going")
+	assert.Less(t, remoteIdx, outputGroupsIdx)
+	assert.Less(t, remoteIdx, keepGoingIdx)
+
+	markerIdx := slices.Index(args, "--")
+	require.GreaterOrEqual(t, markerIdx, 0)
+	assert.Less(t, aspectsIdx, markerIdx, "-- separator and targets must stay at the very end")
+	assert.Greater(t, slices.Index(args, "//..."), markerIdx)
+}
+
+func TestBuildBazelArgs_RejectsInvalidBazelConfigName(t *testing.T) {
+	tests := map[string]string{
+		"empty":            "",
+		"contains space":   "has space",
+		"contains equals":  "has=equals",
+		"starts with dash": "-startsdash",
+	}
+
+	for name, badValue := range tests {
+		t.Run(name, func(t *testing.T) {
+			config := AnalysisConfig{
+				Targets:      []string{"//..."},
+				BazelConfigs: []string{badValue},
+			}
+
+			_, err := buildBazelArgs(config)
+
+			require.Error(t, err, "expected an error for bazel_config value %q", badValue)
+			assert.Contains(t, err.Error(), "bazel_config")
+		})
+	}
 }
 
 func TestBuildBazelArgs_MultipleAspects(t *testing.T) {
@@ -188,7 +258,8 @@ func TestBuildBazelArgs_MultipleAspects(t *testing.T) {
 		},
 	}
 
-	args := buildBazelArgs(config)
+	args, err := buildBazelArgs(config)
+	require.NoError(t, err)
 
 	found := false
 	for _, a := range args {

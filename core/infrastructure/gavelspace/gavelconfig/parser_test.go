@@ -751,6 +751,66 @@ projects:
 	assert.Contains(t, err.Error(), "unknown_source")
 }
 
+func TestParseShouldAcceptBazelConfig(t *testing.T) {
+	data := []byte(`
+name: mono
+bazel_config: [remote]
+projects:
+  - name: svc
+    pattern: //svc/...
+`)
+
+	config, err := gavelconfig.Parse(data)
+
+	require.NoError(t, err)
+	assert.Equal(t, []string{"remote"}, config.BazelConfigs())
+}
+
+func TestParseShouldAcceptMultipleBazelConfigs(t *testing.T) {
+	data := []byte(`
+name: mono
+bazel_config: [remote, ci]
+projects:
+  - name: svc
+    pattern: //svc/...
+`)
+
+	config, err := gavelconfig.Parse(data)
+
+	require.NoError(t, err)
+	assert.Equal(t, []string{"remote", "ci"}, config.BazelConfigs())
+}
+
+func TestParseShouldDefaultBazelConfigToEmpty(t *testing.T) {
+	data := []byte(`
+name: mono
+projects:
+  - name: svc
+    pattern: //svc/...
+`)
+
+	config, err := gavelconfig.Parse(data)
+
+	require.NoError(t, err)
+	assert.Empty(t, config.BazelConfigs())
+}
+
+func TestParseShouldRejectInvalidBazelConfigName(t *testing.T) {
+	data := []byte(`
+name: mono
+bazel_config: ["-bad"]
+projects:
+  - name: svc
+    pattern: //svc/...
+`)
+
+	_, err := gavelconfig.Parse(data)
+
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "bazel_config")
+	assert.Contains(t, err.Error(), "-bad")
+}
+
 func TestParseFileNonexistentPathReturnsReadConfigError(t *testing.T) {
 	_, err := gavelconfig.ParseFile("/nonexistent/path/gavel.yaml")
 	require.Error(t, err)

@@ -14,7 +14,7 @@ import (
 func TestVitestCollectorEmptyTargets(t *testing.T) {
 	c := collector.NewVitestCoverageCollector(slog.Default())
 
-	data, err := c.CollectCoverage(context.Background(), t.TempDir(), nil, nil)
+	data, err := c.CollectCoverage(context.Background(), t.TempDir(), nil, nil, nil)
 
 	require.NoError(t, err)
 	assert.Nil(t, data)

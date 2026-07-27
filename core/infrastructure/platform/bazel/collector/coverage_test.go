@@ -19,7 +19,7 @@ func TestBazelCoverageCollector_ReturnsCoverageData(t *testing.T) {
 	runner := &fakeAnalysisRunner{coverageData: lcov}
 	c := collector.NewBazelCoverageCollector(runner)
 
-	data, err := c.CollectCoverage(context.Background(), t.TempDir(), []string{"//pkg:lib"}, nil)
+	data, err := c.CollectCoverage(context.Background(), t.TempDir(), []string{"//pkg:lib"}, nil, nil)
 
 	require.NoError(t, err)
 	assert.Equal(t, lcov, data)
@@ -29,7 +29,7 @@ func TestBazelCoverageCollector_RunnerError(t *testing.T) {
 	r := &fakeAnalysisRunner{err: fmt.Errorf("bazel coverage failed")}
 	c := collector.NewBazelCoverageCollector(r)
 
-	_, err := c.CollectCoverage(context.Background(), t.TempDir(), []string{"//pkg:lib"}, nil)
+	_, err := c.CollectCoverage(context.Background(), t.TempDir(), []string{"//pkg:lib"}, nil, nil)
 
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "run coverage")
@@ -39,7 +39,7 @@ func TestBazelCoverageCollector_NilWhenNoCoverage(t *testing.T) {
 	runner := &fakeAnalysisRunner{}
 	c := collector.NewBazelCoverageCollector(runner)
 
-	data, err := c.CollectCoverage(context.Background(), t.TempDir(), []string{"//pkg:lib"}, nil)
+	data, err := c.CollectCoverage(context.Background(), t.TempDir(), []string{"//pkg:lib"}, nil, nil)
 
 	require.NoError(t, err)
 	assert.Nil(t, data)

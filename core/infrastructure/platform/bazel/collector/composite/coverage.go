@@ -16,8 +16,8 @@ func NewCoverageCollector(primary, fallback collectevidence.CoverageCollector) *
 	return &CoverageCollector{primary: primary, fallback: fallback}
 }
 
-func (c *CoverageCollector) CollectCoverage(ctx context.Context, workspace string, targets []string, languages []string) ([]byte, error) {
-	data, err := c.primary.CollectCoverage(ctx, workspace, targets, languages)
+func (c *CoverageCollector) CollectCoverage(ctx context.Context, workspace string, targets []string, languages []string, bazelConfigs []string) ([]byte, error) {
+	data, err := c.primary.CollectCoverage(ctx, workspace, targets, languages, bazelConfigs)
 	if err != nil {
 		return nil, err
 	}
@@ -30,7 +30,7 @@ func (c *CoverageCollector) CollectCoverage(ctx context.Context, workspace strin
 		return data, nil
 	}
 
-	fallbackData, err := c.fallback.CollectCoverage(ctx, workspace, targets, languages)
+	fallbackData, err := c.fallback.CollectCoverage(ctx, workspace, targets, languages, bazelConfigs)
 	if err != nil {
 		return data, nil
 	}

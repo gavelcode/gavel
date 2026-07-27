@@ -15,6 +15,7 @@ type Gavelspace struct {
 	projects       []ProjectRef
 	serverConfig   ServerConfig
 	findingsSource string
+	bazelConfigs   []string
 	events         []event.DomainEvent
 }
 
@@ -49,6 +50,18 @@ func (g *Gavelspace) FindingsSource() string     { return g.findingsSource }
 
 func (g *Gavelspace) SetServerConfig(sc ServerConfig) { g.serverConfig = sc }
 func (g *Gavelspace) SetFindingsSource(source string) { g.findingsSource = source }
+
+func (g *Gavelspace) BazelConfigs() []string {
+	copied := make([]string, len(g.bazelConfigs))
+	copy(copied, g.bazelConfigs)
+	return copied
+}
+
+func (g *Gavelspace) SetBazelConfigs(configs []string) {
+	copied := make([]string, len(configs))
+	copy(copied, configs)
+	g.bazelConfigs = copied
+}
 
 func (g *Gavelspace) Projects() []ProjectRef {
 	copied := make([]ProjectRef, len(g.projects))

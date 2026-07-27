@@ -28,7 +28,7 @@ func NewBazelFindingsCollector(r AnalysisRunner, p FindingsParser) *BazelFinding
 	return &BazelFindingsCollector{runner: r, parser: p}
 }
 
-func (c *BazelFindingsCollector) CollectFindings(ctx context.Context, workspace string, targets []string, selection map[string][]string) ([]evidencedto.Evidence, []collectevidence.RawFile, string, []string, error) {
+func (c *BazelFindingsCollector) CollectFindings(ctx context.Context, workspace string, targets []string, selection map[string][]string, bazelConfigs []string) ([]evidencedto.Evidence, []collectevidence.RawFile, string, []string, error) {
 	selected, err := catalog.SelectedAspects(selection)
 	if err != nil {
 		return nil, nil, "", nil, err
@@ -44,9 +44,10 @@ func (c *BazelFindingsCollector) CollectFindings(ctx context.Context, workspace 
 	}
 
 	config := runner.AnalysisConfig{
-		Workspace: workspace,
-		Targets:   targets,
-		Aspects:   lintAspects,
+		Workspace:    workspace,
+		Targets:      targets,
+		Aspects:      lintAspects,
+		BazelConfigs: bazelConfigs,
 	}
 
 	result, err := c.runner.RunAnalysis(ctx, config)

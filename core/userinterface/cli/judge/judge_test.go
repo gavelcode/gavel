@@ -293,7 +293,7 @@ func (f fakeFinder) LoadFromConfig(_ string) (gavelspacemodel.Gavelspace, []proj
 
 type stubFindingsCollector struct{}
 
-func (s stubFindingsCollector) CollectFindings(_ context.Context, _ string, _ []string, _ map[string][]string) ([]evidencedto.Evidence, []collectevidence.RawFile, string, []string, error) {
+func (s stubFindingsCollector) CollectFindings(_ context.Context, _ string, _ []string, _ map[string][]string, _ []string) ([]evidencedto.Evidence, []collectevidence.RawFile, string, []string, error) {
 	return []evidencedto.Evidence{{
 		Subtype:     "code_quality",
 		Source:      "empty.sarif",
@@ -729,7 +729,7 @@ type findingsCollectorWithData struct {
 	parser   *ingestfind.Handler
 }
 
-func (f *findingsCollectorWithData) CollectFindings(_ context.Context, _ string, _ []string, _ map[string][]string) ([]evidencedto.Evidence, []collectevidence.RawFile, string, []string, error) {
+func (f *findingsCollectorWithData) CollectFindings(_ context.Context, _ string, _ []string, _ map[string][]string, _ []string) ([]evidencedto.Evidence, []collectevidence.RawFile, string, []string, error) {
 	cmd, err := ingestfind.NewCommand([]byte(`{"runs":[]}`), "sarif", "test.sarif", "code_quality")
 	if err != nil {
 		return nil, nil, "", nil, err
@@ -915,7 +915,7 @@ type failingCollector struct {
 	err error
 }
 
-func (f *failingCollector) CollectFindings(_ context.Context, _ string, _ []string, _ map[string][]string) ([]evidencedto.Evidence, []collectevidence.RawFile, string, []string, error) {
+func (f *failingCollector) CollectFindings(_ context.Context, _ string, _ []string, _ map[string][]string, _ []string) ([]evidencedto.Evidence, []collectevidence.RawFile, string, []string, error) {
 	return nil, nil, "", nil, f.err
 }
 
@@ -946,7 +946,7 @@ func TestRun_CollectEvidenceError(t *testing.T) {
 
 type buildWarningCollector struct{}
 
-func (b *buildWarningCollector) CollectFindings(_ context.Context, _ string, _ []string, _ map[string][]string) ([]evidencedto.Evidence, []collectevidence.RawFile, string, []string, error) {
+func (b *buildWarningCollector) CollectFindings(_ context.Context, _ string, _ []string, _ map[string][]string, _ []string) ([]evidencedto.Evidence, []collectevidence.RawFile, string, []string, error) {
 	return []evidencedto.Evidence{{
 		Subtype:     "code_quality",
 		Source:      "empty.sarif",

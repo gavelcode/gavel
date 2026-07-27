@@ -19,7 +19,7 @@ type fakeCoverageCollector struct {
 	err  error
 }
 
-func (f *fakeCoverageCollector) CollectCoverage(_ context.Context, _ string, _ []string, _ []string) ([]byte, error) {
+func (f *fakeCoverageCollector) CollectCoverage(_ context.Context, _ string, _ []string, _ []string, _ []string) ([]byte, error) {
 	return f.data, f.err
 }
 
@@ -30,7 +30,7 @@ func TestCompositePrimaryReturnsData(t *testing.T) {
 
 	collector := composite.NewCoverageCollector(primary, fallback)
 
-	data, err := collector.CollectCoverage(context.Background(), "/ws", []string{"//app/..."}, []string{"typescript"})
+	data, err := collector.CollectCoverage(context.Background(), "/ws", []string{"//app/..."}, []string{"typescript"}, nil)
 
 	require.NoError(t, err)
 	assert.Equal(t, lcov, data)
@@ -43,7 +43,7 @@ func TestCompositeFallbackWhenPrimaryEmpty(t *testing.T) {
 
 	collector := composite.NewCoverageCollector(primary, fallback)
 
-	data, err := collector.CollectCoverage(context.Background(), "/ws", []string{"//app/..."}, []string{"typescript"})
+	data, err := collector.CollectCoverage(context.Background(), "/ws", []string{"//app/..."}, []string{"typescript"}, nil)
 
 	require.NoError(t, err)
 	assert.Equal(t, vitestLCOV, data)
@@ -55,7 +55,7 @@ func TestCompositeNoFallbackWithoutTypeScript(t *testing.T) {
 
 	collector := composite.NewCoverageCollector(primary, fallback)
 
-	data, err := collector.CollectCoverage(context.Background(), "/ws", []string{"//core/..."}, []string{"go"})
+	data, err := collector.CollectCoverage(context.Background(), "/ws", []string{"//core/..."}, []string{"go"}, nil)
 
 	require.NoError(t, err)
 	assert.Nil(t, data)
@@ -67,7 +67,7 @@ func TestCompositePrimaryError(t *testing.T) {
 
 	coll := composite.NewCoverageCollector(primary, fallback)
 
-	_, err := coll.CollectCoverage(context.Background(), "/ws", []string{"//app/..."}, []string{"typescript"})
+	_, err := coll.CollectCoverage(context.Background(), "/ws", []string{"//app/..."}, []string{"typescript"}, nil)
 
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "bazel failed")
@@ -78,7 +78,7 @@ func TestCompositeNilFallback(t *testing.T) {
 
 	coll := composite.NewCoverageCollector(primary, nil)
 
-	data, err := coll.CollectCoverage(context.Background(), "/ws", []string{"//app/..."}, []string{"typescript"})
+	data, err := coll.CollectCoverage(context.Background(), "/ws", []string{"//app/..."}, []string{"typescript"}, nil)
 
 	require.NoError(t, err)
 	assert.Nil(t, data)
@@ -91,7 +91,7 @@ func TestCompositeFallbackError_ReturnsPrimaryData(t *testing.T) {
 
 	coll := composite.NewCoverageCollector(primary, fallback)
 
-	data, err := coll.CollectCoverage(context.Background(), "/ws", []string{"//app/..."}, []string{"typescript"})
+	data, err := coll.CollectCoverage(context.Background(), "/ws", []string{"//app/..."}, []string{"typescript"}, nil)
 
 	require.NoError(t, err)
 	assert.Equal(t, emptyCov, data)
@@ -104,7 +104,7 @@ func TestCompositeFallbackReturnsNil_ReturnsPrimaryData(t *testing.T) {
 
 	coll := composite.NewCoverageCollector(primary, fallback)
 
-	data, err := coll.CollectCoverage(context.Background(), "/ws", []string{"//app/..."}, []string{"typescript"})
+	data, err := coll.CollectCoverage(context.Background(), "/ws", []string{"//app/..."}, []string{"typescript"}, nil)
 
 	require.NoError(t, err)
 	assert.Equal(t, emptyCov, data)
@@ -118,7 +118,7 @@ func TestCompositeFallbackOnZeroCoverage(t *testing.T) {
 
 	collector := composite.NewCoverageCollector(primary, fallback)
 
-	data, err := collector.CollectCoverage(context.Background(), "/ws", []string{"//app/..."}, []string{"typescript"})
+	data, err := collector.CollectCoverage(context.Background(), "/ws", []string{"//app/..."}, []string{"typescript"}, nil)
 
 	require.NoError(t, err)
 	assert.Equal(t, vitestLCOV, data)

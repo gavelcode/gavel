@@ -83,8 +83,13 @@ func mapToDomain(dto configDTO) (WorkspaceConfig, error) {
 		return WorkspaceConfig{}, err
 	}
 
+	if err := validateBazelConfigs(dto.BazelConfig); err != nil {
+		return WorkspaceConfig{}, err
+	}
+
 	gavelspace.SetServerConfig(gavelspacemodel.NewServerConfig(dto.Server.URL, dto.Server.Token))
 	gavelspace.SetFindingsSource(dto.FindingsSource)
+	gavelspace.SetBazelConfigs(dto.BazelConfig)
 
 	return WorkspaceConfig{
 		gavelspace:      gavelspace,
@@ -92,6 +97,7 @@ func mapToDomain(dto configDTO) (WorkspaceConfig, error) {
 		coverageOptions: covOptions,
 		server:          ServerConfig{url: dto.Server.URL, token: dto.Server.Token},
 		findingsSource:  dto.FindingsSource,
+		bazelConfigs:    dto.BazelConfig,
 	}, nil
 }
 
@@ -315,4 +321,26 @@ func validateFindingsSource(source string) error {
 	}
 
 	return fmt.Errorf("findings_source: unknown value %q (valid: auto, gavel, rules_lint)", source)
+}
+
+func validateBazelConfigs(names []string) error {
+	for _, name := range names {
+		if err := validateBazelConfigName(name); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func validateBazelConfigName(name string) error {
+	if name == "" {
+		return fmt.Errorf("bazel_config: config name must not be empty")
+	}
+	if strings.ContainsAny(name, " \t\n=") {
+		return fmt.Errorf("bazel_config: invalid config name %q: must not contain whitespace or '='", name)
+	}
+	if strings.HasPrefix(name, "-") {
+		return fmt.Errorf("bazel_config: invalid config name %q: must not start with '-'", name)
+	}
+	return nil
 }

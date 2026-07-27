@@ -28,6 +28,7 @@ Defines the workspace name, projects, quality gate rules, and server connection.
 
 ```yaml
 name: <string>                              # workspace name (required)
+bazel_config: [<string>]                    # bazel --config(s) to activate for analysis (optional)
 
 projects:                                    # list of projects (required, at least one)
   - name: <string>                           # project name (required)
@@ -61,6 +62,13 @@ server:                                      # server connection (optional)
 
 **`name`** (string, required)
 Workspace name. Used for display and identification.
+
+**`bazel_config`** (list of strings, optional)
+Names of `--config` blocks (from your `.bazelrc`) to activate on the `bazel`
+invocation gavel runs — each entry `N` adds `--config=N`. Point gavel's analysis
+at your remote cache or RBE with `bazel_config: [remote]`, without gavel
+accepting arbitrary bazel flags: only named configs pass, and gavel's own flags
+always take precedence. Absent means no `--config` is added.
 
 **`projects`** (list, required)
 One or more projects to analyze. Each project maps to a set of Bazel targets

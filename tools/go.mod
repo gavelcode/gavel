@@ -1,9 +1,9 @@
 module github.com/usegavel/gavel/tools
 
-go 1.25.0
+go 1.25.7
 
 require (
-	github.com/bazelbuild/rules_go v0.61.1
+	github.com/bazelbuild/rules_go v0.62.0
 	github.com/stretchr/testify v1.11.1
 	gopkg.in/yaml.v3 v3.0.1
 )

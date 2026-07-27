@@ -7,15 +7,15 @@ import (
 )
 
 type FindingsCollector interface {
-	CollectFindings(ctx context.Context, workspace string, targets []string, selection map[string][]string) ([]evidencedto.Evidence, []RawFile, string, []string, error)
+	CollectFindings(ctx context.Context, workspace string, targets []string, selection map[string][]string, bazelConfigs []string) ([]evidencedto.Evidence, []RawFile, string, []string, error)
 }
 
 type CoverageCollector interface {
-	CollectCoverage(ctx context.Context, workspace string, targets []string, languages []string) ([]byte, error)
+	CollectCoverage(ctx context.Context, workspace string, targets []string, languages []string, bazelConfigs []string) ([]byte, error)
 }
 
 type ArchitectureCollector interface {
-	CollectViolations(ctx context.Context, workspace string, targets []string, selection map[string][]string) (*evidencedto.Evidence, [][]byte, error)
+	CollectViolations(ctx context.Context, workspace string, targets []string, selection map[string][]string, bazelConfigs []string) (*evidencedto.Evidence, [][]byte, error)
 }
 
 type ChangedLinesSource interface {

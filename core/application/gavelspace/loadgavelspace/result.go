@@ -17,6 +17,7 @@ type WorkspaceView struct {
 	ServerURL      string
 	ServerToken    string
 	FindingsSource string
+	BazelConfigs   []string
 	Projects       []ProjectView
 }
 
@@ -31,6 +32,7 @@ type ProjectView struct {
 	GateRules       []GateRuleView
 	Baseline        BaselineView
 	ArchPolicy      *ArchPolicyView
+	BazelConfigs    []string
 }
 
 type GateRuleView struct {
@@ -65,6 +67,7 @@ func buildView(gavelspace gavelspacemodel.Gavelspace, projects []projectmodel.Pr
 		TenantID:       gavelspace.TenantID().String(),
 		GavelspaceName: gavelspace.ID().String(),
 		FindingsSource: gavelspace.FindingsSource(),
+		BazelConfigs:   gavelspace.BazelConfigs(),
 	}
 	if gavelspace.ServerConfig().IsConfigured() {
 		view.ServerURL = gavelspace.ServerConfig().URL()
@@ -114,6 +117,7 @@ func buildView(gavelspace gavelspacemodel.Gavelspace, projects []projectmodel.Pr
 			GateRules:       rules,
 			Baseline:        baselineView,
 			ArchPolicy:      archPolicyView,
+			BazelConfigs:    view.BazelConfigs,
 		})
 	}
 	return view

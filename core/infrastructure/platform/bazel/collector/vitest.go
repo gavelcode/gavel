@@ -15,7 +15,7 @@ func NewVitestCoverageCollector(log *slog.Logger) *VitestCoverageCollector {
 	return &VitestCoverageCollector{log: log}
 }
 
-func (c *VitestCoverageCollector) CollectCoverage(ctx context.Context, workspace string, targets []string, _ []string) ([]byte, error) {
+func (c *VitestCoverageCollector) CollectCoverage(ctx context.Context, workspace string, targets []string, _ []string, _ []string) ([]byte, error) {
 	if len(targets) == 0 {
 		return nil, nil
 	}

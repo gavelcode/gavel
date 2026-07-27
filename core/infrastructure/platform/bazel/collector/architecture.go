@@ -19,7 +19,7 @@ func NewBazelArchitectureCollector(r AnalysisRunner) *BazelArchitectureCollector
 	return &BazelArchitectureCollector{runner: r}
 }
 
-func (c *BazelArchitectureCollector) CollectViolations(ctx context.Context, workspace string, targets []string, selection map[string][]string) (*evidencedto.Evidence, [][]byte, error) {
+func (c *BazelArchitectureCollector) CollectViolations(ctx context.Context, workspace string, targets []string, selection map[string][]string, bazelConfigs []string) (*evidencedto.Evidence, [][]byte, error) {
 	selected, err := catalog.SelectedAspects(selection)
 	if err != nil {
 		return nil, nil, err
@@ -35,9 +35,10 @@ func (c *BazelArchitectureCollector) CollectViolations(ctx context.Context, work
 	}
 
 	config := runner.AnalysisConfig{
-		Workspace: workspace,
-		Targets:   targets,
-		Aspects:   archAspects,
+		Workspace:    workspace,
+		Targets:      targets,
+		Aspects:      archAspects,
+		BazelConfigs: bazelConfigs,
 	}
 
 	result, err := c.runner.RunAnalysis(ctx, config)

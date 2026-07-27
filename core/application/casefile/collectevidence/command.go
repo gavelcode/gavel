@@ -17,6 +17,7 @@ type Command struct {
 	scopedTargets   []string
 	excludePatterns []string
 	toolSelection   map[string][]string
+	bazelConfigs    []string
 }
 
 type CommandOption func(*Command)
@@ -49,6 +50,12 @@ func WithScopedTargets(targets []string) CommandOption {
 func WithExcludePatterns(patterns []string) CommandOption {
 	return func(c *Command) {
 		c.excludePatterns = append([]string(nil), patterns...)
+	}
+}
+
+func WithBazelConfigs(configs []string) CommandOption {
+	return func(c *Command) {
+		c.bazelConfigs = append([]string(nil), configs...)
 	}
 }
 
@@ -87,3 +94,9 @@ func (c Command) ScopedTargets() []string   { return c.scopedTargets }
 func (c Command) ExcludePatterns() []string { return c.excludePatterns }
 
 func (c Command) ToolSelection() map[string][]string { return copyToolSelection(c.toolSelection) }
+
+func (c Command) BazelConfigs() []string {
+	copied := make([]string, len(c.bazelConfigs))
+	copy(copied, c.bazelConfigs)
+	return copied
+}

@@ -11,6 +11,7 @@ type WorkspaceConfig struct {
 	coverageOptions map[string]CoverageOptions
 	server          ServerConfig
 	findingsSource  string
+	bazelConfigs    []string
 }
 
 func (w WorkspaceConfig) Gavelspace() gavelspacemodel.Gavelspace { return w.gavelspace }
@@ -27,3 +28,9 @@ func (w WorkspaceConfig) CoverageOptionsForProject(name string) CoverageOptions 
 
 func (w WorkspaceConfig) Server() ServerConfig   { return w.server }
 func (w WorkspaceConfig) FindingsSource() string { return w.findingsSource }
+
+func (w WorkspaceConfig) BazelConfigs() []string {
+	copied := make([]string, len(w.bazelConfigs))
+	copy(copied, w.bazelConfigs)
+	return copied
+}

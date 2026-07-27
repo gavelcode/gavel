@@ -15,11 +15,12 @@ func NewBazelCoverageCollector(r AnalysisRunner) *BazelCoverageCollector {
 	return &BazelCoverageCollector{runner: r}
 }
 
-func (c *BazelCoverageCollector) CollectCoverage(ctx context.Context, workspace string, targets []string, _ []string) ([]byte, error) {
+func (c *BazelCoverageCollector) CollectCoverage(ctx context.Context, workspace string, targets []string, _ []string, bazelConfigs []string) ([]byte, error) {
 	config := runner.AnalysisConfig{
 		Workspace:       workspace,
 		Targets:         targets,
 		IncludeCoverage: true,
+		BazelConfigs:    bazelConfigs,
 	}
 
 	result, err := c.runner.RunAnalysis(ctx, config)

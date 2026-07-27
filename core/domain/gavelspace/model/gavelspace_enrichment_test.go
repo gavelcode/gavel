@@ -33,6 +33,33 @@ func TestGavelspace_FindingsSource(t *testing.T) {
 	assert.Equal(t, "rules_lint", gspace.FindingsSource())
 }
 
+func TestGavelspace_BazelConfigs(t *testing.T) {
+	gspace, err := model.NewGavelspace(testTenant, "myrepo")
+	require.NoError(t, err)
+
+	assert.Empty(t, gspace.BazelConfigs())
+
+	gspace.SetBazelConfigs([]string{"remote", "ci"})
+
+	assert.Equal(t, []string{"remote", "ci"}, gspace.BazelConfigs())
+}
+
+func TestGavelspace_BazelConfigsDefensiveCopy(t *testing.T) {
+	gspace, err := model.NewGavelspace(testTenant, "myrepo")
+	require.NoError(t, err)
+
+	input := []string{"remote"}
+	gspace.SetBazelConfigs(input)
+	input[0] = "mutated"
+
+	assert.Equal(t, []string{"remote"}, gspace.BazelConfigs())
+
+	returned := gspace.BazelConfigs()
+	returned[0] = "mutated"
+
+	assert.Equal(t, []string{"remote"}, gspace.BazelConfigs())
+}
+
 func TestCoverageOptions(t *testing.T) {
 	opts := model.NewCoverageOptions("small,medium", "-docker", "//core[/:]")
 

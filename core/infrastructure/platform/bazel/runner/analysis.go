@@ -21,6 +21,7 @@ type AnalysisConfig struct {
 	IncludeCoverage bool
 	TestSizeFilters string
 	TestTagFilters  string
+	BazelConfigs    []string
 }
 
 type AnalysisResult struct {
@@ -35,7 +36,10 @@ func RunAnalysis(ctx context.Context, config AnalysisConfig) (*AnalysisResult, e
 }
 
 func runAnalysis(ctx context.Context, cmd CommandRunner, config AnalysisConfig) (*AnalysisResult, error) {
-	args := buildBazelArgs(config)
+	args, err := buildBazelArgs(config)
+	if err != nil {
+		return nil, err
+	}
 
 	stdout, stderr, runErr := cmd.Run(ctx, config.Workspace, "bazel", args...)
 	output := string(stdout) + string(stderr)
@@ -71,13 +75,20 @@ func runAnalysis(ctx context.Context, cmd CommandRunner, config AnalysisConfig) 
 	return result, nil
 }
 
-func buildBazelArgs(config AnalysisConfig) []string {
+func buildBazelArgs(config AnalysisConfig) ([]string, error) {
 	var args []string
 	if config.IncludeCoverage {
 		args = append(args, "coverage")
 	} else {
 		args = append(args, "build")
 	}
+
+	configArgs, err := bazelConfigArgs(config.BazelConfigs)
+	if err != nil {
+		return nil, err
+	}
+	args = append(args, configArgs...)
+
 	args = append(args,
 		"--aspects="+catalog.AspectPaths(config.Aspects),
 		"--output_groups=gavel_submissions",
@@ -109,7 +120,31 @@ func buildBazelArgs(config AnalysisConfig) []string {
 
 	args = append(args, "--")
 	args = append(args, config.Targets...)
-	return args
+	return args, nil
+}
+
+func bazelConfigArgs(names []string) ([]string, error) {
+	args := make([]string, 0, len(names))
+	for _, name := range names {
+		if err := validateBazelConfigName(name); err != nil {
+			return nil, err
+		}
+		args = append(args, "--config="+name)
+	}
+	return args, nil
+}
+
+func validateBazelConfigName(name string) error {
+	if name == "" {
+		return fmt.Errorf("bazel_config: config name must not be empty")
+	}
+	if strings.ContainsAny(name, " \t\n=") {
+		return fmt.Errorf("bazel_config: invalid config name %q: must not contain whitespace or '='", name)
+	}
+	if strings.HasPrefix(name, "-") {
+		return fmt.Errorf("bazel_config: invalid config name %q: must not start with '-'", name)
+	}
+	return nil
 }
 
 func scopeBinDir(binDir string, targets []string) string {

@@ -184,10 +184,10 @@ func installLintConfigFilegroup(root string) (bool, error) {
 }
 
 const (
-	// TEMPORARY (bazel-central-registry#12088): gavel_tools 0.4.0 is served from
+	// TEMPORARY (bazel-central-registry#12091): gavel_tools 0.4.1 is served from
 	// the gavel registry until BCR merges it. When it does, delete
 	// gavelRegistryLine, gavelRegistryComment and their use in ensureRegistryLines.
-	gavelRegistryComment = "# TEMPORARY (bazel-central-registry#12088): serve gavel_tools until BCR merges; then drop this line."
+	gavelRegistryComment = "# TEMPORARY (bazel-central-registry#12091): serve gavel_tools until BCR merges; then drop this line."
 	gavelRegistryLine    = "common --registry=https://raw.githubusercontent.com/gavelcode/registry/main/"
 	bcrRegistryLine      = "common --registry=https://bcr.bazel.build"
 	registryLineCount    = 2

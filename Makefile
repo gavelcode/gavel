@@ -37,13 +37,9 @@ clispec-check: clispec-gen
 # catalog-sync vendors gavel_tools' tool catalog into the CLI so the distributed
 # standalone binary carries it (go:embed) instead of reading it from Bazel
 # runfiles it does not ship. The pinned gavel_tools version is the source of truth.
-#
-# The file is read straight from the fetched repo, not through a Bazel label: the
-# 0.4.0 release tarball drops rules_go from the module graph but still ships
-# lint/BUILD.bazel (a go_test), so `@gavel_tools//lint:catalog.yaml` cannot load.
 catalog-sync:
-	@bazel fetch --repo=@gavel_tools >/dev/null 2>&1
-	@cp "$$(bazel info output_base 2>/dev/null)/external/gavel_tools+/lint/catalog.yaml" $(CATALOG_DST)
+	@bazel build @gavel_tools//lint:catalog.yaml >/dev/null 2>&1
+	@cp "$$(bazel info execution_root)/$$(bazel cquery --output=files @gavel_tools//lint:catalog.yaml 2>/dev/null)" $(CATALOG_DST)
 
 catalog-check: catalog-sync
 	@git diff --exit-code -- $(CATALOG_DST) \

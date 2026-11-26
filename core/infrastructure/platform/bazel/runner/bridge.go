@@ -14,9 +14,10 @@ import (
 
 const (
 	// maxBuildEventBytes caps one JSON line of the build event stream; a NamedSetOfFiles event can be large.
-	maxBuildEventBytes     = 64 << 20
-	submissionsOutputGroup = "gavel_submissions"
-	failureOutputTailLines = 15
+	maxBuildEventBytes      = 64 << 20
+	initialBuildEventBuffer = 1 << 20
+	submissionsOutputGroup  = "gavel_submissions"
+	failureOutputTailLines  = 15
 )
 
 // BridgeConfig describes one project-declared aspect to build and collect.
@@ -149,7 +150,7 @@ func submissionFiles(bepPath string) ([]reportedFile, error) {
 	sets := make(map[string]*bepEvent)
 	var roots []string
 	scanner := bufio.NewScanner(bytes.NewReader(data))
-	scanner.Buffer(make([]byte, 0, 1<<20), maxBuildEventBytes)
+	scanner.Buffer(make([]byte, 0, initialBuildEventBuffer), maxBuildEventBytes)
 	for scanner.Scan() {
 		var event bepEvent
 		if err := json.Unmarshal(scanner.Bytes(), &event); err != nil {

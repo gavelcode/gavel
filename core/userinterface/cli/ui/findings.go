@@ -17,6 +17,8 @@ type FindingItem struct {
 	Tool     string
 	RuleID   string
 	IsNew    bool
+	// IsBridge marks a finding from a project-provided linter that gavel does not guarantee.
+	IsBridge bool
 }
 
 type ViolationItem struct {
@@ -58,7 +60,11 @@ func ToolSummary(findings []FindingItem) string {
 
 	counts := make(map[string]int)
 	for _, finding := range findings {
-		counts[finding.Tool]++
+		name := finding.Tool
+		if finding.IsBridge {
+			name += " (bridge)"
+		}
+		counts[name]++
 	}
 
 	tools := make([]string, 0, len(counts))
@@ -97,6 +103,9 @@ func ViolationsBlock(violations []ViolationItem) string {
 	return builder.String()
 }
 
+// BridgeLabel marks findings from a project-declared bridge in every output.
+const BridgeLabel = "bridge — not guaranteed by gavel"
+
 func formatFinding(finding FindingItem) string {
 	sevStyle := severityStyle(finding.Severity)
 	ruleRef := Dim.Render(fmt.Sprintf("%s:%s", finding.Tool, finding.RuleID))
@@ -104,11 +113,16 @@ func formatFinding(finding FindingItem) string {
 	if finding.IsNew {
 		newBadge = "  " + Success.Render("NEW")
 	}
-	return fmt.Sprintf("    %6d  %-7s  %s  %s%s\n",
+	bridgeBadge := ""
+	if finding.IsBridge {
+		bridgeBadge = "  " + GoldBar.Render(BridgeLabel)
+	}
+	return fmt.Sprintf("    %6d  %-7s  %s  %s%s%s\n",
 		finding.Line,
 		sevStyle.Render(finding.Severity),
 		finding.Message,
 		ruleRef,
+		bridgeBadge,
 		newBadge,
 	)
 }

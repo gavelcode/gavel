@@ -78,6 +78,7 @@ func main() {
 	vitestCoverage := collector.NewVitestCoverageCollector(logger)
 	coverageCollector := composite.NewCoverageCollector(bazelCoverage, vitestCoverage)
 	archCollector := collector.NewBazelArchitectureCollector(bazelRunner)
+	bridgeCollector := collector.NewBazelBridgeCollector(bazelRunner, findingsHandler)
 	sourceContext := git.NewSourceContext()
 
 	collectEvHandler := collectevidence.NewHandler(
@@ -87,6 +88,7 @@ func main() {
 		collectevidence.WithChangedLinesSource(sourceContext),
 		collectevidence.WithPerLineParser(lcovParser),
 		collectevidence.WithToolExecutionParser(sarifParser),
+		collectevidence.WithBridgeCollector(bridgeCollector),
 	)
 	inst := installer.NewInstaller()
 	submitHandler := submit.NewHandler(createCFHandler, ingestEvHandler, finalizeHandler)

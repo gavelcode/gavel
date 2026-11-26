@@ -161,12 +161,14 @@ type evidenceFile struct {
 	Format string
 	Source string
 	Data   []byte
+	// Provenance is "catalog" or "bridge"; empty means catalog.
+	Provenance string
 }
 
 func collectEvidenceFiles(collected collectevidence.Result, projectName string) []evidenceFile {
 	var files []evidenceFile
 	for _, rf := range collected.RawSARIF {
-		files = append(files, evidenceFile{Format: rf.Format, Source: rf.Source, Data: rf.Data})
+		files = append(files, evidenceFile{Format: rf.Format, Source: rf.Source, Data: rf.Data, Provenance: rf.Provenance})
 	}
 	if collected.RawLCOV != nil {
 		files = append(files, evidenceFile{Format: "lcov", Source: "coverage.lcov", Data: collected.RawLCOV})
@@ -186,6 +188,10 @@ func parseEvidence(ctx context.Context, deps Deps, file evidenceFile) (*evidence
 	switch file.Format {
 	case "sarif":
 		cmd, err := ingestfind.NewCommand(file.Data, "sarif", file.Source, "code_quality")
+		if err != nil {
+			return nil, err
+		}
+		cmd, err = cmd.WithProvenanceName(file.Provenance)
 		if err != nil {
 			return nil, err
 		}

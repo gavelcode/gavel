@@ -1,6 +1,7 @@
 package ui_test
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -193,4 +194,29 @@ func indexOf(s, substr string) int {
 		}
 	}
 	return -1
+}
+
+func TestFindingsBlockTagsBridgeFindingsAsNotGuaranteed(t *testing.T) {
+	findings := []ui.FindingItem{
+		{FilePath: "a.sh", Line: 2, Severity: "warning", Message: "quote it", Tool: "shellcheck", RuleID: "SC2086", IsBridge: true},
+		{FilePath: "a.go", Line: 1, Severity: "error", Message: "unchecked", Tool: "golangci-lint", RuleID: "errcheck"},
+	}
+
+	got := ui.FindingsBlock(findings)
+
+	assert.Contains(t, got, "shellcheck:SC2086")
+	assert.Contains(t, got, "bridge — not guaranteed by gavel")
+	assert.Equal(t, 1, strings.Count(got, "bridge — not guaranteed by gavel"), "catalog findings are not tagged")
+}
+
+func TestToolSummaryTagsBridgeTools(t *testing.T) {
+	findings := []ui.FindingItem{
+		{Tool: "shellcheck", IsBridge: true},
+		{Tool: "golangci-lint"},
+	}
+
+	got := ui.ToolSummary(findings)
+
+	assert.Contains(t, got, "golangci-lint: 1")
+	assert.Contains(t, got, "shellcheck (bridge): 1")
 }

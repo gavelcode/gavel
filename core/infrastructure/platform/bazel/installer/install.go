@@ -7,6 +7,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/usegavel/gavel/core/application/gavelspace/loadgavelspace"
 	"github.com/usegavel/gavel/core/infrastructure/platform/bazel/catalog"
 	"github.com/usegavel/gavel/core/infrastructure/platform/bazel/moduledeps"
 )
@@ -19,7 +20,15 @@ const (
 
 var selfModuleRe = regexp.MustCompile(`module\s*\(\s*name\s*=\s*"gavel(_tools)?"`)
 
-func (i *Installer) Install(workspace string, tooling []string) (map[string]bool, error) {
+// Install wires gavel into the workspace. Bridges are optional: they only add
+// `gavel-bridge-<name>` configs to gavel.bazelrc (never a bazel_dep, since a
+// bridge's aspect lives in the consumer's own workspace).
+func (i *Installer) Install(workspace string, tooling []string, bridges ...loadgavelspace.BridgeView) (map[string]bool, error) {
+	declared, err := distinctBridges(bridges)
+	if err != nil {
+		return nil, err
+	}
+
 	modified := make(map[string]bool)
 
 	if err := os.MkdirAll(filepath.Join(workspace, gavelDir), dirPermission); err != nil {
@@ -28,7 +37,7 @@ func (i *Installer) Install(workspace string, tooling []string) (map[string]bool
 
 	deps := moduledeps.Detect(workspace)
 
-	bazelrcMod, err := i.installBazelrc(workspace, tooling, deps)
+	bazelrcMod, err := i.installBazelrc(workspace, tooling, declared, deps)
 	if err != nil {
 		return nil, fmt.Errorf("install bazelrc: %w", err)
 	}
@@ -55,8 +64,8 @@ func (i *Installer) Install(workspace string, tooling []string) (map[string]bool
 	return modified, nil
 }
 
-func (i *Installer) installBazelrc(root string, tooling []string, deps catalog.Deps) (map[string]bool, error) {
-	block, err := renderTemplate(bazelrcTmpl, toBazelrcData(tooling, deps))
+func (i *Installer) installBazelrc(root string, tooling []string, bridges []loadgavelspace.BridgeView, deps catalog.Deps) (map[string]bool, error) {
+	block, err := renderTemplate(bazelrcTmpl, toBazelrcData(tooling, bridges, deps))
 	if err != nil {
 		return nil, err
 	}

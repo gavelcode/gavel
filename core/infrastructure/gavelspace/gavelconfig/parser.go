@@ -116,6 +116,16 @@ func buildProject(dto projectDTO, now time.Time) (projectmodel.Project, error) {
 		project.UpdateToolSelection(selection, now)
 	}
 
+	bridges, err := buildBridges(dto.Bridges)
+	if err != nil {
+		return projectmodel.Project{}, err
+	}
+	if len(bridges) > 0 {
+		if err := project.UpdateBridges(bridges, now); err != nil {
+			return projectmodel.Project{}, fmt.Errorf("bridges[]: %w", err)
+		}
+	}
+
 	qg, err := buildQualityGate(dto.Gate)
 	if err != nil {
 		return projectmodel.Project{}, err
@@ -131,6 +141,18 @@ func buildProject(dto projectDTO, now time.Time) (projectmodel.Project, error) {
 	}
 
 	return project, nil
+}
+
+func buildBridges(dtos []bridgeDTO) ([]projectmodel.Bridge, error) {
+	bridges := make([]projectmodel.Bridge, 0, len(dtos))
+	for index, dto := range dtos {
+		bridge, err := projectmodel.NewBridge(dto.Name, dto.Aspect, dto.SARIFSuffix, dto.BuildFlags)
+		if err != nil {
+			return nil, fmt.Errorf("bridges[%d]: %w", index, err)
+		}
+		bridges = append(bridges, bridge)
+	}
+	return bridges, nil
 }
 
 func buildTooling(tooling map[string][]string) ([]coverage.Language, map[string][]string, error) {

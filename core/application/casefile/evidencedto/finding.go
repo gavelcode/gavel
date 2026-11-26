@@ -3,6 +3,7 @@ package evidencedto
 import (
 	"fmt"
 
+	"github.com/usegavel/gavel/core/domain/casefile/model/evidence"
 	"github.com/usegavel/gavel/core/domain/casefile/model/evidence/finding"
 )
 
@@ -14,6 +15,8 @@ type Finding struct {
 	Line          int
 	Message       string
 	FingerprintID string
+	// Provenance is "catalog" (gavel-guaranteed) or "bridge" (provided by the project); empty means catalog.
+	Provenance string
 }
 
 func ExtractFindings(evidences []Evidence) []Finding {
@@ -54,6 +57,7 @@ func fromDomainFindings(findings []finding.Finding) []Finding {
 			Line:          domainFinding.Line(),
 			Message:       domainFinding.Message(),
 			FingerprintID: domainFinding.ID().Value(),
+			Provenance:    domainFinding.Provenance().String(),
 		})
 	}
 	return out
@@ -70,10 +74,15 @@ func toDomainFindings(dtos []Finding) ([]finding.Finding, error) {
 		if err != nil {
 			return nil, fmt.Errorf("findings[%d] fingerprint: %w", index, err)
 		}
+		provenance, err := evidence.NewProvenance(input.Provenance)
+		if err != nil {
+			return nil, fmt.Errorf("findings[%d] provenance: %w", index, err)
+		}
 		domainFinding, err := finding.NewFinding(input.Tool, input.RuleID, severity, input.FilePath, input.Line, input.Message, fingerprint)
 		if err != nil {
 			return nil, fmt.Errorf("findings[%d]: %w", index, err)
 		}
+		domainFinding = domainFinding.WithProvenance(provenance)
 		out = append(out, domainFinding)
 	}
 	return out, nil

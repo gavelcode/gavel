@@ -1,17 +1,21 @@
 ---
 title: Gavel and rules_lint integration
 type: explanation
-description: Where aspect_rules_lint fits relative to Gavel's native SARIF aspects — a breadth add-on, not a substitute.
+description: Superseded design record — the rules_lint integrated mode was removed; kept as history.
 tags: [rules_lint, findings, integration, design-record]
 ---
 
 # Integration Strategy: Gavel + rules_lint
 
-> **Status: implemented.** The dual-mode design below shipped — `gavel judge`
-> auto-detects rules_lint reports in `bazel-bin/` and falls back to Gavel's own
-> aspects, overridable with `--findings-source=auto|gavel|rules_lint`. The
-> "Proposed architecture" / "Implementation plan" sections are kept as the
-> rationale of record; the open questions at the end are the remaining nits.
+> **Status: superseded — the integrated mode was removed.** `--findings-source`
+> and the `findings_source` config key no longer exist; gavel always runs its own
+> aspects. The mode was dead code (the value was parsed but never read) and the
+> premise was wrong: gavel guarantees hermetic execution and SARIF with `ruleId`
+> itself, while rules_lint's SARIF has an empty `ruleId` (see gavel-tools
+> `docs/sarif-boundary.md`). The replacement for linters gavel does not
+> ship is [bridges](../configuration.md#bridges): project-declared aspects that
+> gavel builds and judges but marks as not guaranteed. The rest of
+> this document is kept as a historical record only.
 
 ## Context
 

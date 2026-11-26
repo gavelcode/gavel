@@ -32,6 +32,7 @@ type Project struct {
 	excludePatterns    []string
 	languages          []coverage.Language
 	toolSelection      map[string][]string
+	bridges            []Bridge
 	defaultBranch      string
 	qualityGate        qualitygate.Gate
 	architecturePolicy *archpolicy.Policy
@@ -151,6 +152,35 @@ func (p *Project) UpdateToolSelection(selection map[string][]string, occurredAt 
 
 func (p Project) ToolSelection() map[string][]string {
 	return copyToolSelection(p.toolSelection)
+}
+
+// UpdateBridges replaces the project's bridges. A bridge's name becomes the
+// tool name of its findings, so it must be unique and must not shadow a
+// catalog tool the project selected (fingerprints include the tool name).
+func (p *Project) UpdateBridges(bridges []Bridge, occurredAt time.Time) error {
+	catalogTools := make(map[string]bool)
+	for _, tools := range p.toolSelection {
+		for _, tool := range tools {
+			catalogTools[tool] = true
+		}
+	}
+	seen := make(map[string]bool, len(bridges))
+	for _, bridge := range bridges {
+		if seen[bridge.name] {
+			return fmt.Errorf("%w: duplicate bridge name %q", ErrInvalidBridge, bridge.name)
+		}
+		seen[bridge.name] = true
+		if catalogTools[bridge.name] {
+			return fmt.Errorf("%w: bridge name %q clashes with the catalog tool of the same name in this project's tooling", ErrInvalidBridge, bridge.name)
+		}
+	}
+	p.bridges = append([]Bridge(nil), bridges...)
+	p.events = append(p.events, NewBridgesUpdated(p.id, occurredAt))
+	return nil
+}
+
+func (p Project) Bridges() []Bridge {
+	return append([]Bridge(nil), p.bridges...)
 }
 
 func copyToolSelection(selection map[string][]string) map[string][]string {

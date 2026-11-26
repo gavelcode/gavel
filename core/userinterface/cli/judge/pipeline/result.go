@@ -29,4 +29,6 @@ type Result struct {
 	ServerFailed           bool
 	BuildWarning           string
 	UnanalyzedTools        []string
+	// ToolFailures are the tools that failed or ran incomplete, each marked with its provenance.
+	ToolFailures []evidencedto.ToolFailure
 }

@@ -37,6 +37,7 @@ type VerdictFinding struct {
 	Message       string
 	FingerprintID string
 	Status        string
+	Provenance    string
 }
 
 type VerdictViolation struct {

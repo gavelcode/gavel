@@ -499,3 +499,62 @@ func TestWrite_ArchDeltaOnly(t *testing.T) {
 	assert.Equal(t, float64(2), delta["fixed_violations_count"])
 	assert.Equal(t, float64(3), delta["existing_violations_count"])
 }
+
+func TestWrite_MarksFindingProvenance(t *testing.T) {
+	var buf bytes.Buffer
+	results := []pipeline.Result{{
+		Name: "payments", Verdict: "fail", FindingsCount: 2,
+		Findings: []evidencedto.Finding{
+			{Tool: "golangci-lint", RuleID: "R1", Severity: "error", FilePath: "a.go", Line: 1, FingerprintID: "fp1", Provenance: "catalog"},
+			{Tool: "shellcheck", RuleID: "SC2086", Severity: "warning", FilePath: "a.sh", Line: 2, FingerprintID: "fp2", Provenance: "bridge"},
+			{Tool: "legacy", RuleID: "R3", Severity: "note", FilePath: "b.go", Line: 3, FingerprintID: "fp3"},
+		},
+	}}
+
+	require.NoError(t, json.Write(&buf, results))
+
+	var got struct {
+		Projects []struct {
+			Findings []struct {
+				Tool       string `json:"tool"`
+				Provenance string `json:"provenance"`
+			} `json:"findings"`
+		} `json:"projects"`
+	}
+	require.NoError(t, encjson.Unmarshal(buf.Bytes(), &got))
+	findings := got.Projects[0].Findings
+	assert.Equal(t, "catalog", findings[0].Provenance)
+	assert.Equal(t, "bridge", findings[1].Provenance)
+	assert.Equal(t, "catalog", findings[2].Provenance, "unmarked findings are catalog")
+}
+
+func TestWrite_IncludesToolFailuresWithProvenance(t *testing.T) {
+	var buf bytes.Buffer
+	results := []pipeline.Result{{
+		Name: "payments", Verdict: "fail",
+		ToolFailures: []evidencedto.ToolFailure{
+			{Tool: "shellcheck", Reason: "no SARIF files", Provenance: "bridge"},
+			{Tool: "ErrorProne", Reason: "partial", Degraded: true},
+		},
+	}}
+
+	require.NoError(t, json.Write(&buf, results))
+
+	var got struct {
+		Projects []struct {
+			ToolFailures []struct {
+				Tool       string `json:"tool"`
+				Reason     string `json:"reason"`
+				Degraded   bool   `json:"degraded"`
+				Provenance string `json:"provenance"`
+			} `json:"tool_failures"`
+		} `json:"projects"`
+	}
+	require.NoError(t, encjson.Unmarshal(buf.Bytes(), &got))
+	failures := got.Projects[0].ToolFailures
+	require.Len(t, failures, 2)
+	assert.Equal(t, "shellcheck", failures[0].Tool)
+	assert.Equal(t, "bridge", failures[0].Provenance)
+	assert.Equal(t, "catalog", failures[1].Provenance)
+	assert.True(t, failures[1].Degraded)
+}

@@ -110,3 +110,24 @@ func validParsed(t *testing.T) ingestfindings.Parsed {
 		FingerprintID: fingerprint,
 	}
 }
+
+func TestHandlerExecuteBridgeProvenanceMarksFindingsAndNamespacesFingerprints(t *testing.T) {
+	parser := &fakeParser{parsed: []ingestfindings.Parsed{validParsed(t)}}
+	handler := ingestfindings.NewHandler(map[string]ingestfindings.Parser{"sarif": parser})
+	catalogCmd := mustCommand(t, []byte("{}"), "sarif", "shellcheck", evidence.SubtypeCodeQuality.String())
+	bridgeCmd := mustCommand(t, []byte("{}"), "sarif", "shellcheck", evidence.SubtypeCodeQuality.String()).
+		WithProvenance(evidence.ProvenanceBridge)
+
+	catalogResult, err := handler.Execute(context.Background(), catalogCmd)
+	require.NoError(t, err)
+	bridgeResult, err := handler.Execute(context.Background(), bridgeCmd)
+	require.NoError(t, err)
+
+	require.Len(t, bridgeResult.Evidence.Findings, 1)
+	assert.Equal(t, "bridge", bridgeResult.Evidence.Findings[0].Provenance)
+	assert.Equal(t, "catalog", catalogResult.Evidence.Findings[0].Provenance)
+	assert.Equal(t, "shellcheck", bridgeResult.Evidence.Findings[0].Tool)
+	assert.NotEqual(t, catalogResult.Evidence.Findings[0].FingerprintID, bridgeResult.Evidence.Findings[0].FingerprintID,
+		"a bridge can never collide with a catalog tool's fingerprints")
+	assert.Contains(t, bridgeResult.Evidence.Findings[0].FingerprintID, "bridge/shellcheck/")
+}

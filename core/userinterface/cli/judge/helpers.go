@@ -7,12 +7,26 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/usegavel/gavel/core/application/casefile/collectevidence"
 	"github.com/usegavel/gavel/core/application/gavelspace/loadgavelspace"
 	"github.com/usegavel/gavel/core/application/project/preparebaseline"
 	apiclient "github.com/usegavel/gavel/core/userinterface/api/v1/client"
 	"github.com/usegavel/gavel/core/userinterface/cli/judge/pipeline"
 	"github.com/usegavel/gavel/core/userinterface/cli/ui"
 )
+
+func bridgeSpecs(project loadgavelspace.ProjectView) []collectevidence.BridgeSpec {
+	specs := make([]collectevidence.BridgeSpec, 0, len(project.Bridges))
+	for _, bridge := range project.Bridges {
+		specs = append(specs, collectevidence.BridgeSpec{
+			Name:        bridge.Name,
+			Aspect:      bridge.Aspect,
+			SARIFSuffix: bridge.SARIFSuffix,
+			BuildFlags:  bridge.BuildFlags,
+		})
+	}
+	return specs
+}
 
 func resolveGitInfo(ctx context.Context, source SourceContext, commitOverride, branchOverride string) (string, string, error) {
 	commitSHA := commitOverride

@@ -232,3 +232,64 @@ func buildLicenseEvidence(t *testing.T) evidence.Evidence {
 	require.NoError(t, err)
 	return ev
 }
+
+func TestBridgeFindingProvenanceRoundTrip(t *testing.T) {
+	fp, err := finding.NewFingerprintID("fp1")
+	require.NoError(t, err)
+	bridged, err := finding.NewFinding("shellcheck", "SC2086", finding.SeverityWarning, "a.sh", 3, "quote", fp)
+	require.NoError(t, err)
+	content, err := finding.NewContent(evidence.SubtypeCodeQuality, []finding.Finding{bridged.WithProvenance(evidence.ProvenanceBridge)})
+	require.NoError(t, err)
+	original, err := evidence.NewEvidence(evidence.SubtypeCodeQuality, "shellcheck", content, time.Now())
+	require.NoError(t, err)
+
+	dto := evidencedto.EvidenceFromDomain(original)
+	require.Len(t, dto.Findings, 1)
+	assert.Equal(t, "bridge", dto.Findings[0].Provenance)
+
+	back, err := evidencedto.EvidenceToDomain(dto)
+	require.NoError(t, err)
+	got := back.Content().(finding.Content).Findings()[0]
+	assert.Equal(t, evidence.ProvenanceBridge, got.Provenance())
+}
+
+func TestCatalogFindingDTOHasEmptyOrCatalogProvenance(t *testing.T) {
+	dto := evidencedto.EvidenceFromDomain(buildFindingsEvidence(t))
+
+	assert.Equal(t, "catalog", dto.Findings[0].Provenance)
+}
+
+func TestBridgeToolFailureProvenanceRoundTrip(t *testing.T) {
+	dto := evidencedto.Evidence{
+		Subtype:     evidence.SubtypeToolExecution.String(),
+		Source:      "shellcheck",
+		CollectedAt: time.Now(),
+		ToolExecution: &evidencedto.ToolExecution{Failures: []evidencedto.ToolFailure{
+			{Tool: "shellcheck", Reason: "no SARIF produced", Provenance: "bridge"},
+		}},
+	}
+
+	domainEvidence, err := evidencedto.EvidenceToDomain(dto)
+	require.NoError(t, err)
+	failures := domainEvidence.Content().(toolexecution.Content).Failures()
+	require.Len(t, failures, 1)
+	assert.Equal(t, evidence.ProvenanceBridge, failures[0].Provenance())
+
+	back := evidencedto.EvidenceFromDomain(domainEvidence)
+	assert.Equal(t, "bridge", back.ToolExecution.Failures[0].Provenance)
+}
+
+func TestEvidenceToDomainRejectsUnknownProvenance(t *testing.T) {
+	dto := evidencedto.Evidence{
+		Subtype:     evidence.SubtypeToolExecution.String(),
+		Source:      "x",
+		CollectedAt: time.Now(),
+		ToolExecution: &evidencedto.ToolExecution{Failures: []evidencedto.ToolFailure{
+			{Tool: "x", Reason: "r", Provenance: "magic"},
+		}},
+	}
+
+	_, err := evidencedto.EvidenceToDomain(dto)
+
+	require.Error(t, err)
+}

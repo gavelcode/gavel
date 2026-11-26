@@ -28,4 +28,6 @@ type RawFile struct {
 	Format string
 	Source string
 	Data   []byte
+	// Provenance is "catalog" or "bridge"; empty means catalog.
+	Provenance string
 }

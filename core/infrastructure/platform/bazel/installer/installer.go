@@ -4,9 +4,11 @@ import (
 	"bytes"
 	_ "embed"
 	"fmt"
+	"slices"
 	"sort"
 	"text/template"
 
+	"github.com/usegavel/gavel/core/application/gavelspace/loadgavelspace"
 	"github.com/usegavel/gavel/core/infrastructure/platform/bazel/catalog"
 )
 
@@ -48,6 +50,7 @@ type bazelrcData struct {
 	Python     bool
 	TypeScript bool
 	Rust       bool
+	Bridges    []loadgavelspace.BridgeView
 	deps       catalog.Deps
 }
 
@@ -72,7 +75,7 @@ type moduleData struct {
 	Modules []string
 }
 
-func toBazelrcData(tooling []string, deps catalog.Deps) bazelrcData {
+func toBazelrcData(tooling []string, bridges []loadgavelspace.BridgeView, deps catalog.Deps) bazelrcData {
 	set := toToolingSet(tooling)
 	return bazelrcData{
 		Go:         set["go"],
@@ -80,6 +83,7 @@ func toBazelrcData(tooling []string, deps catalog.Deps) bazelrcData {
 		Python:     set["python"],
 		TypeScript: set["typescript"],
 		Rust:       set["rust"],
+		Bridges:    bridges,
 		deps:       deps,
 	}
 }
@@ -113,4 +117,24 @@ func renderTemplate(tmpl *template.Template, data any) (string, error) {
 		return "", fmt.Errorf("render template %s: %w", tmpl.Name(), err)
 	}
 	return buf.String(), nil
+}
+
+// distinctBridges collapses a bridge declared identically by several projects
+// and rejects one name bound to different aspects: the bazelrc config name is
+// the bridge name, so it can mean only one thing.
+func distinctBridges(bridges []loadgavelspace.BridgeView) ([]loadgavelspace.BridgeView, error) {
+	byName := make(map[string]loadgavelspace.BridgeView, len(bridges))
+	var distinct []loadgavelspace.BridgeView
+	for _, bridge := range bridges {
+		seen, ok := byName[bridge.Name]
+		if !ok {
+			byName[bridge.Name] = bridge
+			distinct = append(distinct, bridge)
+			continue
+		}
+		if seen.Aspect != bridge.Aspect || !slices.Equal(seen.BuildFlags, bridge.BuildFlags) {
+			return nil, fmt.Errorf("bridge %q is declared with different aspects or build_flags in different projects; give them distinct names", bridge.Name)
+		}
+	}
+	return distinct, nil
 }

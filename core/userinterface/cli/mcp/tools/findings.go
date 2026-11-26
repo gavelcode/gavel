@@ -111,6 +111,9 @@ func renderFindings(filtered, shown []lintFinding, limit int) string {
 
 	for _, f := range shown {
 		fmt.Fprintf(&builder, "%s:%d [%s] %s (%s:%s)", f.FilePath, f.Line, f.Severity, f.Message, f.Tool, f.RuleID)
+		if isBridge(f.Provenance) {
+			builder.WriteString(" " + bridgeLabel)
+		}
 		if isNew(f) {
 			builder.WriteString(" " + statusNewLabel)
 		}

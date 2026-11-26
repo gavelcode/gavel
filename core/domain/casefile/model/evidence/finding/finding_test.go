@@ -6,6 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/usegavel/gavel/core/domain/casefile/model/evidence"
 	"github.com/usegavel/gavel/core/domain/casefile/model/evidence/finding"
 )
 
@@ -151,4 +152,26 @@ func TestFindingEqual(t *testing.T) {
 
 	assert.True(t, find1.Equal(find2))
 	assert.False(t, find1.Equal(f3))
+}
+
+func TestFindingProvenanceDefaultsToCatalog(t *testing.T) {
+	fp, err := finding.NewFingerprintID("fp")
+	require.NoError(t, err)
+	f, err := finding.NewFinding("ruff", "E1", finding.SeverityError, "a.py", 1, "m", fp)
+	require.NoError(t, err)
+
+	assert.Equal(t, evidence.ProvenanceCatalog, f.Provenance())
+}
+
+func TestFindingWithProvenanceReturnsMarkedCopy(t *testing.T) {
+	fp, err := finding.NewFingerprintID("fp")
+	require.NoError(t, err)
+	f, err := finding.NewFinding("shellcheck", "SC2086", finding.SeverityWarning, "a.sh", 3, "m", fp)
+	require.NoError(t, err)
+
+	bridged := f.WithProvenance(evidence.ProvenanceBridge)
+
+	assert.Equal(t, evidence.ProvenanceBridge, bridged.Provenance())
+	assert.Equal(t, evidence.ProvenanceCatalog, f.Provenance(), "original is unchanged")
+	assert.Equal(t, f.RuleID(), bridged.RuleID())
 }

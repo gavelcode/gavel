@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/usegavel/gavel/core/application/gavelspace/loadgavelspace"
 	"github.com/usegavel/gavel/core/infrastructure/platform/bazel/installer"
 )
 
@@ -517,4 +518,85 @@ func readRaw(t *testing.T, path string) string {
 	data, err := os.ReadFile(path)
 	require.NoError(t, err)
 	return string(data)
+}
+
+func shellcheckBridge() loadgavelspace.BridgeView {
+	return loadgavelspace.BridgeView{
+		Name: "shellcheck", Aspect: "//tools/lint:shellcheck.bzl%shellcheck_gavel", SARIFSuffix: ".shellcheck.sarif",
+		BuildFlags: []string{"--some=flag", "--other"},
+	}
+}
+
+func TestInstall_Bridges_WritesOneBazelrcConfigPerBridge(t *testing.T) {
+	root := setupWorkspace(t, `module(name = "consumer-app", version = "1.0.0")`+"\n")
+
+	_, err := installer.NewInstaller().Install(root, []string{"go"}, shellcheckBridge())
+	require.NoError(t, err)
+
+	bazelrc := readFile(t, filepath.Join(root, installer.GavelBazelrc))
+	for _, want := range []string{
+		"# --- Bridges (provided by the project, not guaranteed by gavel) ---",
+		"build:gavel-bridge-shellcheck --aspects=//tools/lint:shellcheck.bzl%shellcheck_gavel",
+		"build:gavel-bridge-shellcheck --output_groups=gavel_submissions",
+		"build:gavel-bridge-shellcheck --some=flag",
+		"build:gavel-bridge-shellcheck --other",
+	} {
+		assert.Contains(t, bazelrc, want)
+	}
+}
+
+func TestInstall_Bridges_AddNoBazelDep(t *testing.T) {
+	root := setupWorkspace(t, `module(name = "consumer-app", version = "1.0.0")`+"\n")
+	plain := setupWorkspace(t, `module(name = "consumer-app", version = "1.0.0")`+"\n")
+
+	_, err := installer.NewInstaller().Install(root, nil, shellcheckBridge())
+	require.NoError(t, err)
+	_, err = installer.NewInstaller().Install(plain, nil)
+	require.NoError(t, err)
+
+	assert.Equal(t, readRaw(t, filepath.Join(plain, installer.GavelModule)), readRaw(t, filepath.Join(root, installer.GavelModule)))
+	assert.Equal(t, readRaw(t, filepath.Join(plain, "MODULE.bazel")), readRaw(t, filepath.Join(root, "MODULE.bazel")))
+}
+
+func TestInstall_Bridges_IsIdempotent(t *testing.T) {
+	root := setupWorkspace(t, `module(name = "consumer-app", version = "1.0.0")`+"\n")
+	inst := installer.NewInstaller()
+
+	_, err := inst.Install(root, []string{"go"}, shellcheckBridge())
+	require.NoError(t, err)
+	first := readRaw(t, filepath.Join(root, installer.GavelBazelrc)) + readRaw(t, filepath.Join(root, ".bazelrc"))
+	_, err = inst.Install(root, []string{"go"}, shellcheckBridge())
+	require.NoError(t, err)
+	second := readRaw(t, filepath.Join(root, installer.GavelBazelrc)) + readRaw(t, filepath.Join(root, ".bazelrc"))
+
+	assert.Equal(t, first, second)
+}
+
+func TestInstall_Bridges_SameBridgeDeclaredByTwoProjectsIsWrittenOnce(t *testing.T) {
+	root := setupWorkspace(t, `module(name = "consumer-app", version = "1.0.0")`+"\n")
+
+	_, err := installer.NewInstaller().Install(root, nil, shellcheckBridge(), shellcheckBridge())
+	require.NoError(t, err)
+
+	assert.Equal(t, 1, strings.Count(readRaw(t, filepath.Join(root, installer.GavelBazelrc)), "build:gavel-bridge-shellcheck --aspects="))
+}
+
+func TestInstall_Bridges_RejectsSameNameWithDifferentDefinitions(t *testing.T) {
+	root := setupWorkspace(t, `module(name = "consumer-app", version = "1.0.0")`+"\n")
+	other := shellcheckBridge()
+	other.Aspect = "//tools/lint:other.bzl%other"
+
+	_, err := installer.NewInstaller().Install(root, nil, shellcheckBridge(), other)
+
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "shellcheck")
+}
+
+func TestInstall_NoBridges_OmitsBridgeSection(t *testing.T) {
+	root := setupWorkspace(t, `module(name = "consumer-app", version = "1.0.0")`+"\n")
+
+	_, err := installer.NewInstaller().Install(root, []string{"go"})
+	require.NoError(t, err)
+
+	assert.NotContains(t, readRaw(t, filepath.Join(root, installer.GavelBazelrc)), "Bridges")
 }

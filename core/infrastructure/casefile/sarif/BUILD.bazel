@@ -5,6 +5,7 @@ go_library(
     srcs = [
         "architecture.go",
         "artifact_location.go",
+        "bridge.go",
         "configuration.go",
         "document.go",
         "driver.go",
@@ -36,6 +37,7 @@ go_test(
     name = "sarif_test",
     srcs = [
         "architecture_test.go",
+        "bridge_test.go",
         "executions_test.go",
         "filesource_test.go",
         "parser_test.go",

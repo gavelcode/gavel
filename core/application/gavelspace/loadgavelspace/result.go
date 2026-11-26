@@ -32,6 +32,15 @@ type ProjectView struct {
 	Baseline        BaselineView
 	ArchPolicy      *ArchPolicyView
 	BazelConfigs    []string
+	Bridges         []BridgeView
+}
+
+// BridgeView is a project-declared linter aspect (a "bridge").
+type BridgeView struct {
+	Name        string
+	Aspect      string
+	SARIFSuffix string
+	BuildFlags  []string
 }
 
 type GateRuleView struct {
@@ -116,7 +125,21 @@ func buildView(gavelspace gavelspacemodel.Gavelspace, projects []projectmodel.Pr
 			Baseline:        baselineView,
 			ArchPolicy:      archPolicyView,
 			BazelConfigs:    view.BazelConfigs,
+			Bridges:         bridgeViews(project.Bridges()),
 		})
 	}
 	return view
+}
+
+func bridgeViews(bridges []projectmodel.Bridge) []BridgeView {
+	views := make([]BridgeView, 0, len(bridges))
+	for _, bridge := range bridges {
+		views = append(views, BridgeView{
+			Name:        bridge.Name(),
+			Aspect:      bridge.Aspect(),
+			SARIFSuffix: bridge.SARIFSuffix(),
+			BuildFlags:  bridge.BuildFlags(),
+		})
+	}
+	return views
 }

@@ -52,3 +52,15 @@ build:gavel-rust-clippy {{ . }}
 build:gavel-rust-archtest --aspects={{ .Label "rust" "archtest" }}
 build:gavel-rust-archtest --output_groups=gavel_submissions
 {{- end }}
+{{- if .Bridges }}
+
+# --- Bridges (provided by the project, not guaranteed by gavel) ---
+{{- range .Bridges }}
+build:gavel-bridge-{{ .Name }} --aspects={{ .Aspect }}
+build:gavel-bridge-{{ .Name }} --output_groups=gavel_submissions
+{{- $name := .Name }}
+{{- range .BuildFlags }}
+build:gavel-bridge-{{ $name }} {{ . }}
+{{- end }}
+{{- end }}
+{{- end }}

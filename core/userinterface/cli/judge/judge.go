@@ -389,6 +389,9 @@ func runProject(
 	if len(project.BazelConfigs) > 0 {
 		cmdOpts = append(cmdOpts, collectevidence.WithBazelConfigs(project.BazelConfigs))
 	}
+	if bridges := bridgeSpecs(project); len(bridges) > 0 {
+		cmdOpts = append(cmdOpts, collectevidence.WithBridges(bridges))
+	}
 
 	collectCmd, err := collectevidence.NewCommand(workspace, project.TargetPattern, project.Name, project.DefaultBranch, project.Languages, opts.Quick, opts.Absolute, project.Baseline.ArchIDs, cmdOpts...)
 	if err != nil {

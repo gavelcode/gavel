@@ -1,6 +1,7 @@
 package gavelconfig
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"sort"
@@ -79,8 +80,8 @@ func mapToDomain(dto configDTO) (WorkspaceConfig, error) {
 		projects = append(projects, project)
 	}
 
-	if err := validateFindingsSource(dto.FindingsSource); err != nil {
-		return WorkspaceConfig{}, err
+	if dto.RemovedFindingsSource.Kind != 0 {
+		return WorkspaceConfig{}, errFindingsSourceRemoved
 	}
 
 	if err := validateBazelConfigs(dto.BazelConfig); err != nil {
@@ -88,7 +89,6 @@ func mapToDomain(dto configDTO) (WorkspaceConfig, error) {
 	}
 
 	gavelspace.SetServerConfig(gavelspacemodel.NewServerConfig(dto.Server.URL, dto.Server.Token))
-	gavelspace.SetFindingsSource(dto.FindingsSource)
 	gavelspace.SetBazelConfigs(dto.BazelConfig)
 
 	return WorkspaceConfig{
@@ -96,7 +96,6 @@ func mapToDomain(dto configDTO) (WorkspaceConfig, error) {
 		projects:        projects,
 		coverageOptions: covOptions,
 		server:          ServerConfig{url: dto.Server.URL, token: dto.Server.Token},
-		findingsSource:  dto.FindingsSource,
 		bazelConfigs:    dto.BazelConfig,
 	}, nil
 }
@@ -117,6 +116,16 @@ func buildProject(dto projectDTO, now time.Time) (projectmodel.Project, error) {
 		project.UpdateToolSelection(selection, now)
 	}
 
+	bridges, err := buildBridges(dto.Bridges)
+	if err != nil {
+		return projectmodel.Project{}, err
+	}
+	if len(bridges) > 0 {
+		if err := project.UpdateBridges(bridges, now); err != nil {
+			return projectmodel.Project{}, fmt.Errorf("bridges[]: %w", err)
+		}
+	}
+
 	qg, err := buildQualityGate(dto.Gate)
 	if err != nil {
 		return projectmodel.Project{}, err
@@ -132,6 +141,18 @@ func buildProject(dto projectDTO, now time.Time) (projectmodel.Project, error) {
 	}
 
 	return project, nil
+}
+
+func buildBridges(dtos []bridgeDTO) ([]projectmodel.Bridge, error) {
+	bridges := make([]projectmodel.Bridge, 0, len(dtos))
+	for index, dto := range dtos {
+		bridge, err := projectmodel.NewBridge(dto.Name, dto.Aspect, dto.SARIFSuffix, dto.BuildFlags)
+		if err != nil {
+			return nil, fmt.Errorf("bridges[%d]: %w", index, err)
+		}
+		bridges = append(bridges, bridge)
+	}
+	return bridges, nil
 }
 
 func buildTooling(tooling map[string][]string) ([]coverage.Language, map[string][]string, error) {
@@ -308,20 +329,7 @@ func valueOrZero(p *int) int {
 	return *p
 }
 
-var validFindingsSources = map[string]bool{
-	"":           true,
-	"auto":       true,
-	"gavel":      true,
-	"rules_lint": true,
-}
-
-func validateFindingsSource(source string) error {
-	if validFindingsSources[source] {
-		return nil
-	}
-
-	return fmt.Errorf("findings_source: unknown value %q (valid: auto, gavel, rules_lint)", source)
-}
+var errFindingsSourceRemoved = errors.New("findings_source was removed: gavel always runs its own aspects (see docs/design/rules-lint-integration.md)")
 
 func validateBazelConfigs(names []string) error {
 	for _, name := range names {

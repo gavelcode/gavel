@@ -10,7 +10,6 @@ type WorkspaceConfig struct {
 	projects        []projectmodel.Project
 	coverageOptions map[string]CoverageOptions
 	server          ServerConfig
-	findingsSource  string
 	bazelConfigs    []string
 }
 
@@ -26,8 +25,7 @@ func (w WorkspaceConfig) CoverageOptionsForProject(name string) CoverageOptions 
 	return w.coverageOptions[name]
 }
 
-func (w WorkspaceConfig) Server() ServerConfig   { return w.server }
-func (w WorkspaceConfig) FindingsSource() string { return w.findingsSource }
+func (w WorkspaceConfig) Server() ServerConfig { return w.server }
 
 func (w WorkspaceConfig) BazelConfigs() []string {
 	copied := make([]string, len(w.bazelConfigs))

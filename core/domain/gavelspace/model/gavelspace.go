@@ -10,13 +10,12 @@ import (
 )
 
 type Gavelspace struct {
-	id             GavelspaceID
-	tenantID       tenant.TenantID
-	projects       []ProjectRef
-	serverConfig   ServerConfig
-	findingsSource string
-	bazelConfigs   []string
-	events         []event.DomainEvent
+	id           GavelspaceID
+	tenantID     tenant.TenantID
+	projects     []ProjectRef
+	serverConfig ServerConfig
+	bazelConfigs []string
+	events       []event.DomainEvent
 }
 
 func NewGavelspace(tenantID tenant.TenantID, name string) (Gavelspace, error) {
@@ -46,10 +45,8 @@ func ReconstituteGavelspace(gavelspaceID GavelspaceID, tenantID tenant.TenantID,
 func (g *Gavelspace) ID() GavelspaceID           { return g.id }
 func (g *Gavelspace) TenantID() tenant.TenantID  { return g.tenantID }
 func (g *Gavelspace) ServerConfig() ServerConfig { return g.serverConfig }
-func (g *Gavelspace) FindingsSource() string     { return g.findingsSource }
 
 func (g *Gavelspace) SetServerConfig(sc ServerConfig) { g.serverConfig = sc }
-func (g *Gavelspace) SetFindingsSource(source string) { g.findingsSource = source }
 
 func (g *Gavelspace) BazelConfigs() []string {
 	copied := make([]string, len(g.bazelConfigs))

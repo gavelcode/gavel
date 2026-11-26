@@ -106,3 +106,13 @@ func TestCoverageSummary_RootFilesRendersTreeWithDot(t *testing.T) {
 	assert.Contains(t, out, ".")
 	assert.Contains(t, out, "Coverage by directory")
 }
+
+func TestFindingsCarriesBridgeProvenanceIntoTheTag(t *testing.T) {
+	result := pipeline.Result{Findings: []evidencedto.Finding{
+		{Tool: "shellcheck", RuleID: "SC2086", Severity: "warning", FilePath: "a.sh", Line: 2, Message: "quote", FingerprintID: "f", Provenance: "bridge"},
+	}}
+
+	got := render.Findings(result)
+
+	assert.Contains(t, got, "bridge — not guaranteed by gavel")
+}

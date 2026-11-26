@@ -7,12 +7,14 @@ import (
 	"sort"
 
 	"gopkg.in/yaml.v3"
+
+	"github.com/usegavel/gavel/core/application/gavelspace/loadgavelspace"
 )
 
 const defaultCoverageMin = 60
 
 type ConfigInstaller interface {
-	Install(workspace string, tooling []string) (map[string]bool, error)
+	Install(workspace string, tooling []string, bridges ...loadgavelspace.BridgeView) (map[string]bool, error)
 }
 
 type ToolCatalogProvider interface {
@@ -71,7 +73,11 @@ func execute(configPath, workspacePath, name string, force bool, projects []Proj
 	if err := writeArchitectureConfig(workspacePath, tooling); err != nil {
 		return initResult{}, fmt.Errorf("save architecture config: %w", err)
 	}
-	modified, err := installer.Install(workspacePath, tooling)
+	bridges, err := readBridges(absPath)
+	if err != nil {
+		return initResult{}, fmt.Errorf("read bridges: %w", err)
+	}
+	modified, err := installer.Install(workspacePath, tooling, bridges...)
 	if err != nil {
 		return initResult{}, fmt.Errorf("install config: %w", err)
 	}
@@ -187,6 +193,31 @@ func readFromConfig(path string) (string, []Project, Server, error) {
 	return dto.Name, projects, server, nil
 }
 
+// readBridges lists the bridges declared in the config now on disk, so their
+// bazelrc configs are written consistently with the catalog tools.
+func readBridges(path string) ([]loadgavelspace.BridgeView, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+	var dto configDTO
+	if err := yaml.Unmarshal(data, &dto); err != nil {
+		return nil, fmt.Errorf("parse %s: %w", path, err)
+	}
+	var bridges []loadgavelspace.BridgeView
+	for _, project := range dto.Projects {
+		for _, bridge := range project.Bridges {
+			bridges = append(bridges, loadgavelspace.BridgeView{
+				Name:        bridge.Name,
+				Aspect:      bridge.Aspect,
+				SARIFSuffix: bridge.SARIFSuffix,
+				BuildFlags:  bridge.BuildFlags,
+			})
+		}
+	}
+	return bridges, nil
+}
+
 func extractTooling(projects []Project) []string {
 	seen := make(map[string]bool)
 	var result []string
@@ -212,6 +243,14 @@ type projectDTO struct {
 	Pattern string              `yaml:"pattern"`
 	Tooling map[string][]string `yaml:"tooling"`
 	Gate    *qualityGateDTO     `yaml:"quality_gate,omitempty"`
+	Bridges []bridgeDTO         `yaml:"bridges,omitempty"`
+}
+
+type bridgeDTO struct {
+	Name        string   `yaml:"name"`
+	Aspect      string   `yaml:"aspect"`
+	SARIFSuffix string   `yaml:"sarif_suffix"`
+	BuildFlags  []string `yaml:"build_flags,omitempty"`
 }
 
 type qualityGateDTO struct {

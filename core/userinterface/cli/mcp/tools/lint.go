@@ -40,7 +40,15 @@ type lintFinding struct {
 	Message     string `json:"message"`
 	Fingerprint string `json:"fingerprint"`
 	Status      string `json:"status,omitempty"`
+	Provenance  string `json:"provenance,omitempty"`
 }
+
+// bridgeLabel marks anything a project provided itself: gavel ran it but does not guarantee it.
+const bridgeLabel = "[bridge — not guaranteed by gavel]"
+
+const provenanceBridge = "bridge"
+
+func isBridge(provenance string) bool { return provenance == provenanceBridge }
 
 type lintResponse struct {
 	Projects []lintProject `json:"projects"`
@@ -84,6 +92,9 @@ func runLintFile(ctx context.Context, cli *executor.CLI, input LintFileInput) (s
 	fmt.Fprintf(&builder, "# Findings in %s (%d)\n\n", input.File, len(matched))
 	for _, f := range matched {
 		fmt.Fprintf(&builder, "Line %d: [%s] %s (%s:%s)", f.Line, f.Severity, f.Message, f.Tool, f.RuleID)
+		if isBridge(f.Provenance) {
+			builder.WriteString(" " + bridgeLabel)
+		}
 		if f.Status == statusNew {
 			builder.WriteString(" " + statusNewLabel)
 		}

@@ -68,6 +68,14 @@ type judgeProject struct {
 	Rulings         []judgeRuling       `json:"rulings"`
 	Violations      []judgeViolation    `json:"violations,omitempty"`
 	Delta           *judgeDelta         `json:"delta,omitempty"`
+	ToolFailures    []judgeToolFailure  `json:"tool_failures,omitempty"`
+}
+
+type judgeToolFailure struct {
+	Tool       string `json:"tool"`
+	Reason     string `json:"reason"`
+	Degraded   bool   `json:"degraded"`
+	Provenance string `json:"provenance"`
 }
 
 type judgeCoverageNode struct {
@@ -182,6 +190,13 @@ func formatJudgeOutput(output []byte, exitCode int) (string, error) {
 			}
 		}
 
+		if len(proj.ToolFailures) > 0 {
+			builder.WriteString("\nTool failures:\n")
+			for _, failed := range proj.ToolFailures {
+				writeToolFailure(&builder, failed)
+			}
+		}
+
 		if proj.CoverageTree != nil {
 			builder.WriteString("\nCoverage by directory:\n")
 			writeCoverageTree(&builder, proj.CoverageTree, 1)
@@ -198,4 +213,15 @@ func formatJudgeOutput(output []byte, exitCode int) (string, error) {
 	}
 
 	return builder.String(), nil
+}
+
+func writeToolFailure(builder *strings.Builder, failed judgeToolFailure) {
+	label := ""
+	switch {
+	case isBridge(failed.Provenance):
+		label = " " + bridgeLabel
+	case failed.Degraded:
+		label = " (incomplete)"
+	}
+	fmt.Fprintf(builder, "  %s%s: %s\n", failed.Tool, label, failed.Reason)
 }

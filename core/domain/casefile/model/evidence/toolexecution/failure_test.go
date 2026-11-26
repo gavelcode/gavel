@@ -6,6 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/usegavel/gavel/core/domain/casefile/model/evidence"
 	"github.com/usegavel/gavel/core/domain/casefile/model/evidence/toolexecution"
 )
 
@@ -35,4 +36,16 @@ func TestNewFailureValidation(t *testing.T) {
 			assert.ErrorIs(t, err, toolexecution.ErrInvalidFailure)
 		})
 	}
+}
+
+func TestFailureProvenance(t *testing.T) {
+	failed, err := toolexecution.NewFailure("shellcheck", "no SARIF produced")
+	require.NoError(t, err)
+	assert.Equal(t, evidence.ProvenanceCatalog, failed.Provenance())
+
+	bridged := failed.WithProvenance(evidence.ProvenanceBridge)
+
+	assert.Equal(t, evidence.ProvenanceBridge, bridged.Provenance())
+	assert.Equal(t, "shellcheck", bridged.Tool())
+	assert.Equal(t, "no SARIF produced", bridged.Reason())
 }

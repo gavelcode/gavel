@@ -22,17 +22,6 @@ func TestGavelspace_ServerConfig(t *testing.T) {
 	assert.Equal(t, "tok", gspace.ServerConfig().Token())
 }
 
-func TestGavelspace_FindingsSource(t *testing.T) {
-	gspace, err := model.NewGavelspace(testTenant, "myrepo")
-	require.NoError(t, err)
-
-	assert.Equal(t, "", gspace.FindingsSource())
-
-	gspace.SetFindingsSource("rules_lint")
-
-	assert.Equal(t, "rules_lint", gspace.FindingsSource())
-}
-
 func TestGavelspace_BazelConfigs(t *testing.T) {
 	gspace, err := model.NewGavelspace(testTenant, "myrepo")
 	require.NoError(t, err)

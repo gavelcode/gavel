@@ -26,6 +26,7 @@ type Handler struct {
 	changedLines  ChangedLinesSource
 	perLine       ingestncc.PerLineParser
 	toolExecution ToolExecutionParser
+	bridges       BridgeCollector
 }
 
 type HandlerOption func(*Handler)
@@ -40,6 +41,10 @@ func WithPerLineParser(p ingestncc.PerLineParser) HandlerOption {
 
 func WithToolExecutionParser(p ToolExecutionParser) HandlerOption {
 	return func(h *Handler) { h.toolExecution = p }
+}
+
+func WithBridgeCollector(b BridgeCollector) HandlerOption {
+	return func(h *Handler) { h.bridges = b }
 }
 
 func NewHandler(
@@ -81,6 +86,14 @@ func (h *Handler) Execute(ctx context.Context, cmd Command) (Result, error) {
 		return Result{}, fmt.Errorf("findings: %w", err)
 	}
 
+	bridged, err := h.collectBridges(ctx, cmd, targets)
+	if err != nil {
+		return Result{}, fmt.Errorf("bridges: %w", err)
+	}
+	catalogSARIF := rawSARIF
+	findingsEvidences = append(findingsEvidences, bridged.Evidences...)
+	rawSARIF = append(append([]RawFile(nil), rawSARIF...), bridged.RawFiles...)
+
 	allFindings := evidencedto.ExtractFindings(findingsEvidences)
 	findingsCount := len(allFindings)
 
@@ -91,7 +104,8 @@ func (h *Handler) Execute(ctx context.Context, cmd Command) (Result, error) {
 
 	var evidences []evidencedto.Evidence
 	evidences = append(evidences, findingsEvidences...)
-	evidences = h.appendToolExecutionEvidence(evidences, rawSARIF)
+	// Bridge SARIF was already judged by the bridge collector, which names and marks its failures.
+	evidences = h.appendToolExecutionEvidence(evidences, catalogSARIF)
 
 	var covPercent float64
 	var rawLCOV []byte
@@ -173,6 +187,14 @@ func (h *Handler) appendToolExecutionEvidence(evidences []evidencedto.Evidence, 
 		CollectedAt:   time.Now(),
 		ToolExecution: &evidencedto.ToolExecution{Failures: failures},
 	})
+}
+
+func (h *Handler) collectBridges(ctx context.Context, cmd Command, targets []string) (BridgeResult, error) {
+	bridges := cmd.Bridges()
+	if h.bridges == nil || len(bridges) == 0 {
+		return BridgeResult{}, nil
+	}
+	return h.bridges.CollectBridges(ctx, cmd.Workspace(), targets, bridges, cmd.BazelConfigs())
 }
 
 func (h *Handler) collectFindings(ctx context.Context, cmd Command, targets []string) ([]evidencedto.Evidence, []RawFile, string, []string, error) {

@@ -6,6 +6,10 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+
+	"github.com/usegavel/gavel/core/application/gavelspace/loadgavelspace"
+	"github.com/usegavel/gavel/core/infrastructure/platform/bazel/catalog"
+	"github.com/usegavel/gavel/core/infrastructure/platform/bazel/moduledeps"
 )
 
 // Matches single- and multi-line module() so gavel/gavel_tools never self-inject a bazel_dep.
@@ -16,14 +20,24 @@ const (
 
 var selfModuleRe = regexp.MustCompile(`module\s*\(\s*name\s*=\s*"gavel(_tools)?"`)
 
-func (i *Installer) Install(workspace string, tooling []string) (map[string]bool, error) {
+// Install wires gavel into the workspace. Bridges are optional: they only add
+// `gavel-bridge-<name>` configs to gavel.bazelrc (never a bazel_dep, since a
+// bridge's aspect lives in the consumer's own workspace).
+func (i *Installer) Install(workspace string, tooling []string, bridges ...loadgavelspace.BridgeView) (map[string]bool, error) {
+	declared, err := distinctBridges(bridges)
+	if err != nil {
+		return nil, err
+	}
+
 	modified := make(map[string]bool)
 
 	if err := os.MkdirAll(filepath.Join(workspace, gavelDir), dirPermission); err != nil {
 		return nil, fmt.Errorf("create %s directory: %w", gavelDir, err)
 	}
 
-	bazelrcMod, err := i.installBazelrc(workspace, tooling)
+	deps := moduledeps.Detect(workspace)
+
+	bazelrcMod, err := i.installBazelrc(workspace, tooling, declared, deps)
 	if err != nil {
 		return nil, fmt.Errorf("install bazelrc: %w", err)
 	}
@@ -31,7 +45,7 @@ func (i *Installer) Install(workspace string, tooling []string) (map[string]bool
 		modified[k] = v
 	}
 
-	moduleMod, err := i.installModule(workspace)
+	moduleMod, err := i.installModule(workspace, tooling, deps)
 	if err != nil {
 		return nil, fmt.Errorf("install module: %w", err)
 	}
@@ -50,8 +64,8 @@ func (i *Installer) Install(workspace string, tooling []string) (map[string]bool
 	return modified, nil
 }
 
-func (i *Installer) installBazelrc(root string, tooling []string) (map[string]bool, error) {
-	block, err := renderTemplate(bazelrcTmpl, toBazelrcData(tooling))
+func (i *Installer) installBazelrc(root string, tooling []string, bridges []loadgavelspace.BridgeView, deps catalog.Deps) (map[string]bool, error) {
+	block, err := renderTemplate(bazelrcTmpl, toBazelrcData(tooling, bridges, deps))
 	if err != nil {
 		return nil, err
 	}
@@ -76,8 +90,8 @@ func (i *Installer) installBazelrc(root string, tooling []string) (map[string]bo
 	}, nil
 }
 
-func (i *Installer) installModule(root string) (map[string]bool, error) {
-	block, err := renderTemplate(moduleTmpl, moduleData{})
+func (i *Installer) installModule(root string, tooling []string, deps catalog.Deps) (map[string]bool, error) {
+	block, err := renderTemplate(moduleTmpl, toModuleData(tooling, deps))
 	if err != nil {
 		return nil, err
 	}
@@ -170,9 +184,13 @@ func installLintConfigFilegroup(root string) (bool, error) {
 }
 
 const (
-	gavelRegistryLine = "common --registry=https://gavelcode.github.io/registry"
-	bcrRegistryLine   = "common --registry=https://bcr.bazel.build"
-	registryLineCount = 2
+	// TEMPORARY (bazel-central-registry#12088): gavel_tools 0.4.0 is served from
+	// the gavel registry until BCR merges it. When it does, delete
+	// gavelRegistryLine, gavelRegistryComment and their use in ensureRegistryLines.
+	gavelRegistryComment = "# TEMPORARY (bazel-central-registry#12088): serve gavel_tools until BCR merges; then drop this line."
+	gavelRegistryLine    = "common --registry=https://raw.githubusercontent.com/gavelcode/registry/main/"
+	bcrRegistryLine      = "common --registry=https://bcr.bazel.build"
+	registryLineCount    = 2
 )
 
 // Bazel drops its implicit BCR default once any --registry is set, so both must
@@ -205,6 +223,10 @@ func ensureRegistryLines(root string) (bool, error) {
 		builder.WriteString("\n")
 	}
 	for _, line := range missing {
+		if line == gavelRegistryLine {
+			builder.WriteString(gavelRegistryComment)
+			builder.WriteString("\n")
+		}
 		builder.WriteString(line)
 		builder.WriteString("\n")
 	}

@@ -18,6 +18,7 @@ type Command struct {
 	excludePatterns []string
 	toolSelection   map[string][]string
 	bazelConfigs    []string
+	bridges         []BridgeSpec
 }
 
 type CommandOption func(*Command)
@@ -37,6 +38,21 @@ func copyToolSelection(selection map[string][]string) map[string][]string {
 		toolsCopy := make([]string, len(tools))
 		copy(toolsCopy, tools)
 		copied[language] = toolsCopy
+	}
+	return copied
+}
+
+func WithBridges(bridges []BridgeSpec) CommandOption {
+	return func(c *Command) {
+		c.bridges = copyBridges(bridges)
+	}
+}
+
+func copyBridges(bridges []BridgeSpec) []BridgeSpec {
+	copied := make([]BridgeSpec, len(bridges))
+	for index, bridge := range bridges {
+		bridge.BuildFlags = append([]string(nil), bridge.BuildFlags...)
+		copied[index] = bridge
 	}
 	return copied
 }
@@ -92,6 +108,8 @@ func (c Command) Absolute() bool            { return c.absolute }
 func (c Command) BaselineArchIDs() []string { return c.baselineArchIDs }
 func (c Command) ScopedTargets() []string   { return c.scopedTargets }
 func (c Command) ExcludePatterns() []string { return c.excludePatterns }
+
+func (c Command) Bridges() []BridgeSpec { return copyBridges(c.bridges) }
 
 func (c Command) ToolSelection() map[string][]string { return copyToolSelection(c.toolSelection) }
 

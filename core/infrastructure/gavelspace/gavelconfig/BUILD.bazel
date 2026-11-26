@@ -37,6 +37,7 @@ go_library(
 go_test(
     name = "gavelconfig_test",
     srcs = [
+        "bridges_test.go",
         "parser_test.go",
         "workspace_finder_test.go",
     ],

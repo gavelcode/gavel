@@ -27,7 +27,6 @@ import (
 	"github.com/usegavel/gavel/core/infrastructure/casefile/sarif"
 	"github.com/usegavel/gavel/core/infrastructure/gavelspace/gavelconfig"
 	"github.com/usegavel/gavel/core/infrastructure/platform/bazel"
-	"github.com/usegavel/gavel/core/infrastructure/platform/bazel/catalog"
 	"github.com/usegavel/gavel/core/infrastructure/platform/bazel/collector"
 	"github.com/usegavel/gavel/core/infrastructure/platform/bazel/collector/composite"
 	"github.com/usegavel/gavel/core/infrastructure/platform/bazel/installer"
@@ -41,8 +40,6 @@ import (
 var version = "dev"
 
 func main() {
-	catalog.SetModulePrefix("@gavel_tools")
-
 	workspace, wsErr := bazel.WorkspaceDir()
 
 	var projectRepo *projectmemory.ProjectRepository
@@ -81,6 +78,7 @@ func main() {
 	vitestCoverage := collector.NewVitestCoverageCollector(logger)
 	coverageCollector := composite.NewCoverageCollector(bazelCoverage, vitestCoverage)
 	archCollector := collector.NewBazelArchitectureCollector(bazelRunner)
+	bridgeCollector := collector.NewBazelBridgeCollector(bazelRunner, findingsHandler)
 	sourceContext := git.NewSourceContext()
 
 	collectEvHandler := collectevidence.NewHandler(
@@ -90,6 +88,7 @@ func main() {
 		collectevidence.WithChangedLinesSource(sourceContext),
 		collectevidence.WithPerLineParser(lcovParser),
 		collectevidence.WithToolExecutionParser(sarifParser),
+		collectevidence.WithBridgeCollector(bridgeCollector),
 	)
 	inst := installer.NewInstaller()
 	submitHandler := submit.NewHandler(createCFHandler, ingestEvHandler, finalizeHandler)

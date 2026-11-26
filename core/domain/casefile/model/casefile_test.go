@@ -948,3 +948,18 @@ func TestNewCaseFileRejectsZeroTenant(t *testing.T) {
 	require.Error(t, err)
 	assert.ErrorIs(t, err, model.ErrInvalidCaseFile)
 }
+
+func TestCaseFileJudgeFailsOnBridgeFailureAndLabelsItAsBridge(t *testing.T) {
+	caseF := mustNewCaseFile(t)
+	require.NoError(t, caseF.AddEvidence(mustCodeQualityEvidenceWithFindings(t, "pmd", testTime, nil), testTime))
+	failed := mustFailure(t, "shellcheck", "no SARIF produced").WithProvenance(evidence.ProvenanceBridge)
+	require.NoError(t, caseF.AddEvidence(mustToolExecutionEvidence(t, "shellcheck", testTime, []toolexecution.Failure{failed}), testTime))
+
+	result, err := caseF.Judge(mustQualityGate(t, qualitygate.NewZeroTolerance()), nil, testTime, nil)
+
+	require.NoError(t, err)
+	assert.Equal(t, "fail", result.Outcome().String())
+	ruling := findRuling(t, result, evidence.SubtypeToolExecution)
+	assert.False(t, ruling.Passed())
+	assert.Contains(t, ruling.Detail(), "shellcheck (bridge): no SARIF produced")
+}

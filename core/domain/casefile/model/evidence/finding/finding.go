@@ -3,6 +3,8 @@ package finding
 import (
 	"fmt"
 	"strings"
+
+	"github.com/usegavel/gavel/core/domain/casefile/model/evidence"
 )
 
 type Finding struct {
@@ -13,6 +15,8 @@ type Finding struct {
 	filePath string
 	line     int
 	message  string
+	// provenance defaults to catalog; bridge findings are marked via WithProvenance.
+	provenance evidence.Provenance
 }
 
 func NewFinding(tool, ruleID string, severity Severity, filePath string, line int, message string, fingerprintID FingerprintID) (Finding, error) {
@@ -46,6 +50,14 @@ func (f Finding) Severity() Severity { return f.severity }
 func (f Finding) FilePath() string   { return f.filePath }
 func (f Finding) Line() int          { return f.line }
 func (f Finding) Message() string    { return f.message }
+
+func (f Finding) Provenance() evidence.Provenance { return f.provenance }
+
+// WithProvenance returns a copy marked with who stands behind this finding.
+func (f Finding) WithProvenance(provenance evidence.Provenance) Finding {
+	f.provenance = provenance
+	return f
+}
 
 func (f Finding) Equal(other Finding) bool {
 	return f.id.Equal(other.id)

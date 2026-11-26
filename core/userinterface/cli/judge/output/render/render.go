@@ -17,6 +17,7 @@ func Findings(projResult pipeline.Result) string {
 			Tool:     finding.Tool,
 			RuleID:   finding.RuleID,
 			IsNew:    projResult.Delta.NewFingerprints[finding.FingerprintID],
+			IsBridge: finding.Provenance == "bridge",
 		})
 	}
 	vItems := make([]ui.ViolationItem, 0, len(projResult.Violations))

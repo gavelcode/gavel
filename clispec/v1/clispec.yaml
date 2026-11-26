@@ -112,12 +112,6 @@ commands:
         env: GAVEL_TOKEN
         sensitive: true
         description: API token for server authentication.
-      findings-source:
-        type: string
-        description: >
-          Findings source: auto, gavel, or rules_lint.
-          Defaults to workspace config value if not set.
-        enum: [auto, gavel, rules_lint]
       require-submit:
         type: bool
         default: false

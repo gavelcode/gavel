@@ -8,6 +8,7 @@ import (
 	"github.com/usegavel/gavel/core/application/casefile/evidencedto"
 	ingestfind "github.com/usegavel/gavel/core/application/casefile/ingestfindings"
 	"github.com/usegavel/gavel/core/infrastructure/platform/bazel/catalog"
+	"github.com/usegavel/gavel/core/infrastructure/platform/bazel/moduledeps"
 	"github.com/usegavel/gavel/core/infrastructure/platform/bazel/runner"
 )
 
@@ -29,7 +30,7 @@ func NewBazelFindingsCollector(r AnalysisRunner, p FindingsParser) *BazelFinding
 }
 
 func (c *BazelFindingsCollector) CollectFindings(ctx context.Context, workspace string, targets []string, selection map[string][]string, bazelConfigs []string) ([]evidencedto.Evidence, []collectevidence.RawFile, string, []string, error) {
-	selected, err := catalog.SelectedAspects(selection)
+	selected, err := catalog.SelectedAspects(selection, moduledeps.Detect(workspace))
 	if err != nil {
 		return nil, nil, "", nil, err
 	}

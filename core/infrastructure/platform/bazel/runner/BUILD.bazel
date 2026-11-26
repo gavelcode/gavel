@@ -8,6 +8,7 @@ go_library(
         "affected.go",
         "analysis.go",
         "aspect.go",
+        "bridge.go",
         "collector.go",
         "command.go",
         "coverage.go",
@@ -21,6 +22,7 @@ go_library(
         "//core/application/supporting/analyzetarget",
         "//core/infrastructure/casefile/sarif",
         "//core/infrastructure/platform/bazel/catalog",
+        "//core/infrastructure/platform/bazel/moduledeps",
     ],
 )
 
@@ -31,15 +33,14 @@ go_test(
         "analysis_test.go",
         "aspect_int_test.go",
         "bindir_test.go",
+        "bridge_test.go",
         "collector_test.go",
-        "collector_whitebox_test.go",
         "coverage_test.go",
         "fakes_test.go",
         "jscoverage_test.go",
         "query_test.go",
         "target_analyzer_test.go",
     ],
-    data = ["@gavel_tools//lint:catalog.yaml"],
     embed = [":runner"],
     deps = [
         "//core/infrastructure/platform/bazel/catalog",

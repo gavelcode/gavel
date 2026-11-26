@@ -33,7 +33,7 @@ is the pre-GA signal.)
    run `gavel init` in a throwaway directory and copy the line it emits.
 3. Build once so Bazel updates `MODULE.bazel.lock` and resolves the module from
    the gavel registry (already on your `.bazelrc` as
-   `--registry=https://gavelcode.github.io/registry`).
+   `--registry=https://raw.githubusercontent.com/gavelcode/registry/main/`).
 
 `gavel init` is for first-time setup: it *adds* the pin when absent but does not
 rewrite an existing one, so re-running it in place will not migrate the version

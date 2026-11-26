@@ -6,6 +6,7 @@ import (
 	"io"
 	"log/slog"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -250,4 +251,25 @@ func TestExecute_ArchLoaderErrorSkipped(t *testing.T) {
 	result, err := h.Execute(context.Background(), q)
 	require.NoError(t, err)
 	assert.Nil(t, result.Projects[0].Policy())
+}
+
+func TestExecute_ViewExposesProjectBridges(t *testing.T) {
+	gavelspace, err := gavelspacemodel.NewGavelspace(tenant.LocalTenantID, "myrepo")
+	require.NoError(t, err)
+	p, err := projectmodel.NewProject(tenant.LocalTenantID, "core", "core", "//core/...")
+	require.NoError(t, err)
+	bridge, err := projectmodel.NewBridge("shellcheck", "//tools/lint:shellcheck.bzl%shellcheck_gavel", ".shellcheck.sarif", []string{"--flag"})
+	require.NoError(t, err)
+	require.NoError(t, p.UpdateBridges([]projectmodel.Bridge{bridge}, time.Now()))
+	h := loadgavelspace.NewHandler(&fakeFinder{gavelspace: gavelspace, projects: []projectmodel.Project{p}})
+	q, err := loadgavelspace.NewQuery("/path/to/gavel.yaml")
+	require.NoError(t, err)
+
+	result, err := h.Execute(context.Background(), q)
+
+	require.NoError(t, err)
+	require.Len(t, result.View.Projects[0].Bridges, 1)
+	assert.Equal(t, loadgavelspace.BridgeView{
+		Name: "shellcheck", Aspect: "//tools/lint:shellcheck.bzl%shellcheck_gavel", SARIFSuffix: ".shellcheck.sarif", BuildFlags: []string{"--flag"},
+	}, result.View.Projects[0].Bridges[0])
 }

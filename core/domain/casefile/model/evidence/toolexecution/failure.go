@@ -3,12 +3,16 @@ package toolexecution
 import (
 	"fmt"
 	"strings"
+
+	"github.com/usegavel/gavel/core/domain/casefile/model/evidence"
 )
 
 type Failure struct {
 	tool     string
 	reason   string
 	degraded bool
+	// provenance defaults to catalog; bridge failures are marked via WithProvenance.
+	provenance evidence.Provenance
 }
 
 func NewFailure(tool, reason string) (Failure, error) {
@@ -41,3 +45,11 @@ func newFailure(tool, reason string, degraded bool) (Failure, error) {
 func (f Failure) Tool() string   { return f.tool }
 func (f Failure) Reason() string { return f.reason }
 func (f Failure) Degraded() bool { return f.degraded }
+
+func (f Failure) Provenance() evidence.Provenance { return f.provenance }
+
+// WithProvenance returns a copy marked with who stands behind the failed tool.
+func (f Failure) WithProvenance(provenance evidence.Provenance) Failure {
+	f.provenance = provenance
+	return f
+}

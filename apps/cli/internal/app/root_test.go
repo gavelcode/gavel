@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/usegavel/gavel/apps/cli/internal/app"
+	"github.com/usegavel/gavel/core/application/gavelspace/loadgavelspace"
 )
 
 func TestNewRootCommandHasExpectedSubcommands(t *testing.T) {
@@ -96,7 +97,9 @@ func (stubVerifier) VerifyStructure(string) ([]string, error) { return nil, nil 
 
 type stubInstaller struct{}
 
-func (stubInstaller) Install(string, []string) (map[string]bool, error) { return nil, nil }
+func (stubInstaller) Install(string, []string, ...loadgavelspace.BridgeView) (map[string]bool, error) {
+	return nil, nil
+}
 
 type stubCatalog struct{}
 

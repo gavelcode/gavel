@@ -71,6 +71,17 @@ func (c *capturingFindingsCollector) CollectFindings(_ context.Context, _ string
 	return c.evidences, c.rawFiles, "", nil, nil
 }
 
+func newHandlerWith(findings *fakeFindingsCollector, opts ...collectevidence.HandlerOption) *collectevidence.Handler {
+	lcovParser := lcov.NewParser()
+	return collectevidence.NewHandler(
+		findings, &fakeCoverageCollector{}, &fakeArchCollector{},
+		ingestfind.NewHandler(map[string]ingestfind.Parser{"sarif": sarif.NewParser()}),
+		ingestcov.NewHandler(map[string]ingestcov.Parser{"lcov": lcovParser}),
+		classifyarch.NewHandler(), ingestncc.NewHandler(lcovParser),
+		opts...,
+	)
+}
+
 func newHandler(findings *fakeFindingsCollector, coverage *fakeCoverageCollector, arch *fakeArchCollector) *collectevidence.Handler {
 	sarifParser := sarif.NewParser()
 	lcovParser := lcov.NewParser()

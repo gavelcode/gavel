@@ -25,6 +25,7 @@ go_library(
 go_test(
     name = "collectevidence_test",
     srcs = [
+        "bridges_test.go",
         "command_test.go",
         "executions_internal_test.go",
         "handler_test.go",

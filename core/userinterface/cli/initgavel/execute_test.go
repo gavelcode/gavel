@@ -8,17 +8,21 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/usegavel/gavel/core/application/gavelspace/loadgavelspace"
 )
 
 type fakeInstaller struct {
 	installErr error
 	workspace  string
 	tooling    []string
+	bridges    []loadgavelspace.BridgeView
 }
 
-func (f *fakeInstaller) Install(workspace string, tooling []string) (map[string]bool, error) {
+func (f *fakeInstaller) Install(workspace string, tooling []string, bridges ...loadgavelspace.BridgeView) (map[string]bool, error) {
 	f.workspace = workspace
 	f.tooling = tooling
+	f.bridges = bridges
 	if f.installErr != nil {
 		return nil, f.installErr
 	}
@@ -370,4 +374,37 @@ projects:
 	assert.Equal(t, "my-project", result.name)
 	assert.Equal(t, workspace, inst.workspace)
 	assert.Equal(t, []string{"go"}, inst.tooling)
+}
+
+func TestExecuteInstallsBridgesDeclaredInTheSourceConfig(t *testing.T) {
+	workspace := t.TempDir()
+	source := filepath.Join(t.TempDir(), "gavel.yaml")
+	require.NoError(t, os.WriteFile(source, []byte(`name: gavel
+projects:
+  - name: backend
+    pattern: //server/...
+    tooling: {go: [golangci-lint]}
+    bridges:
+      - name: shellcheck
+        aspect: //tools/lint:shellcheck.bzl%shellcheck_gavel
+        sarif_suffix: .shellcheck.sarif
+        build_flags: ["--some=flag"]
+`), 0o600))
+	inst := &fakeInstaller{}
+
+	_, err := execute(".gavel/gavel.yaml", workspace, "gavel", false, validProjects(), Server{}, source, inst, &fakeCatalog{})
+
+	require.NoError(t, err)
+	assert.Equal(t, []loadgavelspace.BridgeView{{
+		Name: "shellcheck", Aspect: "//tools/lint:shellcheck.bzl%shellcheck_gavel", SARIFSuffix: ".shellcheck.sarif", BuildFlags: []string{"--some=flag"},
+	}}, inst.bridges)
+}
+
+func TestExecuteInstallsNoBridgesForAGeneratedConfig(t *testing.T) {
+	inst := &fakeInstaller{}
+
+	_, err := execute(".gavel/gavel.yaml", t.TempDir(), "gavel", false, validProjects(), Server{}, "", inst, &fakeCatalog{})
+
+	require.NoError(t, err)
+	assert.Empty(t, inst.bridges)
 }

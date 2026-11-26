@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/usegavel/gavel/core/application/casefile/collectevidence"
+	"github.com/usegavel/gavel/core/application/casefile/evidencedto"
 	"github.com/usegavel/gavel/core/application/casefile/finalize"
 	"github.com/usegavel/gavel/core/application/casefile/submit"
 )
@@ -89,5 +90,6 @@ func mapSubmitResult(res submit.Result, collected collectevidence.Result, projec
 		RawSARIFDocs:    collected.SARIFDocs,
 		BuildWarning:    collected.BuildWarning,
 		UnanalyzedTools: collected.UnanalyzedTools,
+		ToolFailures:    evidencedto.ExtractToolFailures(collected.Evidences),
 	}
 }

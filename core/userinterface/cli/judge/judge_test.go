@@ -174,15 +174,6 @@ func TestNewCommand_ReturnsCobraCommand(t *testing.T) {
 	assert.NotNil(t, cmd.RunE)
 }
 
-func TestNewCommand_HasFindingsSourceFlag(t *testing.T) {
-	dependencies := newTestDeps(stubFindingsParser{}, stubCoverageParser{})
-	cmd := NewCommand(dependencies.findings, dependencies.coverage, dependencies.submitH, nil, nil, dependencies.projectRepo, dependencies.fpSeeder, stubWorkspaceResolver, dependencies.source, stubStructureVerifier{}, nil, nil, nil)
-
-	flag := cmd.Flags().Lookup("findings-source")
-	require.NotNil(t, flag)
-	assert.Equal(t, "", flag.DefValue)
-}
-
 func TestNewCommand_HasQuickFlag(t *testing.T) {
 	dependencies := newTestDeps(stubFindingsParser{}, stubCoverageParser{})
 	cmd := NewCommand(dependencies.findings, dependencies.coverage, dependencies.submitH, nil, nil, dependencies.projectRepo, dependencies.fpSeeder, stubWorkspaceResolver, dependencies.source, stubStructureVerifier{}, nil, nil, nil)

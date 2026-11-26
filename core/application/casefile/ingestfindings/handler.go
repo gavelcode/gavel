@@ -37,7 +37,7 @@ func (h *Handler) Execute(ctx context.Context, cmd Command) (Result, error) {
 		return Result{}, fmt.Errorf("%w: %w", ErrParseFailed, err)
 	}
 
-	findings, err := toDomainFindings(cmd.Source(), parsed)
+	findings, err := toDomainFindings(cmd.Source(), cmd.Provenance(), parsed)
 	if err != nil {
 		return Result{}, fmt.Errorf("build findings: %w", err)
 	}
@@ -55,14 +55,28 @@ func (h *Handler) Execute(ctx context.Context, cmd Command) (Result, error) {
 	return Result{Evidence: evidencedto.EvidenceFromDomain(ev)}, nil
 }
 
-func toDomainFindings(tool string, parsed []Parsed) ([]finding.Finding, error) {
+func toDomainFindings(tool string, provenance evidence.Provenance, parsed []Parsed) ([]finding.Finding, error) {
 	findings := make([]finding.Finding, 0, len(parsed))
-	for i, p := range parsed {
-		f, err := finding.NewFinding(tool, p.RuleID, p.Severity, p.FilePath, p.Line, p.Message, p.FingerprintID)
+	for index, p := range parsed {
+		fingerprint, err := scopeFingerprint(tool, provenance, p.FingerprintID)
 		if err != nil {
-			return nil, fmt.Errorf("finding %d: %w", i, err)
+			return nil, fmt.Errorf("finding %d: %w", index, err)
 		}
-		findings = append(findings, f)
+		f, err := finding.NewFinding(tool, p.RuleID, p.Severity, p.FilePath, p.Line, p.Message, fingerprint)
+		if err != nil {
+			return nil, fmt.Errorf("finding %d: %w", index, err)
+		}
+		findings = append(findings, f.WithProvenance(provenance))
 	}
 	return findings, nil
+}
+
+// scopeFingerprint namespaces a bridge's fingerprints by its name: tool-supplied
+// fingerprints do not include the tool, so without this two bridges (or a
+// bridge and a catalog tool) could collide in baselines and deduplication.
+func scopeFingerprint(tool string, provenance evidence.Provenance, fingerprint finding.FingerprintID) (finding.FingerprintID, error) {
+	if !provenance.IsBridge() {
+		return fingerprint, nil
+	}
+	return finding.NewFingerprintID("bridge/" + tool + "/" + fingerprint.Value())
 }

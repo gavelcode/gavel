@@ -3,20 +3,21 @@ package installer_test
 import (
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/usegavel/gavel/core/infrastructure/platform/bazel/catalog"
+	"github.com/usegavel/gavel/core/application/gavelspace/loadgavelspace"
 	"github.com/usegavel/gavel/core/infrastructure/platform/bazel/installer"
 )
 
-const gavelDepLine = `bazel_dep(name = "gavel_tools", version = "0.3.8")`
+const gavelDepLine = `bazel_dep(name = "gavel_tools", version = "0.4.0")`
 
 const (
-	gavelRegistryLine = "common --registry=https://gavelcode.github.io/registry"
+	gavelRegistryLine = "common --registry=https://raw.githubusercontent.com/gavelcode/registry/main/"
 	bcrRegistryLine   = "common --registry=https://bcr.bazel.build"
 )
 
@@ -360,30 +361,67 @@ func TestVerifyStructure_MissingGavelModule(t *testing.T) {
 	assert.Contains(t, strings.Join(issues, "\n"), installer.GavelModule+" not found")
 }
 
-func TestInstall_BazelrcUsesModulePrefix(t *testing.T) {
+func TestInstall_BazelrcUsesEachToolsModule(t *testing.T) {
 	root := setupWorkspace(t, `module(name = "consumer-app", version = "1.0.0")`+"\n")
 
-	_, err := installer.NewInstaller().Install(root, []string{"go"})
+	_, err := installer.NewInstaller().Install(root, []string{"go", "java", "python", "typescript", "rust"})
 	require.NoError(t, err)
 
 	bazelrc := readFile(t, filepath.Join(root, installer.GavelBazelrc))
-	assert.Contains(t, bazelrc, "@gavel//lint/aspects:defs.bzl%go_golangci_lint_submission_aspect")
-	assert.Contains(t, bazelrc, "@gavel//lint/aspects:defs.bzl%go_archtest_submission_aspect")
+	for _, want := range []string{
+		"@gavel_tools_go//lint/aspects:defs.bzl%go_golangci_lint_submission_aspect",
+		"@gavel_tools_go//lint/aspects:defs.bzl%go_archtest_submission_aspect",
+		"@gavel_tools_java//lint/aspects:defs.bzl%java_pmd_submission_aspect",
+		"@gavel_tools_python//lint/aspects:defs.bzl%python_ruff_submission_aspect",
+		"@gavel_tools_typescript//lint/aspects:defs.bzl%typescript_eslint_submission_aspect",
+		"@gavel_tools_rust//lint/aspects:defs.bzl%rust_clippy_submission_aspect",
+		"@gavel_tools//lint/aspects:defs.bzl%rust_archtest_submission_aspect",
+	} {
+		assert.Contains(t, bazelrc, want)
+	}
+	assert.NotContains(t, bazelrc, "@gavel//")
 }
 
-func TestInstall_BazelrcReflectsCustomModulePrefix(t *testing.T) {
-	catalog.SetModulePrefix("@gavel_tools")
-	t.Cleanup(func() { catalog.SetModulePrefix("@gavel") })
+func moduleDepNames(t *testing.T, root string) []string {
+	t.Helper()
+	var names []string
+	for _, match := range regexp.MustCompile(`bazel_dep\(name = "([^"]+)"`).FindAllStringSubmatch(readRaw(t, filepath.Join(root, installer.GavelModule)), -1) {
+		names = append(names, match[1])
+	}
+	return names
+}
 
+func TestInstall_MultiLanguage_WritesOneDepPerDistinctModuleSorted(t *testing.T) {
 	root := setupWorkspace(t, `module(name = "consumer-app", version = "1.0.0")`+"\n")
 
-	_, err := installer.NewInstaller().Install(root, []string{"go"})
+	_, err := installer.NewInstaller().Install(root, []string{"typescript", "go", "java", "python", "rust"})
 	require.NoError(t, err)
 
+	assert.Equal(t, []string{"gavel_tools_go", "gavel_tools_java", "gavel_tools_python", "gavel_tools_rust", "gavel_tools_typescript"},
+		moduleDepNames(t, root), "core gavel_tools stays in the root MODULE.bazel, not duplicated here")
+	assert.Contains(t, readFile(t, filepath.Join(root, "MODULE.bazel")), gavelDepLine)
+	assert.Contains(t, readFile(t, filepath.Join(root, installer.GavelModule)), `bazel_dep(name = "gavel_tools_go", version = "0.4.0")`)
+}
+
+func TestInstall_JavaOnly_WritesOnlyJavaModule(t *testing.T) {
+	root := setupWorkspace(t, `module(name = "consumer-app", version = "1.0.0")`+"\n")
+
+	_, err := installer.NewInstaller().Install(root, []string{"java"})
+	require.NoError(t, err)
+
+	assert.Equal(t, []string{"gavel_tools_java"}, moduleDepNames(t, root))
 	bazelrc := readFile(t, filepath.Join(root, installer.GavelBazelrc))
-	assert.Contains(t, bazelrc, "@gavel_tools//lint/aspects:defs.bzl%go_golangci_lint_submission_aspect")
-	assert.Contains(t, bazelrc, "@gavel_tools//lint/aspects:defs.bzl%go_archtest_submission_aspect")
-	assert.NotContains(t, bazelrc, "@gavel//lint/aspects")
+	assert.NotContains(t, bazelrc, "gavel_tools_go")
+	assert.NotContains(t, bazelrc, "gavel_tools_rust")
+}
+
+func TestInstall_RustWithoutRulesRs_UsesBaseRustModule(t *testing.T) {
+	root := setupWorkspace(t, `bazel_dep(name = "rules_rust", version = "0.60.0")`+"\n")
+
+	_, err := installer.NewInstaller().Install(root, []string{"rust"})
+	require.NoError(t, err)
+
+	assert.Equal(t, []string{"gavel_tools_rust"}, moduleDepNames(t, root))
 }
 
 func TestInstall_ModuleBazelDoesNotDeclareToolRepos(t *testing.T) {
@@ -410,4 +448,165 @@ func readFile(t *testing.T, path string) string {
 	data, err := os.ReadFile(path)
 	require.NoError(t, err)
 	return strings.TrimSpace(string(data))
+}
+
+func TestInstall_NoVariantDeps_OutputMatchesGolden(t *testing.T) {
+	root := setupWorkspace(t, `module(name = "consumer-app", version = "1.0.0")`+"\n"+
+		`bazel_dep(name = "rules_rust", version = "0.60.0")`+"\n")
+
+	_, err := installer.NewInstaller().Install(root, []string{"go", "java", "python", "typescript", "rust"})
+	require.NoError(t, err)
+
+	for file, golden := range map[string]string{
+		installer.GavelBazelrc: "testdata/gavel.bazelrc.golden",
+		installer.GavelModule:  "testdata/gavel.MODULE.bazel.golden",
+	} {
+		want, err := os.ReadFile(golden)
+		require.NoError(t, err)
+		assert.Equal(t, string(want), readRaw(t, filepath.Join(root, file)),
+			"consumers without a matching ruleset must get exactly the base wiring")
+	}
+}
+
+func TestInstall_RulesRsConsumer_GetsVariantDepAndAspect(t *testing.T) {
+	root := setupWorkspace(t, `module(name = "consumer-app", version = "1.0.0")`+"\n"+
+		`bazel_dep(name = "rules_rs", version = "0.2.4")`+"\n")
+
+	_, err := installer.NewInstaller().Install(root, []string{"rust"})
+	require.NoError(t, err)
+
+	module := readFile(t, filepath.Join(root, installer.GavelModule))
+	assert.Contains(t, module, `bazel_dep(name = "gavel_tools_rust_rs", version = "0.4.0")`)
+	assert.Equal(t, []string{"gavel_tools_rust_rs"}, moduleDepNames(t, root),
+		"the variant replaces gavel_tools_rust; archtest's core gavel_tools lives in the root MODULE.bazel")
+
+	bazelrc := readFile(t, filepath.Join(root, installer.GavelBazelrc))
+	assert.Contains(t, bazelrc, "build:gavel-rust-clippy --aspects=@gavel_tools_rust_rs//lint/aspects:defs.bzl%rust_clippy_submission_aspect")
+	assert.Contains(t, bazelrc, "build:gavel-rust-archtest --aspects=@gavel_tools//lint/aspects:defs.bzl%rust_archtest_submission_aspect")
+}
+
+func TestInstall_RulesRsConsumer_ForRustOnly(t *testing.T) {
+	root := setupWorkspace(t, `bazel_dep(name = "rules_rs", version = "0.2.4")`+"\n")
+
+	_, err := installer.NewInstaller().Install(root, []string{"go"})
+	require.NoError(t, err)
+
+	assert.NotContains(t, readFile(t, filepath.Join(root, installer.GavelModule)), "gavel_tools_rust_rs",
+		"a variant module is only added when its language is selected")
+}
+
+func TestInstall_RulesRsConsumer_IsIdempotent(t *testing.T) {
+	root := setupWorkspace(t, `bazel_dep(name = "rules_rs", version = "0.2.4")`+"\n")
+	inst := installer.NewInstaller()
+
+	_, err := inst.Install(root, []string{"rust"})
+	require.NoError(t, err)
+	first := readRaw(t, filepath.Join(root, installer.GavelModule)) + readRaw(t, filepath.Join(root, installer.GavelBazelrc)) +
+		readRaw(t, filepath.Join(root, "MODULE.bazel"))
+
+	_, err = inst.Install(root, []string{"rust"})
+	require.NoError(t, err)
+	second := readRaw(t, filepath.Join(root, installer.GavelModule)) + readRaw(t, filepath.Join(root, installer.GavelBazelrc)) +
+		readRaw(t, filepath.Join(root, "MODULE.bazel"))
+
+	assert.Equal(t, first, second)
+	assert.Equal(t, 1, strings.Count(second, `name = "gavel_tools_rust_rs"`))
+}
+
+func readRaw(t *testing.T, path string) string {
+	t.Helper()
+	data, err := os.ReadFile(path)
+	require.NoError(t, err)
+	return string(data)
+}
+
+func shellcheckBridge() loadgavelspace.BridgeView {
+	return loadgavelspace.BridgeView{
+		Name: "shellcheck", Aspect: "//tools/lint:shellcheck.bzl%shellcheck_gavel", SARIFSuffix: ".shellcheck.sarif",
+		BuildFlags: []string{"--some=flag", "--other"},
+	}
+}
+
+func TestInstall_Bridges_WritesOneBazelrcConfigPerBridge(t *testing.T) {
+	root := setupWorkspace(t, `module(name = "consumer-app", version = "1.0.0")`+"\n")
+
+	_, err := installer.NewInstaller().Install(root, []string{"go"}, shellcheckBridge())
+	require.NoError(t, err)
+
+	bazelrc := readFile(t, filepath.Join(root, installer.GavelBazelrc))
+	for _, want := range []string{
+		"# --- Bridges (provided by the project, not guaranteed by gavel) ---",
+		"build:gavel-bridge-shellcheck --aspects=//tools/lint:shellcheck.bzl%shellcheck_gavel",
+		"build:gavel-bridge-shellcheck --output_groups=gavel_submissions",
+		"build:gavel-bridge-shellcheck --some=flag",
+		"build:gavel-bridge-shellcheck --other",
+	} {
+		assert.Contains(t, bazelrc, want)
+	}
+}
+
+func TestInstall_Bridges_AddNoBazelDep(t *testing.T) {
+	root := setupWorkspace(t, `module(name = "consumer-app", version = "1.0.0")`+"\n")
+	plain := setupWorkspace(t, `module(name = "consumer-app", version = "1.0.0")`+"\n")
+
+	_, err := installer.NewInstaller().Install(root, nil, shellcheckBridge())
+	require.NoError(t, err)
+	_, err = installer.NewInstaller().Install(plain, nil)
+	require.NoError(t, err)
+
+	assert.Equal(t, readRaw(t, filepath.Join(plain, installer.GavelModule)), readRaw(t, filepath.Join(root, installer.GavelModule)))
+	assert.Equal(t, readRaw(t, filepath.Join(plain, "MODULE.bazel")), readRaw(t, filepath.Join(root, "MODULE.bazel")))
+}
+
+func TestInstall_Bridges_IsIdempotent(t *testing.T) {
+	root := setupWorkspace(t, `module(name = "consumer-app", version = "1.0.0")`+"\n")
+	inst := installer.NewInstaller()
+
+	_, err := inst.Install(root, []string{"go"}, shellcheckBridge())
+	require.NoError(t, err)
+	first := readRaw(t, filepath.Join(root, installer.GavelBazelrc)) + readRaw(t, filepath.Join(root, ".bazelrc"))
+	_, err = inst.Install(root, []string{"go"}, shellcheckBridge())
+	require.NoError(t, err)
+	second := readRaw(t, filepath.Join(root, installer.GavelBazelrc)) + readRaw(t, filepath.Join(root, ".bazelrc"))
+
+	assert.Equal(t, first, second)
+}
+
+func TestInstall_Bridges_SameBridgeDeclaredByTwoProjectsIsWrittenOnce(t *testing.T) {
+	root := setupWorkspace(t, `module(name = "consumer-app", version = "1.0.0")`+"\n")
+
+	_, err := installer.NewInstaller().Install(root, nil, shellcheckBridge(), shellcheckBridge())
+	require.NoError(t, err)
+
+	assert.Equal(t, 1, strings.Count(readRaw(t, filepath.Join(root, installer.GavelBazelrc)), "build:gavel-bridge-shellcheck --aspects="))
+}
+
+func TestInstall_Bridges_RejectsSameNameWithDifferentDefinitions(t *testing.T) {
+	root := setupWorkspace(t, `module(name = "consumer-app", version = "1.0.0")`+"\n")
+	other := shellcheckBridge()
+	other.Aspect = "//tools/lint:other.bzl%other"
+
+	_, err := installer.NewInstaller().Install(root, nil, shellcheckBridge(), other)
+
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "shellcheck")
+}
+
+func TestInstall_NoBridges_OmitsBridgeSection(t *testing.T) {
+	root := setupWorkspace(t, `module(name = "consumer-app", version = "1.0.0")`+"\n")
+
+	_, err := installer.NewInstaller().Install(root, []string{"go"})
+	require.NoError(t, err)
+
+	assert.NotContains(t, readRaw(t, filepath.Join(root, installer.GavelBazelrc)), "Bridges")
+}
+
+func TestInstall_MarksTemporaryGavelRegistryForRemoval(t *testing.T) {
+	root := t.TempDir()
+	_, err := installer.NewInstaller().Install(root, []string{"go"})
+	require.NoError(t, err)
+
+	bazelrc := readFile(t, filepath.Join(root, ".bazelrc"))
+	assert.Contains(t, bazelrc, "bazel-central-registry#12088",
+		"the gavel registry line is temporary and must name the BCR PR whose merge removes it")
 }

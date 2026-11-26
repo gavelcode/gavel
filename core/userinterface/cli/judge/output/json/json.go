@@ -27,6 +27,15 @@ type findingDTO struct {
 	Message       string `json:"message"`
 	FingerprintID string `json:"fingerprint"`
 	Status        string `json:"status,omitempty"`
+	// Provenance is "catalog" (guaranteed by gavel) or "bridge" (provided by the project, not guaranteed).
+	Provenance string `json:"provenance"`
+}
+
+type toolFailureDTO struct {
+	Tool       string `json:"tool"`
+	Reason     string `json:"reason"`
+	Degraded   bool   `json:"degraded"`
+	Provenance string `json:"provenance"`
 }
 
 type violationDTO struct {
@@ -81,6 +90,7 @@ type projectDTO struct {
 	Delta                  *deltaDTO          `json:"delta,omitempty"`
 	BuildWarning           string             `json:"build_warning,omitempty"`
 	UnanalyzedTools        []string           `json:"unanalyzed_tools,omitempty"`
+	ToolFailures           []toolFailureDTO   `json:"tool_failures,omitempty"`
 }
 
 type responseDTO struct {
@@ -126,6 +136,7 @@ func toProjectDTO(result pipeline.Result) projectDTO {
 		Delta:                  toDeltaDTO(result),
 		BuildWarning:           result.BuildWarning,
 		UnanalyzedTools:        result.UnanalyzedTools,
+		ToolFailures:           toToolFailureDTOs(result.ToolFailures),
 	}
 }
 
@@ -225,6 +236,7 @@ func toFindingDTOs(result pipeline.Result) []findingDTO {
 			Message:       finding.Message,
 			FingerprintID: finding.FingerprintID,
 			Status:        status,
+			Provenance:    provenanceOrCatalog(finding.Provenance),
 		})
 	}
 	return out
@@ -298,4 +310,24 @@ func toDeltaDTO(result pipeline.Result) *deltaDTO {
 		FixedViolationsCount:    result.Delta.FixedViolationsCount,
 		ExistingViolationsCount: result.Delta.ExistingViolationsCount,
 	}
+}
+
+func provenanceOrCatalog(provenance string) string {
+	if provenance == "" {
+		return "catalog"
+	}
+	return provenance
+}
+
+func toToolFailureDTOs(failures []evidencedto.ToolFailure) []toolFailureDTO {
+	out := make([]toolFailureDTO, 0, len(failures))
+	for _, failed := range failures {
+		out = append(out, toolFailureDTO{
+			Tool:       failed.Tool,
+			Reason:     failed.Reason,
+			Degraded:   failed.Degraded,
+			Provenance: provenanceOrCatalog(failed.Provenance),
+		})
+	}
+	return out
 }

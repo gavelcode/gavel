@@ -9,6 +9,7 @@ const (
 	EventNameTargetPatternUpdated      = "project.target_pattern_updated"
 	EventNameExcludePatternsUpdated    = "project.exclude_patterns_updated"
 	EventNameToolSelectionUpdated      = "project.tool_selection_updated"
+	EventNameBridgesUpdated            = "project.bridges_updated"
 )
 
 type QualityGateUpdated struct {
@@ -88,3 +89,16 @@ func NewArchitecturePolicyUpdated(projectID ProjectID, occurredAt time.Time) Arc
 func (e ArchitecturePolicyUpdated) EventName() string     { return EventNameArchitecturePolicyUpdated }
 func (e ArchitecturePolicyUpdated) OccurredAt() time.Time { return e.occurredAt }
 func (e ArchitecturePolicyUpdated) ProjectID() ProjectID  { return e.projectID }
+
+type BridgesUpdated struct {
+	projectID  ProjectID
+	occurredAt time.Time
+}
+
+func NewBridgesUpdated(projectID ProjectID, occurredAt time.Time) BridgesUpdated {
+	return BridgesUpdated{projectID: projectID, occurredAt: occurredAt}
+}
+
+func (e BridgesUpdated) EventName() string     { return EventNameBridgesUpdated }
+func (e BridgesUpdated) OccurredAt() time.Time { return e.occurredAt }
+func (e BridgesUpdated) ProjectID() ProjectID  { return e.projectID }

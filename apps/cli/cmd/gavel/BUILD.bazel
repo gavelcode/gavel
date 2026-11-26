@@ -25,7 +25,6 @@ go_library(
         "//core/infrastructure/casefile/sarif",
         "//core/infrastructure/gavelspace/gavelconfig",
         "//core/infrastructure/platform/bazel",
-        "//core/infrastructure/platform/bazel/catalog",
         "//core/infrastructure/platform/bazel/collector",
         "//core/infrastructure/platform/bazel/collector/composite",
         "//core/infrastructure/platform/bazel/installer",
@@ -39,7 +38,6 @@ go_library(
 
 go_binary(
     name = "gavel",
-    data = ["@gavel_tools//lint:catalog.yaml"],
     embed = [":gavel_lib"],
     visibility = ["//visibility:public"],
 )

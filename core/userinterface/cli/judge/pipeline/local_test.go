@@ -344,3 +344,34 @@ func TestRunProject_NoServerDelegatesToLocal(t *testing.T) {
 	assert.Equal(t, "pass", result.Verdict)
 	assert.False(t, result.ServerFailed)
 }
+
+func TestMapSubmitResult_ExposesToolFailuresWithProvenance(t *testing.T) {
+	collected := collectevidence.Result{Evidences: []evidencedto.Evidence{
+		{Subtype: "tool_execution", ToolExecution: &evidencedto.ToolExecution{Failures: []evidencedto.ToolFailure{
+			{Tool: "shellcheck", Reason: "no SARIF produced", Provenance: "bridge"},
+		}}},
+	}}
+
+	result := mapSubmitResult(submit.Result{}, collected, "payments", Options{})
+
+	require.Len(t, result.ToolFailures, 1)
+	assert.Equal(t, "shellcheck", result.ToolFailures[0].Tool)
+	assert.Equal(t, "bridge", result.ToolFailures[0].Provenance)
+}
+
+func TestParseEvidence_KeepsBridgeProvenanceOfRawSARIF(t *testing.T) {
+	deps, _ := newTestDeps(t)
+	fingerprint, err := finding.NewFingerprintID("fp")
+	require.NoError(t, err)
+	deps.Findings = ingestfind.NewHandler(map[string]ingestfind.Parser{"sarif": stubFindingsParser{results: []ingestfind.Parsed{
+		{RuleID: "r", Severity: finding.SeverityWarning, FilePath: "a.sh", Line: 1, FingerprintID: fingerprint},
+	}}})
+	file := evidenceFile{Format: "sarif", Source: "shellcheck", Data: []byte(`{}`), Provenance: "bridge"}
+
+	got, err := parseEvidence(context.Background(), deps, file)
+
+	require.NoError(t, err)
+	require.Len(t, got.Findings, 1)
+	assert.Equal(t, "bridge", got.Findings[0].Provenance)
+	assert.Equal(t, "shellcheck", got.Findings[0].Tool)
+}

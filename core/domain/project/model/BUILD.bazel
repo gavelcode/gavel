@@ -4,6 +4,7 @@ go_library(
     name = "model",
     srcs = [
         "baseline.go",
+        "bridge.go",
         "errors.go",
         "events.go",
         "project.go",
@@ -26,6 +27,7 @@ go_test(
     name = "model_test",
     srcs = [
         "baseline_test.go",
+        "bridge_test.go",
         "events_test.go",
         "project_id_test.go",
         "project_test.go",

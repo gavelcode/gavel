@@ -6,16 +6,40 @@
 # gavel.yaml then *selects* tools from this menu per project — it never redefines
 # what a tool is.
 #
-# Each aspect listed here must exist in //lint/aspects:defs.bzl; that consistency
-# is enforced by catalog_test. `binary` and `build_flags` are optional (only the
-# tools that need them carry them). `aspects_bzl` is the module-relative label
-# where the aspects live; a consumer prefixes it with the module name it binds
-# gavel_tools under.
+# gavel-tools is one Bazel module per language, so a consumer's module graph only
+# holds the rulesets and linters of the languages it lints. Each tool therefore
+# names the module that publishes its aspect:
+#   module        the Bazel module the consumer must depend on to use the aspect;
+#                 absent means the core `gavel_tools` (aspects that load no
+#                 language ruleset, e.g. the Rust archtest)
+#   aspects_bzl   module-relative label of the file holding the aspect, resolved
+#                 under that module; optional, defaults to the top-level
+#                 `aspects_bzl` below
+#   aspect        the aspect name in that file
+# The label a consumer passes to --aspects is therefore
+#   @<module><aspects_bzl>%<aspect>    e.g. @gavel_tools_java//lint/aspects:defs.bzl%java_pmd_submission_aspect
+# Each aspect listed here must exist in its module's defs.bzl, and every aspect a
+# module's defs.bzl exports must be listed here against that module; catalog_test
+# enforces both, and that each `binary` repo is declared by the tool's own module.
+# `binary` and `build_flags` are optional (only the tools that need them carry them).
+#
+# `variants` (optional, per tool) swaps in a different aspect when the consumer
+# builds with a different ruleset than the default entry assumes. Each variant:
+#   when_bazel_dep  a module name present in the consumer's MODULE.bazel; the
+#                   variant applies when it is there, else the entry itself is used
+#   module          the Bazel module the consumer must depend on to get the aspect
+#   aspects_bzl     module-relative label of the variant's aspects, resolved under
+#                   `module` (not gavel_tools)
+#   aspect          the aspect name in that file
+#   build_flags     (optional) flags the variant needs, replacing the entry's
+# gavel-tools never imposes a ruleset: the default entry uses the consumer's
+# rules_rust, a variant uses whatever the consumer already builds with.
 version: 1
 aspects_bzl: //lint/aspects:defs.bzl
 languages:
   go:
     - name: golangci-lint
+      module: gavel_tools_go
       aspect: go_golangci_lint_submission_aspect
       sarif_suffix: .golangci.sarif
       # Canonical repo name (@@rules_go+) so this flag resolves even when the
@@ -24,57 +48,84 @@ languages:
       build_flags: ["--@@rules_go+//go/config:export_stdlib=True"]
       binary: golangci_lint_binary
     - name: archtest
+      module: gavel_tools_go
       aspect: go_archtest_submission_aspect
       sarif_suffix: .archtest.sarif
   java:
     - name: pmd
+      module: gavel_tools_java
       aspect: java_pmd_submission_aspect
       sarif_suffix: .pmd.sarif
       binary: pmd_binary
     - name: cpd
+      module: gavel_tools_java
       aspect: java_cpd_submission_aspect
       sarif_suffix: .cpd.sarif
       binary: pmd_binary
     - name: spotbugs
+      module: gavel_tools_java
       aspect: java_spotbugs_submission_aspect
       sarif_suffix: .spotbugs.sarif
       binary: spotbugs_binary
     - name: error-prone
+      module: gavel_tools_java
       aspect: java_error_prone_submission_aspect
       sarif_suffix: .errorprone.sarif
       binary: error_prone_binary
     - name: archtest
+      module: gavel_tools_java
       aspect: java_archtest_submission_aspect
       sarif_suffix: .archtest.sarif
   python:
     - name: ruff
+      module: gavel_tools_python
       aspect: python_ruff_submission_aspect
       sarif_suffix: .ruff.sarif
       binary: ruff_binary
     - name: bandit
+      module: gavel_tools_python
       aspect: python_bandit_submission_aspect
       sarif_suffix: .bandit.sarif
       binary: bandit_binary
     - name: pycompile
+      module: gavel_tools_python
       aspect: python_pycompile_submission_aspect
       sarif_suffix: .pycompile.sarif
     - name: archtest
+      module: gavel_tools_python
       aspect: python_archtest_submission_aspect
       sarif_suffix: .archtest.sarif
   typescript:
     - name: eslint
+      module: gavel_tools_typescript
       aspect: typescript_eslint_submission_aspect
       sarif_suffix: .eslint.sarif
     - name: archtest
+      module: gavel_tools_typescript
       aspect: typescript_archtest_submission_aspect
       sarif_suffix: .archtest.sarif
   rust:
     - name: clippy
+      module: gavel_tools_rust
       aspect: rust_clippy_submission_aspect
       sarif_suffix: .clippy.sarif
       build_flags:
         - "--@rules_rust//rust/settings:capture_clippy_output=True"
         - "--@rules_rust//rust/settings:clippy_output_diagnostics=True"
+      variants:
+        # rules_rs compiles with its own rules_rust repo, so the default aspect
+        # never matches it (and now reports that as a failed execution). The
+        # flags use rules_rs's canonical repo name, as the go entry does: the
+        # apparent `@rules_rust` is not visible from a consumer's root module
+        # unless it use_repo()s rules_rs's extension itself ("No repository
+        # visible as '@rules_rust'"), whereas this resolves in every consumer.
+        - when_bazel_dep: rules_rs
+          module: gavel_tools_rust_rs
+          aspects_bzl: //lint/aspects:defs.bzl
+          aspect: rust_clippy_submission_aspect
+          build_flags:
+            - "--@@rules_rs++rules_rust+rules_rust//rust/settings:capture_clippy_output=True"
+            - "--@@rules_rs++rules_rust+rules_rust//rust/settings:clippy_output_diagnostics=True"
     - name: archtest
       aspect: rust_archtest_submission_aspect
       sarif_suffix: .archtest.sarif

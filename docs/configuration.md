@@ -38,6 +38,12 @@ projects:                                    # list of projects (required, at le
     tooling:                                 # language → tools to run (required, at least one language)
       <language>: [<tool>, ...]              # e.g. go: [golangci-lint, archtest]
 
+    bridges:                                 # project-provided linter aspects (optional)
+      - name: <string>                       # unique per project; must not clash with the project's catalog tools
+        aspect: <label>                      # e.g. //tools/lint:shellcheck.bzl%shellcheck_gavel
+        sarif_suffix: <string>               # e.g. .shellcheck.sarif (must end in .sarif)
+        build_flags: [<string>]              # extra bazel flags for this bridge (optional)
+
     quality_gate:                            # quality gate rules (optional)
       findings:                              # code quality findings rule (optional)
         max_error: <int>                     # maximum NEW errors allowed (optional)
@@ -97,9 +103,72 @@ source of truth); a project runs exactly what it lists. Selection is
 everything" default, and listing a tool the catalog does not publish for that
 language is likewise an error.
 
+**`projects[].bridges`** (list, optional)
+Linters gavel does not ship, declared by the project. See [Bridges](#bridges).
+
 **`projects[].quality_gate`** (object, optional)
 Quality gate rules. When omitted, no quality gate is applied and the verdict is
 always pass.
+
+### Bridges
+
+A **bridge** is a linter aspect the project provides itself. Gavel builds it and
+judges its findings like a catalog tool's, but **marks it as provided by the
+project, not guaranteed by gavel**: catalog tools come with hermetic execution
+and SARIF with a `ruleId`; for a bridge those guarantees are the project's.
+
+The aspect writes SARIF into the `gavel_submissions` output group. The SARIF
+contract, the helper for authoring such an aspect and a worked example live in
+gavel-tools: `docs/bridge.md` and `@gavel_tools//lint:bridge.bzl` (the contract
+is not restated here so it cannot drift).
+
+Gavel's side of the arrangement:
+
+- **It runs the build itself** over the project's targets (also under
+  `--affected` scoping) with `--output_groups=gavel_submissions` plus the
+  bridge's `build_flags`, and reads only the SARIF files **that build reported**
+  whose name ends in `sarif_suffix`. It never scans `bazel-bin`, so files left by
+  earlier builds cannot become findings.
+- **Every way a bridge can break is a failed tool execution** (the verdict fails,
+  the reason is shown): the bazel build fails; the build produces no SARIF file
+  with the suffix; a file is not valid JSON or breaks the contract (missing or
+  blank `ruleId`, missing location, ...); or a run reports an unsuccessful
+  invocation. Bridges are independent: one failing does not hide the others.
+- **A contract violation fails the whole bridge**, not just the offending file:
+  none of that bridge's findings are used, and the message lists the first three
+  offending files. Partial findings from a tool that breaks its contract would
+  read as a smaller, trustworthy result.
+- **Provenance** is carried everywhere: the CLI tags findings with
+  `bridge — not guaranteed by gavel`, `--json` has `provenance` on each finding
+  and tool failure, emitted SARIF has `runs[].properties.gavel.provenance`, and
+  the MCP tools use the same label. The quality gate applies to bridge findings
+  exactly as to catalog ones.
+- **Tool name and fingerprints.** A bridge's findings are attributed to the
+  bridge `name` (not the SARIF driver name) and their fingerprints are
+  namespaced `bridge/<name>/...`, so baselines never collide with a catalog tool.
+  A bridge `name` that equals a catalog tool listed in the same project's
+  `tooling` is a config error, as are duplicate names, a missing field, an
+  `aspect` without `%`, and a `sarif_suffix` that does not end in `.sarif`.
+- `gavel init` writes a `build:gavel-bridge-<name>` config (aspect, output group,
+  flags) for each declared bridge into `.gavel/gavel.bazelrc`, so the same aspect
+  can be run by hand. It adds no `bazel_dep`. Bridges are read from the config
+  that `init` installs (`--from`).
+
+Limits: bridge provenance is not part of the server wire API yet, so a server
+shows bridge findings as ordinary findings; the local verdict and all local
+outputs (including GitHub check annotations) are marked.
+
+```yaml
+projects:
+  - name: payments
+    pattern: //payments/...
+    tooling:
+      go: [golangci-lint]
+    bridges:
+      - name: shellcheck
+        aspect: //tools/lint:shellcheck.bzl%shellcheck_gavel
+        sarif_suffix: .shellcheck.sarif
+```
 
 ### Quality gate rules
 

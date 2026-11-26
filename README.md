@@ -121,12 +121,6 @@ can't: *which packages of my Bazel monorepo are healthy, and did this change
 make one of them worse* — where the build graph is the unit of analysis and the
 inner loop is where quality is actually won.
 
-> **Already running [aspect's rules_lint](https://github.com/aspect-build/rules_lint)?**
-> Keep it. Gavel reads the SARIF it drops in `bazel-bin/`
-> (`gavel judge --findings-source=rules_lint`) and turns those reports into a
-> gate — baseline delta, coverage, architecture, verdict — the layer rules_lint
-> deliberately leaves to you.
-
 ## Status
 
 > **Alpha — v0.1.0.** Under active development; APIs and config formats may change.

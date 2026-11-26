@@ -32,12 +32,19 @@ versions live in the gavel-tools catalog.
 
 ## How analysis runs
 
+Each language's aspects ship in their own gavel-tools Bazel module
+(`gavel_tools_go`, `gavel_tools_java`, ...; tools without a `module` entry live
+in core `gavel_tools`). `gavel init` writes one `bazel_dep` per module your
+selected languages need into `.gavel/gavel.MODULE.bazel`, and `gavel judge`
+resolves the same modules. The catalog is the source of truth for which tool
+lives in which module.
+
 `gavel judge` builds gavel-tools' submission aspects over the project's targets
 and collects the `*.sarif` files they emit under `bazel-bin/`:
 
 ```
 bazel build \
-  --aspects=@gavel_tools//lint/aspects:defs.bzl%<lang>_<tool>_submission_aspect \
+  --aspects=@<module>//lint/aspects:defs.bzl%<lang>_<tool>_submission_aspect \
   --output_groups=gavel_submissions \
   --keep_going -- <targets>
 ```

@@ -3,6 +3,7 @@ package evidencedto
 import (
 	"fmt"
 
+	"github.com/usegavel/gavel/core/domain/casefile/model/evidence"
 	"github.com/usegavel/gavel/core/domain/casefile/model/evidence/toolexecution"
 )
 
@@ -14,6 +15,8 @@ type ToolFailure struct {
 	Tool     string
 	Reason   string
 	Degraded bool
+	// Provenance is "catalog" or "bridge"; empty means catalog.
+	Provenance string
 }
 
 func fromDomainToolExecution(content toolexecution.Content) ToolExecution {
@@ -21,9 +24,10 @@ func fromDomainToolExecution(content toolexecution.Content) ToolExecution {
 	out := make([]ToolFailure, 0, len(failures))
 	for _, failed := range failures {
 		out = append(out, ToolFailure{
-			Tool:     failed.Tool(),
-			Reason:   failed.Reason(),
-			Degraded: failed.Degraded(),
+			Tool:       failed.Tool(),
+			Reason:     failed.Reason(),
+			Degraded:   failed.Degraded(),
+			Provenance: failed.Provenance().String(),
 		})
 	}
 	return ToolExecution{Failures: out}
@@ -42,8 +46,29 @@ func toDomainToolExecution(in ToolExecution) (toolexecution.Content, error) {
 }
 
 func newToolFailure(failed ToolFailure) (toolexecution.Failure, error) {
-	if failed.Degraded {
-		return toolexecution.NewDegradedFailure(failed.Tool, failed.Reason)
+	provenance, err := evidence.NewProvenance(failed.Provenance)
+	if err != nil {
+		return toolexecution.Failure{}, err
 	}
-	return toolexecution.NewFailure(failed.Tool, failed.Reason)
+	var domainFailure toolexecution.Failure
+	if failed.Degraded {
+		domainFailure, err = toolexecution.NewDegradedFailure(failed.Tool, failed.Reason)
+	} else {
+		domainFailure, err = toolexecution.NewFailure(failed.Tool, failed.Reason)
+	}
+	if err != nil {
+		return toolexecution.Failure{}, err
+	}
+	return domainFailure.WithProvenance(provenance), nil
+}
+
+// ExtractToolFailures flattens the failures of every tool_execution evidence.
+func ExtractToolFailures(evidences []Evidence) []ToolFailure {
+	var out []ToolFailure
+	for _, ev := range evidences {
+		if ev.ToolExecution != nil {
+			out = append(out, ev.ToolExecution.Failures...)
+		}
+	}
+	return out
 }

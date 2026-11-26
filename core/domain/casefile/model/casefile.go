@@ -134,7 +134,11 @@ func (cf *CaseFile) toolExecutionRuling(grouped map[evidence.Subtype]evidence.Co
 func toolExecutionReasons(failures []toolexecution.Failure) string {
 	reasons := make([]string, 0, len(failures))
 	for _, failed := range failures {
-		reasons = append(reasons, fmt.Sprintf("%s: %s", failed.Tool(), failed.Reason()))
+		tool := failed.Tool()
+		if failed.Provenance().IsBridge() {
+			tool += " (bridge)"
+		}
+		reasons = append(reasons, fmt.Sprintf("%s: %s", tool, failed.Reason()))
 	}
 	return strings.Join(reasons, "; ")
 }

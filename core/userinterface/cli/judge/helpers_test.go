@@ -311,3 +311,17 @@ func TestClientBaselineFetcher_FetchBaselineError(t *testing.T) {
 
 	require.Error(t, err)
 }
+
+func TestBridgeSpecsMapsProjectBridgesToCollectSpecs(t *testing.T) {
+	project := loadgavelspace.ProjectView{Bridges: []loadgavelspace.BridgeView{
+		{Name: "shellcheck", Aspect: "//t:s.bzl%s", SARIFSuffix: ".shellcheck.sarif", BuildFlags: []string{"--f"}},
+	}}
+
+	specs := bridgeSpecs(project)
+
+	require.Len(t, specs, 1)
+	assert.Equal(t, "shellcheck", specs[0].Name)
+	assert.Equal(t, "//t:s.bzl%s", specs[0].Aspect)
+	assert.Equal(t, ".shellcheck.sarif", specs[0].SARIFSuffix)
+	assert.Equal(t, []string{"--f"}, specs[0].BuildFlags)
+}

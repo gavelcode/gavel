@@ -4,8 +4,11 @@ import (
 	"bytes"
 	_ "embed"
 	"fmt"
+	"slices"
+	"sort"
 	"text/template"
 
+	"github.com/usegavel/gavel/core/application/gavelspace/loadgavelspace"
 	"github.com/usegavel/gavel/core/infrastructure/platform/bazel/catalog"
 )
 
@@ -24,7 +27,7 @@ const moduleInclude = `include("//:.gavel/gavel.MODULE.bazel")`
 
 const GavelBazelrc = ".gavel/gavel.bazelrc"
 const GavelModule = ".gavel/gavel.MODULE.bazel"
-const gavelToolsVersion = "0.3.8"
+const gavelToolsVersion = "0.4.0"
 const gavelDepLine = `bazel_dep(name = "gavel_tools", version = "` + gavelToolsVersion + `")`
 
 type Installer struct{}
@@ -42,26 +45,62 @@ func (i *Installer) ToolsForLanguage(language string) []string {
 }
 
 type bazelrcData struct {
-	Prefix     string
 	Go         bool
 	Java       bool
 	Python     bool
 	TypeScript bool
 	Rust       bool
+	Bridges    []loadgavelspace.BridgeView
+	deps       catalog.Deps
 }
 
-type moduleData struct{}
+// Label is the aspect label for one catalog tool, resolved as judge resolves it.
+func (d bazelrcData) Label(language, tool string) (string, error) {
+	aspect, ok := catalog.AspectFor(language, tool, d.deps)
+	if !ok {
+		return "", fmt.Errorf("catalog has no %s tool %q", language, tool)
+	}
+	return aspect.Path, nil
+}
 
-func toBazelrcData(tooling []string) bazelrcData {
+// Flags are the extra build flags the resolved tool needs.
+func (d bazelrcData) Flags(language, tool string) []string {
+	aspect, _ := catalog.AspectFor(language, tool, d.deps)
+	return aspect.BuildFlags
+}
+
+type moduleData struct {
+	Version string
+	// Modules are the non-core modules the selected tools resolved to.
+	Modules []string
+}
+
+func toBazelrcData(tooling []string, bridges []loadgavelspace.BridgeView, deps catalog.Deps) bazelrcData {
 	set := toToolingSet(tooling)
 	return bazelrcData{
-		Prefix:     catalog.ModulePrefix() + "//lint/aspects:defs.bzl%",
 		Go:         set["go"],
 		Java:       set["java"],
 		Python:     set["python"],
 		TypeScript: set["typescript"],
 		Rust:       set["rust"],
+		Bridges:    bridges,
+		deps:       deps,
 	}
+}
+
+// The core module's dep is written once into the root MODULE.bazel (gavelDepLine), so it is not repeated here.
+func toModuleData(tooling []string, deps catalog.Deps) moduleData {
+	seen := make(map[string]bool)
+	var modules []string
+	for _, aspect := range catalog.AllAspectsForLanguages(tooling, deps) {
+		if aspect.Module == catalog.CoreModule || seen[aspect.Module] {
+			continue
+		}
+		seen[aspect.Module] = true
+		modules = append(modules, aspect.Module)
+	}
+	sort.Strings(modules)
+	return moduleData{Version: gavelToolsVersion, Modules: modules}
 }
 
 func toToolingSet(tooling []string) map[string]bool {
@@ -78,4 +117,24 @@ func renderTemplate(tmpl *template.Template, data any) (string, error) {
 		return "", fmt.Errorf("render template %s: %w", tmpl.Name(), err)
 	}
 	return buf.String(), nil
+}
+
+// distinctBridges collapses a bridge declared identically by several projects
+// and rejects one name bound to different aspects: the bazelrc config name is
+// the bridge name, so it can mean only one thing.
+func distinctBridges(bridges []loadgavelspace.BridgeView) ([]loadgavelspace.BridgeView, error) {
+	byName := make(map[string]loadgavelspace.BridgeView, len(bridges))
+	var distinct []loadgavelspace.BridgeView
+	for _, bridge := range bridges {
+		seen, ok := byName[bridge.Name]
+		if !ok {
+			byName[bridge.Name] = bridge
+			distinct = append(distinct, bridge)
+			continue
+		}
+		if seen.Aspect != bridge.Aspect || !slices.Equal(seen.BuildFlags, bridge.BuildFlags) {
+			return nil, fmt.Errorf("bridge %q is declared with different aspects or build_flags in different projects; give them distinct names", bridge.Name)
+		}
+	}
+	return distinct, nil
 }

@@ -11,4 +11,5 @@ var (
 	ErrInvalidContent       = failure.New("invalid evidence content", failure.Validation)
 	ErrInvalidEvidence      = failure.New("invalid evidence", failure.Validation)
 	ErrInvalidViolation     = failure.New("invalid architecture violation", failure.Validation)
+	ErrInvalidProvenance    = failure.New("invalid evidence provenance", failure.Validation)
 )

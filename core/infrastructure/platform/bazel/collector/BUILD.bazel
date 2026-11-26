@@ -6,6 +6,7 @@ go_library(
     name = "collector",
     srcs = [
         "architecture.go",
+        "bridges.go",
         "coverage.go",
         "findings.go",
         "runner_adapter.go",
@@ -17,8 +18,10 @@ go_library(
         "//core/application/casefile/collectevidence",
         "//core/application/casefile/evidencedto",
         "//core/application/casefile/ingestfindings",
+        "//core/domain/casefile/model/evidence",
         "//core/infrastructure/casefile/sarif",
         "//core/infrastructure/platform/bazel/catalog",
+        "//core/infrastructure/platform/bazel/moduledeps",
         "//core/infrastructure/platform/bazel/runner",
     ],
 )
@@ -27,17 +30,18 @@ go_test(
     name = "collector_test",
     srcs = [
         "architecture_test.go",
+        "bridges_test.go",
         "coverage_test.go",
         "fakes_test.go",
         "findings_test.go",
         "vitest_test.go",
     ],
-    data = ["@gavel_tools//lint:catalog.yaml"],
     deps = [
         ":collector",
         "//core/application/casefile/collectevidence",
         "//core/application/casefile/evidencedto",
         "//core/application/casefile/ingestfindings",
+        "//core/domain/casefile/model/evidence",
         "//core/infrastructure/platform/bazel/runner",
         "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//require",

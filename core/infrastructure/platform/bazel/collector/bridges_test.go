@@ -122,9 +122,9 @@ func TestBridgeCollectorReportsBuildFailureAsFailedBridgeExecution(t *testing.T)
 func TestBridgeCollectorFailsTheWholeBridgeOnContractViolationAndListsFirstOffendingFiles(t *testing.T) {
 	bad := `{"runs":[{"tool":{"driver":{"name":"todo"}},"results":[{"ruleId":"","message":{"text":"m"},"locations":[{"physicalLocation":{"artifactLocation":{"uri":"a.sh"},"region":{"startLine":1}}}]}]}]}`
 	r := &fakeBridgeRunner{results: map[string]*runner.BridgeResult{"//tools:todo.bzl%todo": files(validBridgeDoc, bad, "{nope", bad, bad)}}
-	p := &recordingFindingsParser{}
+	parser := &recordingFindingsParser{}
 
-	result := collect(t, r, p, spec("todo"))
+	result := collect(t, r, parser, spec("todo"))
 
 	failures := failuresOf(result)
 	require.Len(t, failures, 1)
@@ -134,7 +134,7 @@ func TestBridgeCollectorFailsTheWholeBridgeOnContractViolationAndListsFirstOffen
 	assert.Contains(t, failures[0].Reason, "pkg3/x.sarif")
 	assert.NotContains(t, failures[0].Reason, "pkg4/x.sarif", "only the first offending files are listed")
 	assert.Contains(t, failures[0].Reason, "and 1 more")
-	assert.Empty(t, p.commands, "no finding of a contract-breaking bridge is ingested, even from its valid files")
+	assert.Empty(t, parser.commands, "no finding of a contract-breaking bridge is ingested, even from its valid files")
 	assert.Empty(t, result.RawFiles)
 }
 

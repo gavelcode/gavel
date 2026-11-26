@@ -24,7 +24,7 @@ Bazel 7, but 7.x is unsupported. The flag itself lives in
 [`catalog.yaml`](../core/infrastructure/platform/bazel/catalog/catalog.yaml).
 
 **Restricted / hermetic networks.** `gavel init` adds the gavel module registry
-(`gavelcode.github.io`) to your `.bazelrc`, and `gavel_tools` fetches its
+(`raw.githubusercontent.com/gavelcode/registry`) to your `.bazelrc`, and `gavel_tools` fetches its
 analyzer binaries from `github.com` and `repo1.maven.org`. A repo with a
 locked-down `--downloader_config` (an allowlist plus `block *` mirror) must
 allowlist those hosts, or vendor `gavel_tools` into its own mirror — gavel
@@ -66,7 +66,7 @@ This generates:
 - `.gavel/gavel.MODULE.bazel` — tool dependency declarations
 
 It also appends `try-import` and `include` lines to your `.bazelrc` and
-`MODULE.bazel`, and adds `common --registry=https://gavelcode.github.io/registry`
+`MODULE.bazel`, and adds `common --registry=https://raw.githubusercontent.com/gavelcode/registry/main/`
 to your `.bazelrc` so Bazel can resolve `gavel_tools`. To move that pin later,
 see [Upgrading gavel_tools](upgrading.md).
 

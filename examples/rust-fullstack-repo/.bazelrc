@@ -1,4 +1,5 @@
-common --registry=https://gavelcode.github.io/registry
+# TEMPORARY (bazel-central-registry#12088): serve gavel_tools 0.4.0 until BCR merges; then drop this line.
+common --registry=https://raw.githubusercontent.com/gavelcode/registry/main/
 common --registry=https://bcr.bazel.build
 common --experimental_isolated_extension_usages
 

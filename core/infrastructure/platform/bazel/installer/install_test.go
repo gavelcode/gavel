@@ -17,7 +17,7 @@ import (
 const gavelDepLine = `bazel_dep(name = "gavel_tools", version = "0.4.0")`
 
 const (
-	gavelRegistryLine = "common --registry=https://gavelcode.github.io/registry"
+	gavelRegistryLine = "common --registry=https://raw.githubusercontent.com/gavelcode/registry/main/"
 	bcrRegistryLine   = "common --registry=https://bcr.bazel.build"
 )
 
@@ -599,4 +599,14 @@ func TestInstall_NoBridges_OmitsBridgeSection(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.NotContains(t, readRaw(t, filepath.Join(root, installer.GavelBazelrc)), "Bridges")
+}
+
+func TestInstall_MarksTemporaryGavelRegistryForRemoval(t *testing.T) {
+	root := t.TempDir()
+	_, err := installer.NewInstaller().Install(root, []string{"go"})
+	require.NoError(t, err)
+
+	bazelrc := readFile(t, filepath.Join(root, ".bazelrc"))
+	assert.Contains(t, bazelrc, "bazel-central-registry#12088",
+		"the gavel registry line is temporary and must name the BCR PR whose merge removes it")
 }

@@ -184,9 +184,13 @@ func installLintConfigFilegroup(root string) (bool, error) {
 }
 
 const (
-	gavelRegistryLine = "common --registry=https://gavelcode.github.io/registry"
-	bcrRegistryLine   = "common --registry=https://bcr.bazel.build"
-	registryLineCount = 2
+	// TEMPORARY (bazel-central-registry#12088): gavel_tools 0.4.0 is served from
+	// the gavel registry until BCR merges it. When it does, delete
+	// gavelRegistryLine, gavelRegistryComment and their use in ensureRegistryLines.
+	gavelRegistryComment = "# TEMPORARY (bazel-central-registry#12088): serve gavel_tools until BCR merges; then drop this line."
+	gavelRegistryLine    = "common --registry=https://raw.githubusercontent.com/gavelcode/registry/main/"
+	bcrRegistryLine      = "common --registry=https://bcr.bazel.build"
+	registryLineCount    = 2
 )
 
 // Bazel drops its implicit BCR default once any --registry is set, so both must
@@ -219,6 +223,10 @@ func ensureRegistryLines(root string) (bool, error) {
 		builder.WriteString("\n")
 	}
 	for _, line := range missing {
+		if line == gavelRegistryLine {
+			builder.WriteString(gavelRegistryComment)
+			builder.WriteString("\n")
+		}
 		builder.WriteString(line)
 		builder.WriteString("\n")
 	}

@@ -49,3 +49,16 @@ build:gavel-rust-clippy --@rules_rust//rust/settings:clippy_output_diagnostics=T
 Without these, the converter receives text output and produces zero findings.
 Clippy's version is tied to the workspace's Rust toolchain — it is not separately
 pinned.
+
+## rules_rs consumers
+
+Consumers that build Rust with [`rules_rs`](https://github.com/dzbarsky/rules_rs)
+instead of `rules_rust` get a different aspect, published by the
+`gavel_tools_rust_rs` module in place of the default `gavel_tools_rust`. Gavel never imposes a ruleset: when your root
+`MODULE.bazel` declares `bazel_dep(name = "rules_rs", ...)`, `gavel init` adds
+the variant module to `.gavel/gavel.MODULE.bazel` and points
+`gavel-rust-clippy` at its aspect, and `gavel judge` resolves the same variant.
+No gavel configuration is needed. Which dep selects which variant, and its build
+flags, are declared by the `variants` entries of the gavel-tools catalog (see
+`docs/catalog.md` in gavel-tools); detection scans the literal `bazel_dep` calls
+in `MODULE.bazel` and the files it `include()`s.

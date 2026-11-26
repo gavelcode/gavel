@@ -6,6 +6,9 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+
+	"github.com/usegavel/gavel/core/infrastructure/platform/bazel/catalog"
+	"github.com/usegavel/gavel/core/infrastructure/platform/bazel/moduledeps"
 )
 
 // Matches single- and multi-line module() so gavel/gavel_tools never self-inject a bazel_dep.
@@ -23,7 +26,9 @@ func (i *Installer) Install(workspace string, tooling []string) (map[string]bool
 		return nil, fmt.Errorf("create %s directory: %w", gavelDir, err)
 	}
 
-	bazelrcMod, err := i.installBazelrc(workspace, tooling)
+	deps := moduledeps.Detect(workspace)
+
+	bazelrcMod, err := i.installBazelrc(workspace, tooling, deps)
 	if err != nil {
 		return nil, fmt.Errorf("install bazelrc: %w", err)
 	}
@@ -31,7 +36,7 @@ func (i *Installer) Install(workspace string, tooling []string) (map[string]bool
 		modified[k] = v
 	}
 
-	moduleMod, err := i.installModule(workspace)
+	moduleMod, err := i.installModule(workspace, tooling, deps)
 	if err != nil {
 		return nil, fmt.Errorf("install module: %w", err)
 	}
@@ -50,8 +55,8 @@ func (i *Installer) Install(workspace string, tooling []string) (map[string]bool
 	return modified, nil
 }
 
-func (i *Installer) installBazelrc(root string, tooling []string) (map[string]bool, error) {
-	block, err := renderTemplate(bazelrcTmpl, toBazelrcData(tooling))
+func (i *Installer) installBazelrc(root string, tooling []string, deps catalog.Deps) (map[string]bool, error) {
+	block, err := renderTemplate(bazelrcTmpl, toBazelrcData(tooling, deps))
 	if err != nil {
 		return nil, err
 	}
@@ -76,8 +81,8 @@ func (i *Installer) installBazelrc(root string, tooling []string) (map[string]bo
 	}, nil
 }
 
-func (i *Installer) installModule(root string) (map[string]bool, error) {
-	block, err := renderTemplate(moduleTmpl, moduleData{})
+func (i *Installer) installModule(root string, tooling []string, deps catalog.Deps) (map[string]bool, error) {
+	block, err := renderTemplate(moduleTmpl, toModuleData(tooling, deps))
 	if err != nil {
 		return nil, err
 	}

@@ -85,3 +85,17 @@ func TestAnalyze_InvalidSARIF(t *testing.T) {
 	require.NoError(t, err)
 	assert.Empty(t, findings)
 }
+
+func TestAnalyze_RulesRsConsumer_BuildsWithTheVariantAspect(t *testing.T) {
+	workspace := t.TempDir()
+	require.NoError(t, os.WriteFile(filepath.Join(workspace, "MODULE.bazel"), []byte(`bazel_dep(name = "rules_rs", version = "0.2.4")`+"\n"), 0o644))
+	fake := &fakeRunner{results: []fakeResult{
+		{Stdout: []byte("build ok\n")},
+		{Stdout: []byte(t.TempDir() + "\n")},
+	}}
+
+	_, _ = NewBazelTargetAnalyzer(fake).Analyze(t.Context(), workspace, "//pkg:lib", []string{"rust"})
+
+	require.NotEmpty(t, fake.calls)
+	assert.Contains(t, fake.calls[0].Args, "--aspects=@gavel_tools_rust_rs//lint/aspects:defs.bzl%rust_clippy_submission_aspect")
+}

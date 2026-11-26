@@ -19,6 +19,7 @@ go_library(
         "//core/application/casefile/ingestfindings",
         "//core/infrastructure/casefile/sarif",
         "//core/infrastructure/platform/bazel/catalog",
+        "//core/infrastructure/platform/bazel/moduledeps",
         "//core/infrastructure/platform/bazel/runner",
     ],
 )

@@ -27,7 +27,6 @@ import (
 	"github.com/usegavel/gavel/core/infrastructure/casefile/sarif"
 	"github.com/usegavel/gavel/core/infrastructure/gavelspace/gavelconfig"
 	"github.com/usegavel/gavel/core/infrastructure/platform/bazel"
-	"github.com/usegavel/gavel/core/infrastructure/platform/bazel/catalog"
 	"github.com/usegavel/gavel/core/infrastructure/platform/bazel/collector"
 	"github.com/usegavel/gavel/core/infrastructure/platform/bazel/collector/composite"
 	"github.com/usegavel/gavel/core/infrastructure/platform/bazel/installer"
@@ -41,8 +40,6 @@ import (
 var version = "dev"
 
 func main() {
-	catalog.SetModulePrefix("@gavel_tools")
-
 	workspace, wsErr := bazel.WorkspaceDir()
 
 	var projectRepo *projectmemory.ProjectRepository

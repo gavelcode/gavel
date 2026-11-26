@@ -23,8 +23,9 @@ func TestLoadEmbedded_ParsesTheBundledCatalog(t *testing.T) {
 }
 
 func TestActive_LoadsLazily(t *testing.T) {
+	previous := loaded
 	loaded = nil
-	t.Cleanup(func() { loaded = nil })
+	t.Cleanup(func() { loaded = previous })
 
 	got := active()
 
@@ -32,11 +33,12 @@ func TestActive_LoadsLazily(t *testing.T) {
 }
 
 func TestActive_PanicsWhenTheCatalogCannotLoad(t *testing.T) {
+	previous := loaded
 	loaded = nil
 	original := loader
 	loader = func() (*Catalog, error) { return nil, errors.New("boom") }
 	t.Cleanup(func() {
-		loaded = nil
+		loaded = previous
 		loader = original
 	})
 

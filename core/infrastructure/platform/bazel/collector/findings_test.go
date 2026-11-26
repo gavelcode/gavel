@@ -3,6 +3,8 @@ package collector_test
 import (
 	"context"
 	"fmt"
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -105,4 +107,36 @@ func TestBazelFindingsCollector_PropagatesBuildWarning(t *testing.T) {
 	assert.Len(t, evidences, 1)
 	assert.Len(t, rawFiles, 1)
 	assert.Equal(t, "bazel build had failures", buildWarning)
+}
+
+func writeModule(t *testing.T, content string) string {
+	t.Helper()
+	root := t.TempDir()
+	require.NoError(t, os.WriteFile(filepath.Join(root, "MODULE.bazel"), []byte(content), 0o644))
+	return root
+}
+
+func TestBazelFindingsCollector_RulesRsConsumer_RunsTheVariantAspect(t *testing.T) {
+	runner := &fakeAnalysisRunner{sarifFiles: map[string][][]byte{}}
+	c := collector.NewBazelFindingsCollector(runner, &fakeFindingsParser{})
+	workspace := writeModule(t, `bazel_dep(name = "rules_rs", version = "0.2.4")`+"\n")
+
+	_, _, _, _, err := c.CollectFindings(context.Background(), workspace, []string{"//pkg:lib"}, map[string][]string{"rust": {"clippy"}}, nil)
+
+	require.NoError(t, err)
+	require.Len(t, runner.config.Aspects, 1)
+	assert.Equal(t, "gavel_tools_rust_rs", runner.config.Aspects[0].Module,
+		"judge must resolve the same variant init wired")
+}
+
+func TestBazelFindingsCollector_ConsumerWithoutRulesRs_RunsTheBaseAspect(t *testing.T) {
+	runner := &fakeAnalysisRunner{sarifFiles: map[string][][]byte{}}
+	c := collector.NewBazelFindingsCollector(runner, &fakeFindingsParser{})
+	workspace := writeModule(t, `bazel_dep(name = "rules_rust", version = "0.60.0")`+"\n")
+
+	_, _, _, _, err := c.CollectFindings(context.Background(), workspace, []string{"//pkg:lib"}, map[string][]string{"rust": {"clippy"}}, nil)
+
+	require.NoError(t, err)
+	require.Len(t, runner.config.Aspects, 1)
+	assert.Equal(t, "gavel_tools_rust", runner.config.Aspects[0].Module)
 }

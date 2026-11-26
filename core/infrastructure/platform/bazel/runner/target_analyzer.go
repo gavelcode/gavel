@@ -9,6 +9,7 @@ import (
 	"github.com/usegavel/gavel/core/application/supporting/analyzetarget"
 	"github.com/usegavel/gavel/core/infrastructure/casefile/sarif"
 	"github.com/usegavel/gavel/core/infrastructure/platform/bazel/catalog"
+	"github.com/usegavel/gavel/core/infrastructure/platform/bazel/moduledeps"
 )
 
 const bazelBuildTimeout = 10 * time.Minute
@@ -22,7 +23,7 @@ func NewBazelTargetAnalyzer(cr CommandRunner) *BazelTargetAnalyzer {
 }
 
 func (a *BazelTargetAnalyzer) Analyze(ctx context.Context, workspace, target string, languages []string) ([]analyzetarget.Finding, error) {
-	aspects := catalog.LintAspectsForLanguages(languages)
+	aspects := catalog.LintAspectsForLanguages(languages, moduledeps.Detect(workspace))
 	if err := a.runBazelBuildTarget(ctx, workspace, target, aspects); err != nil {
 		return nil, err
 	}

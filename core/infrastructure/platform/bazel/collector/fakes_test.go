@@ -13,9 +13,11 @@ type fakeAnalysisRunner struct {
 	coverageData []byte
 	buildWarning error
 	err          error
+	config       runner.AnalysisConfig
 }
 
-func (f *fakeAnalysisRunner) RunAnalysis(_ context.Context, _ runner.AnalysisConfig) (*runner.AnalysisResult, error) {
+func (f *fakeAnalysisRunner) RunAnalysis(_ context.Context, config runner.AnalysisConfig) (*runner.AnalysisResult, error) {
+	f.config = config
 	if f.err != nil {
 		return nil, f.err
 	}

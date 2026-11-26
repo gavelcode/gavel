@@ -8,6 +8,7 @@ import (
 	"github.com/usegavel/gavel/core/application/casefile/evidencedto"
 	coresarif "github.com/usegavel/gavel/core/infrastructure/casefile/sarif"
 	"github.com/usegavel/gavel/core/infrastructure/platform/bazel/catalog"
+	"github.com/usegavel/gavel/core/infrastructure/platform/bazel/moduledeps"
 	"github.com/usegavel/gavel/core/infrastructure/platform/bazel/runner"
 )
 
@@ -20,7 +21,7 @@ func NewBazelArchitectureCollector(r AnalysisRunner) *BazelArchitectureCollector
 }
 
 func (c *BazelArchitectureCollector) CollectViolations(ctx context.Context, workspace string, targets []string, selection map[string][]string, bazelConfigs []string) (*evidencedto.Evidence, [][]byte, error) {
-	selected, err := catalog.SelectedAspects(selection)
+	selected, err := catalog.SelectedAspects(selection, moduledeps.Detect(workspace))
 	if err != nil {
 		return nil, nil, err
 	}

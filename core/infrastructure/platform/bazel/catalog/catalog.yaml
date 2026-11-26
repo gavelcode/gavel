@@ -8,14 +8,16 @@
 #
 # Each aspect listed here must exist in //lint/aspects:defs.bzl; that consistency
 # is enforced by catalog_test. `binary` and `build_flags` are optional (only the
-# tools that need them carry them). `aspects_bzl` is the module-relative label
-# where the aspects live; a consumer prefixes it with the module name it binds
-# gavel_tools under.
+# tools that need them carry them). `module` is the Bazel module that publishes
+# the tool's aspect (absent = gavel_tools). `aspects_bzl` is the module-relative
+# label where the aspects live; it is a top-level default a tool may override.
+# The aspect label is @<module><aspects_bzl>%<aspect>.
 version: 1
 aspects_bzl: //lint/aspects:defs.bzl
 languages:
   go:
     - name: golangci-lint
+      module: gavel_tools_go
       aspect: go_golangci_lint_submission_aspect
       sarif_suffix: .golangci.sarif
       # Canonical repo name (@@rules_go+) so this flag resolves even when the
@@ -24,57 +26,78 @@ languages:
       build_flags: ["--@@rules_go+//go/config:export_stdlib=True"]
       binary: golangci_lint_binary
     - name: archtest
+      module: gavel_tools_go
       aspect: go_archtest_submission_aspect
       sarif_suffix: .archtest.sarif
   java:
     - name: pmd
+      module: gavel_tools_java
       aspect: java_pmd_submission_aspect
       sarif_suffix: .pmd.sarif
       binary: pmd_binary
     - name: cpd
+      module: gavel_tools_java
       aspect: java_cpd_submission_aspect
       sarif_suffix: .cpd.sarif
       binary: pmd_binary
     - name: spotbugs
+      module: gavel_tools_java
       aspect: java_spotbugs_submission_aspect
       sarif_suffix: .spotbugs.sarif
       binary: spotbugs_binary
     - name: error-prone
+      module: gavel_tools_java
       aspect: java_error_prone_submission_aspect
       sarif_suffix: .errorprone.sarif
       binary: error_prone_binary
     - name: archtest
+      module: gavel_tools_java
       aspect: java_archtest_submission_aspect
       sarif_suffix: .archtest.sarif
   python:
     - name: ruff
+      module: gavel_tools_python
       aspect: python_ruff_submission_aspect
       sarif_suffix: .ruff.sarif
       binary: ruff_binary
     - name: bandit
+      module: gavel_tools_python
       aspect: python_bandit_submission_aspect
       sarif_suffix: .bandit.sarif
       binary: bandit_binary
     - name: pycompile
+      module: gavel_tools_python
       aspect: python_pycompile_submission_aspect
       sarif_suffix: .pycompile.sarif
     - name: archtest
+      module: gavel_tools_python
       aspect: python_archtest_submission_aspect
       sarif_suffix: .archtest.sarif
   typescript:
     - name: eslint
+      module: gavel_tools_typescript
       aspect: typescript_eslint_submission_aspect
       sarif_suffix: .eslint.sarif
     - name: archtest
+      module: gavel_tools_typescript
       aspect: typescript_archtest_submission_aspect
       sarif_suffix: .archtest.sarif
   rust:
     - name: clippy
+      module: gavel_tools_rust
       aspect: rust_clippy_submission_aspect
       sarif_suffix: .clippy.sarif
       build_flags:
         - "--@rules_rust//rust/settings:capture_clippy_output=True"
         - "--@rules_rust//rust/settings:clippy_output_diagnostics=True"
+      variants:
+        - when_bazel_dep: rules_rs
+          module: gavel_tools_rust_rs
+          aspects_bzl: //lint/aspects:defs.bzl
+          aspect: rust_clippy_submission_aspect
+          build_flags:
+            - "--@@rules_rs++rules_rust+rules_rust//rust/settings:capture_clippy_output=True"
+            - "--@@rules_rs++rules_rust+rules_rust//rust/settings:clippy_output_diagnostics=True"
     - name: archtest
       aspect: rust_archtest_submission_aspect
       sarif_suffix: .archtest.sarif

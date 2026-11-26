@@ -21,6 +21,7 @@ go_library(
         "//core/application/supporting/analyzetarget",
         "//core/infrastructure/casefile/sarif",
         "//core/infrastructure/platform/bazel/catalog",
+        "//core/infrastructure/platform/bazel/moduledeps",
     ],
 )
 

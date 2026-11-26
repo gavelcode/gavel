@@ -1,0 +1,20 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+package(default_visibility = ["//visibility:public"])
+
+go_library(
+    name = "moduledeps",
+    srcs = ["moduledeps.go"],
+    importpath = "github.com/usegavel/gavel/core/infrastructure/platform/bazel/moduledeps",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "moduledeps_test",
+    srcs = ["moduledeps_test.go"],
+    deps = [
+        ":moduledeps",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

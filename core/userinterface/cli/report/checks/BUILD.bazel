@@ -16,5 +16,8 @@ go_library(
     srcs = ["build.go"],
     importpath = "github.com/usegavel/gavel/core/userinterface/cli/report/checks",
     visibility = ["//visibility:public"],
-    deps = ["//core/userinterface/cli/judge/output/json"],
+    deps = [
+        "//core/userinterface/cli/judge/output/json",
+        "//core/userinterface/cli/ui",
+    ],
 )

@@ -156,7 +156,7 @@ Gavel's side of the arrangement:
 
 Limits: bridge provenance is not part of the server wire API yet, so a server
 shows bridge findings as ordinary findings; the local verdict and all local
-outputs are marked.
+outputs (including GitHub check annotations) are marked.
 
 ```yaml
 projects:

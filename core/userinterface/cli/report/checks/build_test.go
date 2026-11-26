@@ -145,3 +145,19 @@ func TestBatchAnnotationsChunksByMax(t *testing.T) {
 func TestMaxAnnotationsPerRequestMatchesGitHubLimit(t *testing.T) {
 	assert.Equal(t, 50, checks.MaxAnnotationsPerRequest)
 }
+
+func TestBridgeFindingAnnotationIsMarkedAndCatalogIsNot(t *testing.T) {
+	run := checks.Build([]outputjson.Verdict{{
+		Name: "core", Verdict: "fail",
+		Findings: []outputjson.VerdictFinding{
+			{Tool: "shellcheck", RuleID: "SC2086", Severity: "warning", FilePath: "a.sh", Line: 2, Message: "quote it", Provenance: "bridge"},
+			{Tool: "golangci-lint", RuleID: "errcheck", Severity: "error", FilePath: "a.go", Line: 3, Message: "unchecked", Provenance: "catalog"},
+			{Tool: "legacy", RuleID: "R", Severity: "error", FilePath: "b.go", Line: 4, Message: "no provenance"},
+		},
+	}}, checks.Options{})
+	require.Len(t, run.Annotations, 3)
+	assert.Equal(t, "quote it (bridge — not guaranteed by gavel)", run.Annotations[0].Message)
+	assert.Equal(t, "shellcheck (SC2086)", run.Annotations[0].Title)
+	assert.Equal(t, "unchecked", run.Annotations[1].Message)
+	assert.Equal(t, "no provenance", run.Annotations[2].Message)
+}

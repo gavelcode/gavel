@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	outputjson "github.com/usegavel/gavel/core/userinterface/cli/judge/output/json"
+	"github.com/usegavel/gavel/core/userinterface/cli/ui"
 )
 
 const MaxAnnotationsPerRequest = 50
@@ -28,6 +29,7 @@ const (
 	severityError    = "error"
 	severityWarning  = "warning"
 	statusExisting   = "existing"
+	provenanceBridge = "bridge"
 	minGitHubLine    = 1
 )
 
@@ -127,11 +129,18 @@ func annotations(verdicts []outputjson.Verdict, newOnly bool) []Annotation {
 				EndLine:   clampLine(finding.Line),
 				Level:     level(finding.Severity),
 				Title:     findingTitle(finding),
-				Message:   finding.Message,
+				Message:   findingMessage(finding),
 			})
 		}
 	}
 	return out
+}
+
+func findingMessage(finding outputjson.VerdictFinding) string {
+	if finding.Provenance == provenanceBridge {
+		return finding.Message + " (" + ui.BridgeLabel + ")"
+	}
+	return finding.Message
 }
 
 func clampLine(line int) int {

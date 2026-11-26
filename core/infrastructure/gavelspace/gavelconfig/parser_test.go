@@ -619,65 +619,6 @@ projects:
 	assert.Equal(t, "//web/...", refs[1].TargetPattern())
 }
 
-func TestParseShouldAcceptFindingsSourceAuto(t *testing.T) {
-	data := []byte(`
-name: mono
-findings_source: auto
-projects:
-  - name: svc
-    pattern: //svc/...
-`)
-
-	config, err := gavelconfig.Parse(data)
-
-	require.NoError(t, err)
-	assert.Equal(t, "auto", config.FindingsSource())
-}
-
-func TestParseShouldAcceptFindingsSourceGavel(t *testing.T) {
-	data := []byte(`
-name: mono
-findings_source: gavel
-projects:
-  - name: svc
-    pattern: //svc/...
-`)
-
-	config, err := gavelconfig.Parse(data)
-
-	require.NoError(t, err)
-	assert.Equal(t, "gavel", config.FindingsSource())
-}
-
-func TestParseShouldAcceptFindingsSourceRulesLint(t *testing.T) {
-	data := []byte(`
-name: mono
-findings_source: rules_lint
-projects:
-  - name: svc
-    pattern: //svc/...
-`)
-
-	config, err := gavelconfig.Parse(data)
-
-	require.NoError(t, err)
-	assert.Equal(t, "rules_lint", config.FindingsSource())
-}
-
-func TestParseShouldDefaultFindingsSourceToEmpty(t *testing.T) {
-	data := []byte(`
-name: mono
-projects:
-  - name: svc
-    pattern: //svc/...
-`)
-
-	config, err := gavelconfig.Parse(data)
-
-	require.NoError(t, err)
-	assert.Equal(t, "", config.FindingsSource())
-}
-
 func TestParseShouldAcceptCoverageOptions(t *testing.T) {
 	data := []byte(`
 name: mono
@@ -735,20 +676,19 @@ projects:
 	assert.False(t, opts.IsZero())
 }
 
-func TestParseShouldRejectInvalidFindingsSource(t *testing.T) {
-	data := []byte(`
-name: mono
-findings_source: unknown_source
-projects:
-  - name: svc
-    pattern: //svc/...
-`)
+func TestParseShouldRejectRemovedFindingsSource(t *testing.T) {
+	for _, value := range []string{"auto", "gavel", "rules_lint"} {
+		t.Run(value, func(t *testing.T) {
+			data := []byte("name: mono\nfindings_source: " + value + "\nprojects:\n  - name: svc\n    pattern: //svc/...\n")
 
-	_, err := gavelconfig.Parse(data)
+			_, err := gavelconfig.Parse(data)
 
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "findings_source")
-	assert.Contains(t, err.Error(), "unknown_source")
+			require.Error(t, err)
+			assert.ErrorIs(t, err, gavelconfig.ErrParseConfig)
+			assert.Contains(t, err.Error(), "findings_source was removed")
+			assert.Contains(t, err.Error(), "docs/design/rules-lint-integration.md")
+		})
+	}
 }
 
 func TestParseShouldAcceptBazelConfig(t *testing.T) {

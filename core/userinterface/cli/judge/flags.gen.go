@@ -16,7 +16,6 @@ type Options struct {
 	Branch string
 	CommitSHA string
 	Config string
-	FindingsSource string
 	Gavelspace string
 	JSONOutput bool
 	NoBaselineUpdate bool
@@ -43,7 +42,6 @@ func RegisterFlags(cmd *cobra.Command, opts *Options) {
 	cmd.Flags().StringVar(&opts.Branch, "branch", "", "Branch name. Auto-detected from git if not provided.")
 	cmd.Flags().StringVar(&opts.CommitSHA, "commit", "", "Commit SHA. Auto-detected from git if not provided.")
 	cmd.Flags().StringVar(&opts.Config, "config", "", "Path to gavel.yaml. Resolution order: flag value, .gavel/gavel.yaml, gavel.yaml, then defaults to .gavel/gavel.yaml.")
-	cmd.Flags().StringVar(&opts.FindingsSource, "findings-source", "", "Findings source: auto, gavel, or rules_lint. Defaults to workspace config value if not set.")
 	cmd.Flags().StringVar(&opts.Gavelspace, "gavelspace", "", "Associate analysis with a gavelspace (multi-repo group).")
 	cmd.Flags().BoolVar(&opts.JSONOutput, "json", false, "Output results as JSON.")
 	cmd.Flags().BoolVar(&opts.NoBaselineUpdate, "no-baseline-update", false, "Evaluate the delta but do not persist any baseline changes. Used by read-only tooling; the normal gate still updates the baseline.")

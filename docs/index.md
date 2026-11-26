@@ -40,7 +40,7 @@ this index maps them. Start here and follow the links.
 ### Decision records (`design/`)
 
 * [Incrementality decision record](design/incrementality-decision.md) — Why Gavel relies on Bazel's action cache instead of rdeps/diff scoping.
-* [Gavel and rules_lint integration](design/rules-lint-integration.md) — Where `aspect_rules_lint` fits relative to the native SARIF aspects.
+* [Gavel and rules_lint integration](design/rules-lint-integration.md) — Superseded: the integrated mode was removed; kept as history.
 * [PostgreSQL connection pool tuning](design/postgres-pool-tuning.md) — Sizing the server's pgx pool.
 * [Coverage exclusion policy](design/coverage-exclusion-policy.md) — Why Gavel mirrors what the tools measure (no per-line pragma) and where legitimate exclusions belong.
 * [GitHub Checks reporting](design/github-checks-reporting.md) — Why `gavel report` is a separate command from `judge`, and why its GitHub client lives in userinterface.

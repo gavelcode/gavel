@@ -87,12 +87,6 @@ By default, the quality gate evaluates only NEW findings (compared against the
 baseline in .gavel/baseline/). Use --absolute to evaluate all findings regardless.
 Steps 2 and 3 are skipped with --quick. Use --project to analyze a single project.
 
-Findings can be collected from Gavel's own aspects (default) or from pre-existing
-rules_lint reports in bazel-bin/. Use --findings-source to control the mode:
-  auto       - detect rules_lint reports, fall back to Gavel aspects (default)
-  gavel      - always run Gavel's own Bazel aspects
-  rules_lint - read rules_lint reports, supplement with Gavel-exclusive tools
-
 Exit code 0 means all projects passed. Exit code 1 means one or more failed.`,
 		Example: `  gavel judge
   gavel judge --project=payments
@@ -100,7 +94,6 @@ Exit code 0 means all projects passed. Exit code 1 means one or more failed.`,
   gavel judge --absolute
   gavel judge --json
   gavel judge --timeout=10m
-  gavel judge --findings-source=rules_lint
   gavel judge --output-sarif report.sarif`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			return run(cmd, opts, deps)
@@ -155,9 +148,6 @@ func run(cmd *cobra.Command, opts Options, deps deps) error {
 		if _, err := fmt.Fprint(writer, ui.Header("JUDGE")); err != nil {
 			return err
 		}
-	}
-	if opts.FindingsSource == "" {
-		opts.FindingsSource = view.FindingsSource
 	}
 
 	startedAt := time.Now().UTC()

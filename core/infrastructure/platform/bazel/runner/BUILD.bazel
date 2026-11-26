@@ -33,7 +33,6 @@ go_test(
         "aspect_int_test.go",
         "bindir_test.go",
         "collector_test.go",
-        "collector_whitebox_test.go",
         "coverage_test.go",
         "fakes_test.go",
         "jscoverage_test.go",

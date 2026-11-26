@@ -16,7 +16,6 @@ type WorkspaceView struct {
 	GavelspaceName string
 	ServerURL      string
 	ServerToken    string
-	FindingsSource string
 	BazelConfigs   []string
 	Projects       []ProjectView
 }
@@ -66,7 +65,6 @@ func buildView(gavelspace gavelspacemodel.Gavelspace, projects []projectmodel.Pr
 	view := WorkspaceView{
 		TenantID:       gavelspace.TenantID().String(),
 		GavelspaceName: gavelspace.ID().String(),
-		FindingsSource: gavelspace.FindingsSource(),
 		BazelConfigs:   gavelspace.BazelConfigs(),
 	}
 	if gavelspace.ServerConfig().IsConfigured() {

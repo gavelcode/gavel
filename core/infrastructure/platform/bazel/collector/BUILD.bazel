@@ -36,7 +36,6 @@ go_test(
         "findings_test.go",
         "vitest_test.go",
     ],
-    data = ["@gavel_tools//lint:catalog.yaml"],
     deps = [
         ":collector",
         "//core/application/casefile/collectevidence",

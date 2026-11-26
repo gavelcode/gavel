@@ -30,7 +30,6 @@ go_test(
     ],
     data = glob(["testdata/*"]) + [
         "//:MODULE.bazel",
-        "@gavel_tools//lint:catalog.yaml",
     ],
     embed = [":installer"],
     deps = [

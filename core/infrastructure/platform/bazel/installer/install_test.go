@@ -14,7 +14,7 @@ import (
 	"github.com/usegavel/gavel/core/infrastructure/platform/bazel/installer"
 )
 
-const gavelDepLine = `bazel_dep(name = "gavel_tools", version = "0.3.8")`
+const gavelDepLine = `bazel_dep(name = "gavel_tools", version = "0.4.0")`
 
 const (
 	gavelRegistryLine = "common --registry=https://gavelcode.github.io/registry"
@@ -400,7 +400,7 @@ func TestInstall_MultiLanguage_WritesOneDepPerDistinctModuleSorted(t *testing.T)
 	assert.Equal(t, []string{"gavel_tools_go", "gavel_tools_java", "gavel_tools_python", "gavel_tools_rust", "gavel_tools_typescript"},
 		moduleDepNames(t, root), "core gavel_tools stays in the root MODULE.bazel, not duplicated here")
 	assert.Contains(t, readFile(t, filepath.Join(root, "MODULE.bazel")), gavelDepLine)
-	assert.Contains(t, readFile(t, filepath.Join(root, installer.GavelModule)), `bazel_dep(name = "gavel_tools_go", version = "0.3.8")`)
+	assert.Contains(t, readFile(t, filepath.Join(root, installer.GavelModule)), `bazel_dep(name = "gavel_tools_go", version = "0.4.0")`)
 }
 
 func TestInstall_JavaOnly_WritesOnlyJavaModule(t *testing.T) {
@@ -476,7 +476,7 @@ func TestInstall_RulesRsConsumer_GetsVariantDepAndAspect(t *testing.T) {
 	require.NoError(t, err)
 
 	module := readFile(t, filepath.Join(root, installer.GavelModule))
-	assert.Contains(t, module, `bazel_dep(name = "gavel_tools_rust_rs", version = "0.3.8")`)
+	assert.Contains(t, module, `bazel_dep(name = "gavel_tools_rust_rs", version = "0.4.0")`)
 	assert.Equal(t, []string{"gavel_tools_rust_rs"}, moduleDepNames(t, root),
 		"the variant replaces gavel_tools_rust; archtest's core gavel_tools lives in the root MODULE.bazel")
 

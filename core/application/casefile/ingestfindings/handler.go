@@ -57,14 +57,14 @@ func (h *Handler) Execute(ctx context.Context, cmd Command) (Result, error) {
 
 func toDomainFindings(tool string, provenance evidence.Provenance, parsed []Parsed) ([]finding.Finding, error) {
 	findings := make([]finding.Finding, 0, len(parsed))
-	for i, p := range parsed {
+	for index, p := range parsed {
 		fingerprint, err := scopeFingerprint(tool, provenance, p.FingerprintID)
 		if err != nil {
-			return nil, fmt.Errorf("finding %d: %w", i, err)
+			return nil, fmt.Errorf("finding %d: %w", index, err)
 		}
 		f, err := finding.NewFinding(tool, p.RuleID, p.Severity, p.FilePath, p.Line, p.Message, fingerprint)
 		if err != nil {
-			return nil, fmt.Errorf("finding %d: %w", i, err)
+			return nil, fmt.Errorf("finding %d: %w", index, err)
 		}
 		findings = append(findings, f.WithProvenance(provenance))
 	}

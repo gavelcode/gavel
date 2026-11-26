@@ -58,20 +58,20 @@ func stripComments(source string) string {
 	var out strings.Builder
 	inString := false
 	inComment := false
-	for _, r := range source {
+	for _, char := range source {
 		switch {
 		case inComment:
-			if r == '\n' {
+			if char == '\n' {
 				inComment = false
-				out.WriteRune(r)
+				out.WriteRune(char)
 			}
-		case r == '"':
+		case char == '"':
 			inString = !inString
-			out.WriteRune(r)
-		case r == '#' && !inString:
+			out.WriteRune(char)
+		case char == '#' && !inString:
 			inComment = true
 		default:
-			out.WriteRune(r)
+			out.WriteRune(char)
 		}
 	}
 	return out.String()

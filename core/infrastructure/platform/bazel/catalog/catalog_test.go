@@ -326,16 +326,16 @@ func TestLintAspectsForLanguages_MatchingDepSelectsVariant(t *testing.T) {
 }
 
 func TestAspectFor_ResolvesSingleTool(t *testing.T) {
-	aspect, ok := catalog.AspectFor("rust", "clippy", rulesRs)
-	require.True(t, ok)
+	aspect, found := catalog.AspectFor("rust", "clippy", rulesRs)
+	require.True(t, found)
 	assert.Equal(t, "gavel_tools_rust_rs", aspect.Module)
 
-	base, ok := catalog.AspectFor("rust", "clippy", nil)
-	require.True(t, ok)
+	base, baseFound := catalog.AspectFor("rust", "clippy", nil)
+	require.True(t, baseFound)
 	assert.Equal(t, "gavel_tools_rust", base.Module)
 
-	_, ok = catalog.AspectFor("rust", "nope", nil)
-	assert.False(t, ok)
+	_, nopeFound := catalog.AspectFor("rust", "nope", nil)
+	assert.False(t, nopeFound)
 }
 
 func TestResolution_FirstMatchingVariantWinsAndFlagsFallBackToBase(t *testing.T) {

@@ -13,6 +13,8 @@ import (
 )
 
 const (
+	// maxBuildEventBytes caps one JSON line of the build event stream; a NamedSetOfFiles event can be large.
+	maxBuildEventBytes     = 64 << 20
 	submissionsOutputGroup = "gavel_submissions"
 	failureOutputTailLines = 15
 )
@@ -147,7 +149,7 @@ func submissionFiles(bepPath string) ([]reportedFile, error) {
 	sets := make(map[string]*bepEvent)
 	var roots []string
 	scanner := bufio.NewScanner(bytes.NewReader(data))
-	scanner.Buffer(make([]byte, 0, 1<<20), 64<<20)
+	scanner.Buffer(make([]byte, 0, 1<<20), maxBuildEventBytes)
 	for scanner.Scan() {
 		var event bepEvent
 		if err := json.Unmarshal(scanner.Bytes(), &event); err != nil {
@@ -174,15 +176,15 @@ func submissionFiles(bepPath string) ([]reportedFile, error) {
 	var files []reportedFile
 	seenSets := make(map[string]bool)
 	seenFiles := make(map[string]bool)
-	var visit func(id string) error
-	visit = func(id string) error {
-		if seenSets[id] {
+	var visit func(setID string) error
+	visit = func(setID string) error {
+		if seenSets[setID] {
 			return nil
 		}
-		seenSets[id] = true
-		set, ok := sets[id]
+		seenSets[setID] = true
+		set, ok := sets[setID]
 		if !ok {
-			return fmt.Errorf("build event stream references unknown file set %q", id)
+			return fmt.Errorf("build event stream references unknown file set %q", setID)
 		}
 		for _, file := range set.NamedSetOfFiles.Files {
 			path, err := localPath(file.URI)

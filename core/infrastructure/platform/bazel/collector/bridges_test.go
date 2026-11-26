@@ -74,28 +74,28 @@ func failuresOf(result collectevidence.BridgeResult) []evidencedto.ToolFailure {
 }
 
 func TestBridgeCollectorRunsEachBridgeOverTheProjectTargets(t *testing.T) {
-	r := &fakeBridgeRunner{results: map[string]*runner.BridgeResult{
+	bridgeRunner := &fakeBridgeRunner{results: map[string]*runner.BridgeResult{
 		"//tools:todo.bzl%todo": files(validBridgeDoc), "//tools:other.bzl%other": files(validBridgeDoc),
 	}}
 
-	collect(t, r, &recordingFindingsParser{}, spec("todo"), spec("other"))
+	collect(t, bridgeRunner, &recordingFindingsParser{}, spec("todo"), spec("other"))
 
-	require.Len(t, r.configs, 2)
+	require.Len(t, bridgeRunner.configs, 2)
 	assert.Equal(t, runner.BridgeConfig{
 		Workspace: "/ws", Targets: []string{"//app/..."}, Aspect: "//tools:todo.bzl%todo",
 		SARIFSuffix: ".todo.sarif", BuildFlags: []string{"--f"}, BazelConfigs: []string{"ci"},
-	}, r.configs[0])
+	}, bridgeRunner.configs[0])
 }
 
 func TestBridgeCollectorMarksFindingsAsBridgeAndNamesTheToolAfterTheBridge(t *testing.T) {
-	r := &fakeBridgeRunner{results: map[string]*runner.BridgeResult{"//tools:todo.bzl%todo": files(validBridgeDoc)}}
-	p := &recordingFindingsParser{}
+	bridgeRunner := &fakeBridgeRunner{results: map[string]*runner.BridgeResult{"//tools:todo.bzl%todo": files(validBridgeDoc)}}
+	parser := &recordingFindingsParser{}
 
-	result := collect(t, r, p, spec("todo"))
+	result := collect(t, bridgeRunner, parser, spec("todo"))
 
-	require.Len(t, p.commands, 1)
-	assert.Equal(t, "todo", p.commands[0].Source(), "the bridge name, not the SARIF driver name, is the tool")
-	assert.True(t, p.commands[0].Provenance().IsBridge())
+	require.Len(t, parser.commands, 1)
+	assert.Equal(t, "todo", parser.commands[0].Source(), "the bridge name, not the SARIF driver name, is the tool")
+	assert.True(t, parser.commands[0].Provenance().IsBridge())
 	require.Len(t, result.Evidences, 1)
 	assert.Equal(t, "bridge", result.Evidences[0].Findings[0].Provenance)
 	assert.Empty(t, failuresOf(result))

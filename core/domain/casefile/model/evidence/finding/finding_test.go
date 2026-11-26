@@ -166,12 +166,12 @@ func TestFindingProvenanceDefaultsToCatalog(t *testing.T) {
 func TestFindingWithProvenanceReturnsMarkedCopy(t *testing.T) {
 	fp, err := finding.NewFingerprintID("fp")
 	require.NoError(t, err)
-	f, err := finding.NewFinding("shellcheck", "SC2086", finding.SeverityWarning, "a.sh", 3, "m", fp)
+	original, err := finding.NewFinding("shellcheck", "SC2086", finding.SeverityWarning, "a.sh", 3, "m", fp)
 	require.NoError(t, err)
 
-	bridged := f.WithProvenance(evidence.ProvenanceBridge)
+	bridged := original.WithProvenance(evidence.ProvenanceBridge)
 
 	assert.Equal(t, evidence.ProvenanceBridge, bridged.Provenance())
-	assert.Equal(t, evidence.ProvenanceCatalog, f.Provenance(), "original is unchanged")
-	assert.Equal(t, f.RuleID(), bridged.RuleID())
+	assert.Equal(t, evidence.ProvenanceCatalog, original.Provenance(), "original is unchanged")
+	assert.Equal(t, original.RuleID(), bridged.RuleID())
 }

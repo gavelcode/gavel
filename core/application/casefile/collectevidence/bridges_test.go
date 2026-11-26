@@ -116,12 +116,13 @@ func TestExecute_SkipsBridgeCollectorWhenProjectDeclaresNone(t *testing.T) {
 }
 
 func TestCommandBridgesAreDefensivelyCopied(t *testing.T) {
+	const tampered = "tampered"
 	specs := []collectevidence.BridgeSpec{bridgeSpec()}
 	cmd, err := collectevidence.NewCommand("/ws", "//app/...", "app", "main", nil, true, false, nil, collectevidence.WithBridges(specs))
 	require.NoError(t, err)
 
-	specs[0].Name = "tampered"
-	cmd.Bridges()[0].Name = "tampered"
+	specs[0].Name = tampered
+	cmd.Bridges()[0].Name = tampered
 
 	assert.Equal(t, "todo", cmd.Bridges()[0].Name)
 }
